@@ -428,6 +428,14 @@ function App() {
     setActiveSection(null);
   };
 
+  const handleJumpToSection = (sectionId: string) => {
+    const section = (sections || []).find(s => s.id === sectionId);
+    if (section) {
+      setActiveSection(section);
+      setView('reader');
+    }
+  };
+
   // Reset progress stats
   const handleResetProgress = () => {
     if (window.confirm('Reset all progress, unlocked themes, features, and shelves?')) {
@@ -565,6 +573,7 @@ function App() {
       images={activeImages}
       language={language}
       onExplainText={handleExplainText}
+      onJumpToSection={handleJumpToSection}
     />
   ) : null;
 

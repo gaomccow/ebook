@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Flame, Star, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, X, Sparkles } from 'lucide-react';
+import { ArrowLeft, Flame, Star, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, X, Sparkles, Bookmark, BookmarkCheck } from 'lucide-react';
 import type { SectionNode } from './PathView';
 import type { Language } from '../utils/translations';
 
@@ -31,6 +31,7 @@ interface ReaderViewProps {
   
   // AI Explanation feature
   onExplainText?: (text: string) => Promise<string>;
+  onJumpToSection?: (sectionId: string) => void;
 }
 
 export const ReaderView: React.FC<ReaderViewProps> = ({
@@ -51,7 +52,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   hasDistractionShield,
   images = {},
   language = 'en',
-  onExplainText
+  onExplainText,
+  onJumpToSection
 }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isNearBottom, setIsNearBottom] = useState(false);
@@ -61,6 +63,144 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   // Distraction Shield header hide state
   const [hideHeader, setHideHeader] = useState(false);
   const lastScrollTop = useRef(0);
+
+  // Bookmark State & Scroll Restoration
+  interface BookmarkItem {
+    sectionId: string;
+    sectionTitle: string;
+    paraIndex: number;
+    previewText: string;
+  }
+
+  const getBookmarksKey = () => {
+    const parts = section.id.split('_');
+    const bookId = section.id.startsWith('book_') ? `${parts[0]}_${parts[1]}` : 'book_default';
+    return `bookmarks_${bookId}`;
+  };
+
+  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>(() => {
+    const stored = localStorage.getItem(getBookmarksKey());
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  const [showBookmarkModal, setShowBookmarkModal] = useState(false);
+  const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
+
+  // Sync bookmarks list when book changes
+  useEffect(() => {
+    const stored = localStorage.getItem(getBookmarksKey());
+    setBookmarks(stored ? JSON.parse(stored) : []);
+  }, [section.id]);
+
+  // Determine if a paragraph index is bookmarked in the current chapter
+  const isParaBookmarked = (idx: number) => {
+    return bookmarks.some(b => b.sectionId === section.id && b.paraIndex === idx);
+  };
+
+  // Find paragraphs that have bookmarks in the current chapter
+  const currentChapterBookmarks = bookmarks.filter(b => b.sectionId === section.id);
+
+  const findCurrentParaIndex = (): number => {
+    if (!containerRef.current) return 0;
+    const paragraphs = containerRef.current.querySelectorAll('[data-para-index]');
+    const containerTop = containerRef.current.getBoundingClientRect().top;
+    let bestIndex = 0;
+    let minDiff = Infinity;
+    for (let i = 0; i < paragraphs.length; i++) {
+      const rect = paragraphs[i].getBoundingClientRect();
+      const diff = Math.abs(rect.top - containerTop);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestIndex = parseInt(paragraphs[i].getAttribute('data-para-index') || '0', 10);
+      }
+    }
+    return bestIndex;
+  };
+
+  const handleToggleBookmarkAt = (idx: number, rawText: string) => {
+    const key = getBookmarksKey();
+    let updated = [...bookmarks];
+    const existingIndex = updated.findIndex(b => b.sectionId === section.id && b.paraIndex === idx);
+
+    if (existingIndex !== -1) {
+      updated.splice(existingIndex, 1);
+      triggerToast(language === 'vi' ? 'Đã xóa dấu trang!' : 'Bookmark cleared!');
+    } else {
+      const textPreview = rawText.length > 60 ? rawText.substring(0, 57) + '...' : rawText;
+      updated.push({
+        sectionId: section.id,
+        sectionTitle: section.title,
+        paraIndex: idx,
+        previewText: textPreview
+      });
+      triggerToast(language === 'vi' ? 'Đã lưu dấu trang tại đây!' : 'Bookmark saved here!');
+    }
+
+    localStorage.setItem(key, JSON.stringify(updated));
+    setBookmarks(updated);
+  };
+
+  const handleSetBookmark = () => {
+    if (!containerRef.current) return;
+    const idx = findCurrentParaIndex();
+    const el = containerRef.current.querySelector(`[data-para-index="${idx}"]`);
+    const rawText = el?.textContent || 'Bookmark Location';
+    handleToggleBookmarkAt(idx, rawText);
+  };
+
+  const handleClearBookmarkAt = (idx: number) => {
+    const key = getBookmarksKey();
+    const updated = bookmarks.filter(b => !(b.sectionId === section.id && b.paraIndex === idx));
+    localStorage.setItem(key, JSON.stringify(updated));
+    setBookmarks(updated);
+    triggerToast(language === 'vi' ? 'Đã xóa dấu trang!' : 'Bookmark cleared!');
+  };
+
+  const handleClearAllBookmarks = () => {
+    const key = getBookmarksKey();
+    localStorage.removeItem(key);
+    setBookmarks([]);
+    setShowBookmarkModal(false);
+    triggerToast(language === 'vi' ? 'Đã xóa toàn bộ dấu trang!' : 'All bookmarks cleared!');
+  };
+
+  const triggerToast = (msg: string) => {
+    setBookmarkToast(msg);
+    setTimeout(() => {
+      setBookmarkToast(null);
+    }, 2000);
+  };
+
+  // Scroll to a specific paragraph index
+  const handleScrollToPara = (idx: number) => {
+    if (containerRef.current) {
+      const el = containerRef.current.querySelector(`[data-para-index="${idx}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  // Auto-scroll on mount/chapter change if a bookmark is present
+  useEffect(() => {
+    // Restores first available bookmark in this chapter on mount
+    const firstCurrentBookmark = bookmarks.find(b => b.sectionId === section.id);
+    if (firstCurrentBookmark) {
+      const timer = setTimeout(() => {
+        if (containerRef.current) {
+          const el = containerRef.current.querySelector(`[data-para-index="${firstCurrentBookmark.paraIndex}"]`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'auto', block: 'start' });
+          }
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    } else {
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0;
+      }
+    }
+  }, [section.id, content]);
 
   // AI Explainer State
   const [explainingText, setExplainingText] = useState('');
@@ -372,6 +512,100 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         </div>
       </header>
 
+      {/* Draggable Bookmark Ribbon hanging below the sticky progress header */}
+      <div className="absolute top-[72px] right-6 z-50 flex flex-col items-center">
+        {/* Toast Notification */}
+        <AnimatePresence>
+          {bookmarkToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.9 }}
+              className="absolute right-12 top-2 bg-gray-900 text-white text-[10px] font-black uppercase tracking-wider py-1.5 px-3 rounded-xl shadow-lg border border-gray-700 whitespace-nowrap"
+            >
+              {bookmarkToast}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Drag track backdrop visual indicator */}
+        <div className="w-0.5 h-20 border-r-2 border-dashed border-slate-300 dark:border-slate-700/50 absolute top-0 pointer-events-none opacity-40" />
+
+        {/* Draggable Ribbon Tab */}
+        <motion.div
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 60 }}
+          dragElastic={0.1}
+          dragMomentum={false}
+          onDragEnd={(_event, info) => {
+            if (info.offset.y > 35) {
+              handleSetBookmark();
+            } else if (info.offset.y < -15 && bookmarks.length > 0) {
+              handleClearBookmarkAt(findCurrentParaIndex());
+            }
+          }}
+          onClick={() => {
+            if (bookmarks.length === 0) {
+              handleSetBookmark();
+            } else if (bookmarks.length === 1) {
+              const b = bookmarks[0];
+              if (b.sectionId === section.id) {
+                handleScrollToPara(b.paraIndex);
+              } else if (onJumpToSection) {
+                onJumpToSection(b.sectionId);
+              }
+            } else {
+              // Multiple bookmarks active -> show choice dialog popover
+              setShowBookmarkModal(true);
+            }
+          }}
+          className={`w-8 h-12 rounded-b-lg flex flex-col items-center justify-between py-1.5 cursor-grab active:cursor-grabbing shadow-md border-x-2 border-b transition-all relative
+            ${currentChapterBookmarks.length > 0
+              ? 'bg-duo-orange border-duo-orange-dark text-white'
+              : bookmarks.length > 0
+              ? 'bg-duo-purple border-duo-purple-dark text-white animate-pulse'
+              : 'bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:bg-slate-300'
+            }
+          `}
+          animate={{ y: currentChapterBookmarks.length > 0 ? 30 : 0 }}
+          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+          title={
+            currentChapterBookmarks.length > 0 
+              ? 'Click to view/scroll bookmarks / Drag up to clear' 
+              : bookmarks.length > 0
+              ? `View bookmarks from other chapters`
+              : 'Drag down or click to bookmark this spot'
+          }
+        >
+          {/* Grab handles drag pattern indicator */}
+          <div className="flex flex-col gap-0.5 opacity-60">
+            <span className="w-3.5 h-0.5 bg-current rounded-full" />
+            <span className="w-3.5 h-0.5 bg-current rounded-full" />
+          </div>
+
+          {/* Bookmark icon */}
+          {currentChapterBookmarks.length > 0 ? (
+            <BookmarkCheck className="w-3.5 h-3.5 fill-white" />
+          ) : bookmarks.length > 0 ? (
+            <Bookmark className="w-3.5 h-3.5 fill-white animate-bounce" />
+          ) : (
+            <Bookmark className="w-3.5 h-3.5" />
+          )}
+
+          {/* Ribbon Cutout Tail Visual */}
+          <div className="absolute -bottom-1.5 left-0 right-0 flex justify-center">
+            <div className={`w-0 h-0 border-l-[14px] border-r-[14px] border-t-[6px] border-l-transparent border-r-transparent
+              ${currentChapterBookmarks.length > 0 
+                ? 'border-t-duo-orange-dark' 
+                : bookmarks.length > 0
+                ? 'border-t-duo-purple-dark'
+                : 'border-t-slate-300 dark:border-t-slate-700'
+              }
+            `} />
+          </div>
+        </motion.div>
+      </div>
+
       {/* Main Content Area (Continuous Scroller) */}
       <main 
         ref={containerRef}
@@ -475,14 +709,44 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 );
               }
 
+              const isBookmarked = isParaBookmarked(index);
+
               return (
-                <p 
+                <div 
                   key={index} 
-                  className="text-lg leading-relaxed mb-6 font-normal tracking-wide text-justify text-inherit"
-                  style={{ textWrap: 'pretty' }}
+                  className="relative group/para pr-8 pl-8 -mx-8 py-1 rounded-xl transition-all hover:bg-slate-200/5"
                 >
-                  {p}
-                </p>
+                  {/* Precise Paragraph Bookmark Handle (Faded on hover, active when bookmarked) */}
+                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 flex items-center z-20">
+                    {isBookmarked ? (
+                      <button
+                        onClick={() => handleClearBookmarkAt(index)}
+                        className="p-1 text-duo-orange hover:scale-110 transition-transform"
+                        title="Clear bookmark on this paragraph"
+                      >
+                        <BookmarkCheck className="w-4 h-4 fill-duo-orange" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleToggleBookmarkAt(index, p)}
+                        className="p-1 text-slate-300 dark:text-slate-600 hover:text-duo-orange opacity-0 group-hover/para:opacity-100 transition-all hover:scale-110"
+                        title="Set bookmark on this exact paragraph"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <p 
+                    data-para-index={index}
+                    className={`text-lg leading-relaxed mb-0 font-normal tracking-wide text-justify text-inherit transition-colors
+                      ${isBookmarked ? 'border-l-4 border-duo-orange pl-3 -ml-4 font-bold text-[var(--accent-color)]' : ''}
+                    `}
+                    style={{ textWrap: 'pretty' }}
+                  >
+                    {p}
+                  </p>
+                </div>
               );
             })}
           </article>
@@ -587,6 +851,83 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 <button
                   onClick={() => setExplainingText('')}
                   className="px-6 py-2 bg-duo-purple border-duo-purple-dark text-white rounded-2xl text-xs font-black uppercase tracking-wider btn-3d"
+                >
+                  {language === 'vi' ? 'Đóng' : 'Close'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Multiple Bookmarks Selection Popover Dialog */}
+      <AnimatePresence>
+        {showBookmarkModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-55 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.9, y: 15, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 15, opacity: 0 }}
+              className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border-4 border-duo-gray p-6 shadow-2xl relative flex flex-col max-h-[70vh] text-gray-800 z-56"
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setShowBookmarkModal(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <h3 className="text-lg font-black text-gray-800 dark:text-white flex items-center gap-2 mb-3">
+                <Bookmark className="w-5 h-5 text-duo-orange fill-duo-orange/20" />
+                {language === 'vi' ? 'Chọn Dấu Trang' : 'Select Bookmark'}
+              </h3>
+
+              <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 py-2 no-scrollbar">
+                {bookmarks.map((b, idx) => {
+                  const isCurrentChapter = b.sectionId === section.id;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setShowBookmarkModal(false);
+                        if (isCurrentChapter) {
+                          handleScrollToPara(b.paraIndex);
+                        } else if (onJumpToSection) {
+                          onJumpToSection(b.sectionId);
+                        }
+                      }}
+                      className="w-full text-left p-3.5 rounded-2xl border-2 border-slate-100 hover:border-duo-orange bg-slate-50 hover:bg-duo-orange/5 dark:bg-slate-800 dark:border-slate-700 dark:hover:border-duo-orange transition-all flex flex-col gap-1 cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[10px] font-black text-duo-orange-dark uppercase tracking-wider">
+                          {b.sectionTitle}
+                        </span>
+                        {isCurrentChapter && (
+                          <span className="text-[9px] font-bold text-duo-green bg-duo-green/10 px-1.5 py-0.5 rounded uppercase">
+                            {language === 'vi' ? 'Chương này' : 'Current'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 line-clamp-2 italic mt-0.5 leading-relaxed">
+                        "{b.previewText}"
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Footer */}
+              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between gap-3 shrink-0">
+                <button
+                  onClick={handleClearAllBookmarks}
+                  className="px-4 py-2 border-2 border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50 rounded-2xl text-xs font-black uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  {language === 'vi' ? 'Xóa Hết' : 'Clear All'}
+                </button>
+                <button
+                  onClick={() => setShowBookmarkModal(false)}
+                  className="px-6 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-gray-600 dark:text-gray-300 rounded-2xl text-xs font-black uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   {language === 'vi' ? 'Đóng' : 'Close'}
                 </button>
