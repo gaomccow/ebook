@@ -16,7 +16,7 @@ import { EpubParser } from './services/EpubParser';
 import { GeminiClient } from './services/GeminiClient';
 import { IDBStorage } from './services/IDBStorage';
 import type { Language } from './utils/translations';
-import { Home, Compass, BookOpen, Highlighter, Flame } from 'lucide-react';
+import { Home, Compass, BookOpen, Highlighter, Flame, ChevronUp, ChevronDown } from 'lucide-react';
 import { FloatingDock } from './components/ui/FloatingDock';
 
 // Default static reading material (Deep Focus guide)
@@ -670,40 +670,46 @@ function App() {
       />
 
       {/* Floating Navigation Dock (hidden in Focus Mode, Quiz, or Theme Transition) */}
-      <AnimatePresence>
-        {showDock && !isFocusMode && view !== 'quiz' && !reconfigTheme && (
-          <motion.div 
-            initial={{ y: 80, opacity: 0, left: dockLeftVal, x: '-50%' }}
-            animate={{ y: 0, opacity: 1, left: dockLeftVal, x: '-50%' }}
-            exit={{ y: 80, opacity: 0, left: dockLeftVal, x: '-50%' }}
-            transition={{ type: 'spring', damping: 22, stiffness: 200 }}
-            className="fixed bottom-6 z-40"
-          >
-            <FloatingDock items={dockItems} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Half-transparent Oversized Horizontal Sliding Switch (Lever) at the bottom right corner */}
       {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/20 dark:border-slate-800/20 rounded-full px-4 py-2.5 shadow-lg select-none">
-          <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-            {language === 'vi' ? 'THANH PHỤ' : 'DOCK'}
-          </span>
-          <button
-            onClick={() => setShowDock(prev => !prev)}
-            className={`w-16 h-8 rounded-full p-1 relative flex items-center transition-colors cursor-pointer
-              ${showDock ? 'bg-duo-blue' : 'bg-slate-300 dark:bg-slate-700'}
-            `}
-          >
-            <motion.div 
-              layout
-              className="w-6 h-6 rounded-full bg-white shadow-md"
-              animate={{ x: showDock ? 32 : 0 }}
-              transition={{ type: 'spring', stiffness: 450, damping: 25 }}
-            />
-          </button>
+        <div 
+          style={{ left: dockLeftVal }}
+          className="fixed bottom-6 -translate-x-1/2 z-40 pointer-events-none"
+        >
+          <AnimatePresence>
+            {showDock && (
+              <motion.div 
+                initial={{ y: 80, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 80, opacity: 0 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 200 }}
+                className="pointer-events-auto"
+              >
+                <FloatingDock items={dockItems} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+      )}
+
+      {/* Small half-opaque arrow handle on the right side of the screen to show/hide dock */}
+      {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
+        <button
+          onClick={() => setShowDock(prev => !prev)}
+          className="fixed right-0 top-1/2 transform -translate-y-1/2 z-50 bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md border-l-2 border-y-2 border-slate-300/30 dark:border-slate-700/30 rounded-l-2xl py-3 px-2 flex flex-col items-center gap-1.5 shadow-lg hover:bg-slate-200/75 dark:hover:bg-slate-800/75 cursor-pointer select-none text-slate-500 dark:text-slate-400 hover:text-duo-blue dark:hover:text-cyan-400 transition-all"
+          title={showDock ? "Hide Navigation Dock" : "Show Navigation Dock"}
+        >
+          {showDock ? (
+            <ChevronDown className="w-4 h-4 animate-pulse" />
+          ) : (
+            <ChevronUp className="w-4 h-4 animate-bounce" />
+          )}
+          <span 
+            style={{ writingMode: 'vertical-lr' }} 
+            className="text-[8px] font-black tracking-widest uppercase mt-0.5"
+          >
+            {showDock ? (language === 'vi' ? 'ẨN' : 'HIDE') : (language === 'vi' ? 'HIỆN' : 'SHOW')}
+          </span>
+        </button>
       )}
 
       {/* Stats & Progression Info Popover Modal */}
