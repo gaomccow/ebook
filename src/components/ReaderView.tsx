@@ -177,6 +177,16 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     }
   };
 
+  const handleParagraphClick = (_e: React.MouseEvent, idx: number, rawText: string) => {
+    if (!isDesktop) {
+      const selection = window.getSelection()?.toString();
+      if (selection && selection.trim().length > 0) {
+        return;
+      }
+      handleToggleBookmarkAt(idx, rawText);
+    }
+  };
+
   // Auto-scroll on mount/chapter change if a bookmark is present
   useEffect(() => {
     // Restores first available bookmark in this chapter on mount
@@ -684,7 +694,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                     <span className="absolute -top-3.5 -right-1.5 text-xs bg-[var(--bg-color)] px-1">+</span>
                     <span className="absolute -bottom-3.5 -left-1.5 text-xs bg-[var(--bg-color)] px-1">+</span>
                     <span className="absolute -bottom-3.5 -right-1.5 text-xs bg-[var(--bg-color)] px-1">+</span>
-                    <p className="text-sm leading-relaxed text-justify">
+                    <p 
+                      data-para-index={index}
+                      onClick={(e) => handleParagraphClick(e, index, p)}
+                      className="text-sm leading-relaxed text-justify cursor-pointer"
+                    >
                       {p}
                     </p>
                   </div>
@@ -721,7 +735,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
 
                   <p 
                     data-para-index={index}
-                    className={`text-lg leading-relaxed mb-0 font-normal tracking-wide text-justify text-inherit transition-colors
+                    onClick={(e) => handleParagraphClick(e, index, p)}
+                    className={`text-lg leading-relaxed mb-0 font-normal tracking-wide text-justify text-inherit transition-colors cursor-pointer
                       ${isBookmarked ? 'border-l-4 border-duo-orange pl-3 -ml-4 font-bold text-[var(--accent-color)]' : ''}
                     `}
                     style={{ textWrap: 'pretty' }}
