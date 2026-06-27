@@ -359,14 +359,22 @@ ${concept}
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-specdec',
+          model: 'llama-3.1-8b-instant', // cheapest and fastest Groq model
           messages: [
             { role: 'user', content: prompt }
           ]
         })
       });
       if (!response.ok) {
-        throw new Error(`Groq API error: ${response.statusText}`);
+        const errText = await response.text();
+        let parsedMessage = '';
+        try {
+          const parsed = JSON.parse(errText);
+          parsedMessage = parsed.error?.message || errText;
+        } catch {
+          parsedMessage = errText;
+        }
+        throw new Error(`Groq API error: ${response.status} - ${parsedMessage}`);
       }
       const data = await response.json();
       return data.choices?.[0]?.message?.content || 'No explanation generated.';
