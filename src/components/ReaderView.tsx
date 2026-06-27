@@ -1,14 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Flame, Star, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, X, Sparkles, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, X, Sparkles, Bookmark, BookmarkCheck } from 'lucide-react';
 import type { SectionNode } from './PathView';
 import type { Language } from '../utils/translations';
 
 interface ReaderViewProps {
   section: SectionNode;
   content: string; 
-  totalXP: number;
-  streak: number;
   onBack: () => void;
   onComplete: (wordCount: number) => void;
   hasVerificationActive: boolean;
@@ -37,8 +35,6 @@ interface ReaderViewProps {
 export const ReaderView: React.FC<ReaderViewProps> = ({
   section,
   content,
-  totalXP,
-  streak,
   onBack,
   onComplete,
   hasVerificationActive,

@@ -535,8 +535,6 @@ function App() {
     <PathView
       sections={sections}
       completedSections={stats.completedSections}
-      totalXP={stats.xp}
-      streak={stats.streak}
       onSelectSection={handleSelectSection}
       onResetProgress={handleResetProgress}
       apiKey={apiKey}
@@ -559,8 +557,6 @@ function App() {
     <ReaderView
       section={activeSection}
       content={contentMap[activeSection.id] || ''}
-      totalXP={stats.xp}
-      streak={stats.streak}
       onBack={() => {
         setView('path');
         setActiveSection(null);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Check, Star, Flame, Trophy, RefreshCw, Key, Upload, BookOpen, AlertCircle, X, ShieldAlert, Sparkles, ChevronLeft } from 'lucide-react';
+import { Lock, Check, Trophy, RefreshCw, Key, Upload, BookOpen, AlertCircle, X, ShieldAlert, Sparkles, ChevronLeft } from 'lucide-react';
 import { TRANSLATIONS } from '../utils/translations';
 import type { Language } from '../utils/translations';
 
@@ -14,8 +14,6 @@ export interface SectionNode {
 interface PathViewProps {
   sections: SectionNode[];
   completedSections: string[];
-  totalXP: number;
-  streak: number;
   onSelectSection: (section: SectionNode) => void;
   onResetProgress: () => void;
   
@@ -42,8 +40,6 @@ interface PathViewProps {
 export const PathView: React.FC<PathViewProps> = ({
   sections,
   completedSections,
-  totalXP,
-  streak,
   onSelectSection,
   onResetProgress,
   apiKey,
