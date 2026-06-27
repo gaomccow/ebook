@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Check, Star, Trophy, RefreshCw, Key, Upload, BookOpen, AlertCircle, X, ShieldAlert, Sparkles, ChevronLeft } from 'lucide-react';
+import { Lock, Check, Star, Trophy, RefreshCw, Key, Upload, BookOpen, AlertCircle, X, ShieldAlert, Sparkles, ChevronLeft, ChevronRight, Bookmark, HelpCircle } from 'lucide-react';
 import { TRANSLATIONS } from '../utils/translations';
 import type { Language } from '../utils/translations';
 
@@ -64,6 +64,10 @@ export const PathView: React.FC<PathViewProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [tempKey, setTempKey] = useState(apiKey);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Tutorial popup guides states
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
 
   // Constants for winding path layout (Responsive to Sidebar pane)
   const yStep = isSidebar ? 105 : 130; 
@@ -239,6 +243,93 @@ export const PathView: React.FC<PathViewProps> = ({
         </div>
       );
     }
+
+  const tutorialSlides = [
+    {
+      title: language === 'vi' ? 'Chào mừng đến với Lumina Reader! 📚' : 'Welcome to Lumina Reader! 📚',
+      subtitle: language === 'vi' 
+        ? 'Rèn luyện khả năng tập trung đọc sách dài hạn thông qua lộ trình được trò chơi hóa.' 
+        : 'Reclaim your focus and build reading stamina through a winding path layout.',
+      icon: <Trophy className="w-12 h-12 text-duo-orange fill-duo-orange animate-bounce" />,
+      features: [
+        {
+          title: language === 'vi' ? 'Lộ Trình Trò Chơi Hóa' : 'Gamified Progression Path',
+          desc: language === 'vi' 
+            ? 'Đọc qua từng chương sách giống như một bài học Duolingo sinh động.' 
+            : 'Read chapters sequentially along a beautiful interactive progress track.'
+        },
+        {
+          title: language === 'vi' ? 'Điểm XP & Chuỗi Ngày Đọc' : 'XP Rewards & Reading Streaks',
+          desc: language === 'vi' 
+            ? 'Tích lũy XP để tăng cấp và duy trì Streak hàng ngày để tạo thói quen đọc.' 
+            : 'Accumulate XP to level up, and keep your daily streak alive to build a healthy routine.'
+        }
+      ]
+    },
+    {
+      title: language === 'vi' ? 'Trình Đọc Tập Trung Tối Đa 🧘' : 'Focus Mode Reader 🧘',
+      subtitle: language === 'vi'
+        ? 'Loại bỏ hoàn toàn phiền nhiễu để đắm chìm trong nội dung sách.'
+        : 'Eliminate external distractions and immerse yourself entirely in literature.',
+      icon: <BookOpen className="w-12 h-12 text-duo-blue animate-pulse" />,
+      features: [
+        {
+          title: language === 'vi' ? 'Chế Độ Focus' : 'Focus Mode',
+          desc: language === 'vi' 
+            ? 'Ẩn các thanh bên và bảng điều khiển chỉ với 1 cú click để tập trung tuyệt đối.' 
+            : 'Hide sidebars and tracking metrics instantly to create a clean, distraction-free reading canvas.'
+        },
+        {
+          title: language === 'vi' ? 'Giải Thích Từ Vựng Bằng AI' : 'Interactive AI Context Explainer',
+          desc: language === 'vi' 
+            ? 'Bôi đen bất kỳ từ hoặc câu nào để nhận ngay phân tích ngữ cảnh từ AI.' 
+            : 'Highlight any word or phrase to receive instant contextual analysis and translation from Gemini/Groq.'
+        }
+      ]
+    },
+    {
+      title: language === 'vi' ? 'Lưu Dấu Trang Đa Năng 📌' : 'Advanced Bookmarking 📌',
+      subtitle: language === 'vi'
+        ? 'Lưu chính xác vị trí đọc và dịch chuyển tức thời qua các chương.'
+        : 'Save precise paragraph milestones globally across the entire book.',
+      icon: <Bookmark className="w-12 h-12 text-red-500 fill-red-500 animate-pulse" />,
+      features: [
+        {
+          title: language === 'vi' ? 'Chạm Để Đánh Dấu (Mobile)' : 'Direct Tap-to-Bookmark (Mobile)',
+          desc: language === 'vi' 
+            ? 'Trên điện thoại, chỉ cần chạm trực tiếp vào dòng chữ để đánh dấu vị trí.' 
+            : 'On mobile viewports, simply tap anywhere on a paragraph text to set or clear a bookmark instantly.'
+        },
+        {
+          title: language === 'vi' ? 'Ribbon Dịch Chuyển Tức Thời' : 'Global Bookmarks Portal',
+          desc: language === 'vi' 
+            ? 'Click vào ribbon ở góc phải để mở danh sách dấu trang và dịch chuyển giữa các chương.' 
+            : 'Click the orange ribbon on the top-right to view all saved spots and jump to them instantly across chapters.'
+        }
+      ]
+    },
+    {
+      title: language === 'vi' ? 'Khảo Sát Đọc Hiểu & Trợ Lý AI ⚡' : 'AI Quizzes & Diagnostics ⚡',
+      subtitle: language === 'vi'
+        ? 'Kiểm tra mức độ đọc hiểu thực tế và theo dõi thống kê học tập.'
+        : 'Verify comprehension levels and audit real-time statistics.',
+      icon: <Sparkles className="w-12 h-12 text-duo-purple fill-duo-purple animate-pulse" />,
+      features: [
+        {
+          title: language === 'vi' ? 'Trắc Nghiệm Đọc Hiểu Bằng AI' : 'Comprehension Audits',
+          desc: language === 'vi' 
+            ? 'Hệ thống tự động biên soạn câu hỏi kiểm tra sau mỗi chương dựa trên nội dung bạn vừa đọc.' 
+            : 'Dynamic verification quizzes are generated to test your reading retention, with AI hints to guide wrong answers.'
+        },
+        {
+          title: language === 'vi' ? 'Thống Kê Đọc & Trạng Thái' : 'Focus Analytics',
+          desc: language === 'vi' 
+            ? 'Theo dõi thời gian đọc dự kiến, mức độ tập trung, từ vựng đã highlight và tiến độ XP.' 
+            : 'Audit your reading speeds, estimated time remaining, total highlight cards, and streak achievements.'
+        }
+      ]
+    }
+  ];
 
   // --- STANDARD WINDING PATH VIEW ---
   return (
@@ -627,6 +718,123 @@ export const PathView: React.FC<PathViewProps> = ({
                   </button>
                 </div>
               </form>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setTutorialStep(0);
+                  setShowTutorial(true);
+                }}
+                className="w-full mt-4 py-3 bg-gradient-to-r from-duo-blue to-duo-purple text-white text-xs font-black uppercase tracking-wider rounded-2xl btn-3d flex items-center justify-center gap-2 border border-blue-600/20 shadow-[0_3px_0_0_#1b72a6] dark:shadow-[0_3px_0_0_#6c1cb0]"
+              >
+                <HelpCircle className="w-4 h-4 text-white" />
+                {language === 'vi' ? 'Xem Hướng Dẫn Sử Dụng' : 'Show App Tutorial Guide'}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Interactive App Features Tutorial Popup Modal */}
+      <AnimatePresence>
+        {showTutorial && (
+          <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 30, opacity: 0 }}
+              className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border-4 border-slate-300 dark:border-slate-800 p-6 shadow-2xl relative flex flex-col justify-between max-h-[90vh] overflow-y-auto"
+            >
+              {/* Close Button */}
+              <button 
+                onClick={() => setShowTutorial(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Slide Content */}
+              <div className="flex flex-col items-center text-center mt-4 mb-6">
+                {/* Large Icon Wrapper */}
+                <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4 border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
+                  {tutorialSlides[tutorialStep].icon}
+                </div>
+
+                <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 mb-2">
+                  {tutorialSlides[tutorialStep].title}
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-bold max-w-md">
+                  {tutorialSlides[tutorialStep].subtitle}
+                </p>
+
+                {/* Features list */}
+                <div className="w-full text-left mt-6 flex flex-col gap-4">
+                  {tutorialSlides[tutorialStep].features.map((feature, idx) => (
+                    <div 
+                      key={idx} 
+                      className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/30 dark:border-slate-800/30 flex flex-col gap-1 transition-all hover:border-duo-blue/30"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-duo-blue" />
+                        <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wide">
+                          {feature.title}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pl-4 leading-relaxed">
+                        {feature.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Navigation Footer */}
+              <div className="flex items-center justify-between mt-4 border-t border-slate-100 dark:border-slate-800/60 pt-4">
+                {/* Dot Indicators */}
+                <div className="flex gap-1.5">
+                  {tutorialSlides.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setTutorialStep(idx)}
+                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300
+                        ${tutorialStep === idx 
+                          ? 'bg-duo-blue w-6' 
+                          : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
+                        }
+                      `}
+                    />
+                  ))}
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-2">
+                  {tutorialStep > 0 && (
+                    <button
+                      onClick={() => setTutorialStep(prev => prev - 1)}
+                      className="px-4 py-2 border-2 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center gap-1 transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      {language === 'vi' ? 'Quay Lại' : 'Back'}
+                    </button>
+                  )}
+                  {tutorialStep < tutorialSlides.length - 1 ? (
+                    <button
+                      onClick={() => setTutorialStep(prev => prev + 1)}
+                      className="px-4 py-2 bg-duo-blue border-b-4 border-duo-blue-dark text-white text-xs font-black rounded-xl hover:brightness-105 flex items-center gap-1 transition-all"
+                    >
+                      {language === 'vi' ? 'Tiếp Theo' : 'Next'}
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowTutorial(false)}
+                      className="px-6 py-2 bg-duo-green border-b-4 border-duo-green-dark text-white text-xs font-black rounded-xl hover:brightness-105 transition-all"
+                    >
+                      {language === 'vi' ? 'Bắt Đầu Đọc!' : 'Start Reading!'}
+                    </button>
+                  )}
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
