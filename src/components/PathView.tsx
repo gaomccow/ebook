@@ -267,21 +267,6 @@ export const PathView: React.FC<PathViewProps> = ({
         
         {/* Stats and controls (Responsive Layout options) */}
         <div className="flex items-center gap-2">
-          {!isSidebar && (
-            <>
-              {/* XP */}
-              <div className="flex items-center gap-1 bg-duo-yellow/10 px-2.5 py-1 rounded-full border-2 border-duo-yellow-dark/20">
-                <Star className="w-4 h-4 text-duo-yellow fill-duo-yellow" />
-                <span className="font-black text-duo-yellow-dark text-xs">{totalXP} XP</span>
-              </div>
-
-              {/* Streak */}
-              <div className="flex items-center gap-1 bg-duo-orange/10 px-2.5 py-1 rounded-full border-2 border-duo-orange-dark/20">
-                <Flame className="w-4 h-4 text-duo-orange fill-duo-orange" />
-                <span className="font-black text-duo-orange-dark text-xs">{streak}</span>
-              </div>
-            </>
-          )}
 
           {/* API Key settings Button */}
           <button 

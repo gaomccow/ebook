@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface FocusLabLayoutProps {
@@ -8,6 +8,8 @@ interface FocusLabLayoutProps {
   activeSectionId: string | null;
   isFocusMode: boolean;
   currentTheme: string;
+  showHighlightsSidebar: boolean;
+  onCloseHighlightsSidebar?: () => void;
   
   // Render nodes
   libraryView: React.ReactNode;
@@ -23,6 +25,8 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
   activeSectionId,
   isFocusMode,
   currentTheme,
+  showHighlightsSidebar,
+  onCloseHighlightsSidebar,
   libraryView,
   pathView,
   readerView,
@@ -32,7 +36,7 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
   // Mobile Column Flow
   if (!isDesktop) {
     return (
-      <div className="w-full min-h-screen bg-slate-50 relative">
+      <div className="w-full min-h-screen bg-slate-50 relative overflow-x-hidden">
         {/* Retro scanlines grid overlay */}
         <div className="retro-scanlines" />
         {/* Tactical blueprint grid overlay */}
@@ -84,6 +88,32 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Mobile Full-Screen Highlights Drawer Overlay */}
+        <AnimatePresence>
+          {showHighlightsSidebar && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+              className="fixed inset-0 z-[100] bg-white dark:bg-slate-900 flex flex-col"
+            >
+              {/* Back / Close button at the top of drawer */}
+              <div className="absolute top-4 right-4 z-[110]">
+                <button
+                  onClick={onCloseHighlightsSidebar}
+                  className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-500 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 h-full overflow-hidden">
+                {highlightsSidebar}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -95,7 +125,8 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
   // - When using "Atmospheric Gradient" theme during active reading
   // - When rendering the "Trophy Room Library" (since it handles its own sidebar)
   const hideSidebarsForTheme = currentTheme === 'gradient' && view === 'reader';
-  const showSidebars = !isFocusMode && view !== 'quiz' && view !== 'library' && !hideSidebarsForTheme;
+  const showLeftSidebar = !isFocusMode && view !== 'quiz' && view !== 'library' && !hideSidebarsForTheme;
+  const showRightSidebar = showHighlightsSidebar && !isFocusMode && view !== 'quiz' && view !== 'library' && !hideSidebarsForTheme;
 
   return (
     <div className="flex h-screen w-full bg-[var(--bg-color)] text-[var(--text-color)] overflow-hidden relative">
@@ -106,7 +137,7 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
 
       {/* Left Sidebar: Winding Path View */}
       <AnimatePresence initial={false}>
-        {showSidebars && (
+        {showLeftSidebar && (
           <motion.aside
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 310, opacity: 1 }}
@@ -182,7 +213,7 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
 
       {/* Right Sidebar: Highlights & Notes */}
       <AnimatePresence initial={false}>
-        {showSidebars && (
+        {showRightSidebar && (
           <motion.aside
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 310, opacity: 1 }}

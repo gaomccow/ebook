@@ -16,6 +16,8 @@ import { EpubParser } from './services/EpubParser';
 import { GeminiClient } from './services/GeminiClient';
 import { IDBStorage } from './services/IDBStorage';
 import type { Language } from './utils/translations';
+import { Home, Compass, BookOpen, Highlighter, Flame } from 'lucide-react';
+import { FloatingDock } from './components/ui/FloatingDock';
 
 // Default static reading material (Deep Focus guide)
 const DEFAULT_SECTIONS: SectionNode[] = [
@@ -154,6 +156,10 @@ function App() {
     isFirstTime: false
   });
   const [reconfigTheme, setReconfigTheme] = useState<string | null>(null);
+
+  // Highlights and Stats visibility toggles
+  const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
   // Localization and Images states
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('gamified_reader_language') as Language) || 'en');
@@ -605,6 +611,45 @@ function App() {
     />
   );
 
+  const dockItems = [
+    {
+      title: language === 'vi' ? 'Thư viện' : 'Library',
+      icon: <Home className="w-full h-full" />,
+      onClick: () => setView('library'),
+      active: view === 'library'
+    },
+    {
+      title: language === 'vi' ? 'Bài học' : 'Path Map',
+      icon: <Compass className="w-full h-full" />,
+      onClick: () => setView('path'),
+      active: view === 'path'
+    },
+    {
+      title: language === 'vi' ? 'Đọc sách' : 'Active Reader',
+      icon: <BookOpen className="w-full h-full" />,
+      onClick: () => {
+        if (activeSection) setView('reader');
+      },
+      active: view === 'reader',
+      disabled: !activeSection
+    },
+    {
+      title: language === 'vi' ? 'Dấu nổi bật' : 'Highlights',
+      icon: <Highlighter className="w-full h-full" />,
+      onClick: () => setShowHighlightsSidebar(prev => !prev),
+      active: showHighlightsSidebar
+    },
+    {
+      title: language === 'vi' ? 'Học lực' : 'XP Stats',
+      icon: <Flame className="w-full h-full text-duo-orange fill-duo-orange" />,
+      onClick: () => setShowStatsModal(true),
+      active: showStatsModal
+    }
+  ];
+
+  const currentLevel = Math.floor(stats.xp / 100) + 1;
+  const xpIntoCurrentLevel = stats.xp % 100;
+
   return (
     <div className="min-h-screen">
       <FocusLabLayout
@@ -613,12 +658,80 @@ function App() {
         activeSectionId={activeSection?.id || null}
         isFocusMode={isFocusMode}
         currentTheme={stats.currentTheme}
+        showHighlightsSidebar={showHighlightsSidebar}
+        onCloseHighlightsSidebar={() => setShowHighlightsSidebar(false)}
         libraryView={libraryViewNode}
         pathView={pathViewNode}
         readerView={readerViewNode}
         quizView={quizViewNode}
         highlightsSidebar={highlightsSidebarNode}
       />
+
+      {/* Floating Navigation Dock (hidden in Focus Mode, Quiz, or Theme Transition) */}
+      {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+          <FloatingDock items={dockItems} />
+        </div>
+      )}
+
+      {/* Stats & Progression Info Popover Modal */}
+      <AnimatePresence>
+        {showStatsModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-55 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.9, y: 15, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 15, opacity: 0 }}
+              className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border-4 border-duo-gray p-6 shadow-2xl relative flex flex-col text-gray-800 dark:text-white text-center"
+            >
+              <h3 className="text-xl font-black mb-1 flex items-center justify-center gap-2">
+                <Flame className="w-6 h-6 text-duo-orange fill-duo-orange" />
+                {language === 'vi' ? 'Học Lực Của Bạn' : 'Your Progression Stats'}
+              </h3>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-6">
+                {language === 'vi' ? 'Thống kê hoạt động học tập' : 'Personal Progression Matrix'}
+              </p>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 p-4 rounded-2xl flex flex-col items-center">
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-1">XP Level</span>
+                  <span className="text-3xl font-black text-duo-blue">{currentLevel}</span>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 p-4 rounded-2xl flex flex-col items-center">
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-1">Streak</span>
+                  <span className="text-3xl font-black text-duo-orange flex items-center gap-1">
+                    {stats.streak} <span className="text-sm font-extrabold">🔥</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* XP progress bar */}
+              <div className="mb-6 text-left">
+                <div className="flex justify-between items-center text-xs font-black uppercase text-gray-400 tracking-wider mb-1.5">
+                  <span>Level Progress</span>
+                  <span className="text-duo-blue-dark dark:text-cyan-400">{xpIntoCurrentLevel}/100 XP</span>
+                </div>
+                <div className="w-full h-4 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden p-0.5">
+                  <div 
+                    className="h-full bg-duo-blue rounded-full"
+                    style={{ width: `${xpIntoCurrentLevel}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowStatsModal(false)}
+                className="w-full py-3.5 bg-duo-blue border-duo-blue-dark text-white text-xs font-black uppercase tracking-widest rounded-2xl btn-3d cursor-pointer"
+              >
+                {language === 'vi' ? 'Tiếp Tục' : 'Continue'}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Level Up celebratory popup modal */}
       <LevelUpModal

@@ -485,20 +485,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 {isFocusMode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             )}
-
-            {!isDesktop && (
-              <>
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-duo-yellow fill-duo-yellow" />
-                  <span className="font-extrabold text-xs">{totalXP}</span>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <Flame className="w-4 h-4 text-duo-orange fill-duo-orange" />
-                  <span className="font-extrabold text-xs">{streak}</span>
-                </div>
-              </>
-            )}
           </div>
         </div>
 
