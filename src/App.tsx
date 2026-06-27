@@ -648,6 +648,10 @@ function App() {
   const currentLevel = Math.floor(stats.xp / 100) + 1;
   const xpIntoCurrentLevel = stats.xp % 100;
 
+  const hideSidebarsForTheme = stats.currentTheme === 'gradient' && view === 'reader';
+  const hasLeftSidebar = isDesktop && !isFocusMode && view !== 'quiz' && view !== 'library' && !hideSidebarsForTheme;
+  const dockLeftVal = hasLeftSidebar ? 'calc(50vw + 155px)' : '50vw';
+
   return (
     <div className="min-h-screen">
       <FocusLabLayout
@@ -669,11 +673,11 @@ function App() {
       <AnimatePresence>
         {showDock && !isFocusMode && view !== 'quiz' && !reconfigTheme && (
           <motion.div 
-            initial={{ y: 80, opacity: 0, x: '-50%' }}
-            animate={{ y: 0, opacity: 1, x: '-50%' }}
-            exit={{ y: 80, opacity: 0, x: '-50%' }}
+            initial={{ y: 80, opacity: 0, left: dockLeftVal, x: '-50%' }}
+            animate={{ y: 0, opacity: 1, left: dockLeftVal, x: '-50%' }}
+            exit={{ y: 80, opacity: 0, left: dockLeftVal, x: '-50%' }}
             transition={{ type: 'spring', damping: 22, stiffness: 200 }}
-            className="fixed bottom-6 left-1/2 z-40 transform -translate-x-1/2"
+            className="fixed bottom-6 z-40"
           >
             <FloatingDock items={dockItems} />
           </motion.div>
