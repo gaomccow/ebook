@@ -1,0 +1,334 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-duo-green: #58cc02;
+  --color-duo-green-hover: #61e002;
+  --color-duo-green-dark: #46a302;
+  
+  --color-duo-blue: #1cb0f6;
+  --color-duo-blue-hover: #24bffd;
+  --color-duo-blue-dark: #1899d6;
+  
+  --color-duo-orange: #ff9600;
+  --color-duo-orange-hover: #ffa31a;
+  --color-duo-orange-dark: #e68500;
+  
+  --color-duo-yellow: #ffc800;
+  --color-duo-yellow-hover: #ffd01a;
+  --color-duo-yellow-dark: #e6b400;
+
+  --color-duo-gray: #e5e5e5;
+  --color-duo-gray-dark: #afafaf;
+  --color-duo-gray-light: #f7f7f7;
+  
+  --color-duo-card-shadow: #e5e5e5;
+  
+  --color-duo-purple: #aa3bff;
+  --color-duo-purple-dark: #8c25e0;
+
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  font-family: var(--font-sans);
+  color-scheme: light;
+  background-color: #ffffff;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background-color: #ffffff;
+}
+
+/* 3D Button Utility */
+.btn-3d {
+  position: relative;
+  transition: transform 0.1s ease, filter 0.1s ease;
+  user-select: none;
+  cursor: pointer;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.btn-3d:active {
+  transform: translateY(4px);
+}
+
+.btn-3d::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  top: 4px;
+  border-radius: inherit;
+  z-index: -1;
+  transition: transform 0.1s ease;
+}
+
+.btn-3d:active::after {
+  transform: translateY(-4px);
+}
+
+/* 3D Green Button */
+.btn-3d-green {
+  background-color: var(--color-duo-green);
+  color: white;
+  border: 2px solid var(--color-duo-green-dark);
+}
+.btn-3d-green::after {
+  background-color: var(--color-duo-green-dark);
+}
+.btn-3d-green:hover:not(:active) {
+  background-color: var(--color-duo-green-hover);
+}
+
+/* 3D Blue Button */
+.btn-3d-blue {
+  background-color: var(--color-duo-blue);
+  color: white;
+  border: 2px solid var(--color-duo-blue-dark);
+}
+.btn-3d-blue::after {
+  background-color: var(--color-duo-blue-dark);
+}
+.btn-3d-blue:hover:not(:active) {
+  background-color: var(--color-duo-blue-hover);
+}
+
+/* 3D Yellow Button */
+.btn-3d-yellow {
+  background-color: var(--color-duo-yellow);
+  color: #3c3c3c;
+  border: 2px solid var(--color-duo-yellow-dark);
+}
+.btn-3d-yellow::after {
+  background-color: var(--color-duo-yellow-dark);
+}
+.btn-3d-yellow:hover:not(:active) {
+  background-color: var(--color-duo-yellow-hover);
+}
+
+/* 3D Gray Button */
+.btn-3d-gray {
+  background-color: white;
+  color: #afafaf;
+  border: 2px solid var(--color-duo-gray);
+}
+.btn-3d-gray::after {
+  background-color: var(--color-duo-gray);
+}
+.btn-3d-gray:hover:not(:active) {
+  background-color: var(--color-duo-gray-light);
+}
+
+/* Custom Scrollbar for seamless reading view */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Winding path node connection line style */
+.path-connection {
+  stroke-dasharray: 8 8;
+  animation: dash 30s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+/* --- THEME ENGINE CONSTANTS & ROOT CONFIG --- */
+
+:root {
+  --bg-color: #f8fafc;
+  --text-color: #1e293b;
+  --accent-color: #1cb0f6;
+  --card-bg: #ffffff;
+  --border-color: #e5e5e5;
+  --font-main: 'Outfit', 'Inter', system-ui, sans-serif;
+  --scanline-display: none;
+  --tactical-grid: none;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-main);
+}
+
+/* RETRO TERMINAL (Pixel Art / ASCII) */
+[data-theme='retro'] {
+  --bg-color: #080c08;
+  --text-color: #e2e8f0; /* Soft warm silver for high-readability body text */
+  --accent-color: #4ade80; /* Brighter phosphor green for indicators/accents */
+  --card-bg: #0e140e;
+  --border-color: #22c55e;
+  --font-main: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --scanline-display: block;
+}
+[data-theme='retro'] h1,
+[data-theme='retro'] h2,
+[data-theme='retro'] h3 {
+  color: #4ade80 !important;
+  text-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+}
+[data-theme='retro'] .btn-3d {
+  background-color: #080c08 !important;
+  color: #4ade80 !important;
+  border: 2px solid #22c55e !important;
+  border-radius: 0px !important;
+  box-shadow: 4px 4px 0px #22c55e !important;
+  transform: none !important;
+  text-shadow: none !important;
+}
+[data-theme='retro'] .btn-3d::after {
+  display: none !important;
+}
+[data-theme='retro'] .btn-3d:active {
+  box-shadow: 1px 1px 0px #22c55e !important;
+  transform: translate(3px, 3px) !important;
+}
+[data-theme='retro'] header,
+[data-theme='retro'] main,
+[data-theme='retro'] aside,
+[data-theme='retro'] div,
+[data-theme='retro'] button {
+  border-radius: 0px !important;
+}
+
+/* Retro Scanline CRT Overlay - subtle and low-opacity to maintain readability */
+.retro-scanlines {
+  display: var(--scanline-display);
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.03) 50%);
+  background-size: 100% 6px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* ATMOSPHERIC GRADIENT (Abstract Mesh) */
+[data-theme='gradient'] {
+  --bg-color: transparent;
+  --text-color: #f8fafc; /* Warm bright slate for readability */
+  --accent-color: #ff9600;
+  --card-bg: rgba(15, 23, 42, 0.82); /* Semi-opaque dark slate background to easily read white text over active gradients */
+  --border-color: rgba(255, 255, 255, 0.15);
+  --font-main: 'Outfit', sans-serif;
+}
+[data-theme='gradient'] body {
+  background: linear-gradient(45deg, #090d16, #110e2b, #1d0729, #0d0010);
+  background-size: 400% 400%;
+  animation: shift-gradient 25s ease infinite;
+  background-attachment: fixed;
+}
+[data-theme='gradient'] .btn-3d {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+[data-theme='gradient'] .btn-3d::after {
+  display: none !important;
+}
+[data-theme='gradient'] .btn-3d:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+[data-theme='gradient'] .btn-3d:active {
+  transform: scale(0.97) !important;
+}
+
+@keyframes shift-gradient {
+  0% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+}
+
+/* TACTICAL DASHBOARD (Telemetry Grid) */
+[data-theme='tactical'] {
+  --bg-color: #080d1a;
+  --text-color: #e2e8f0; /* Silver gray body text for high readability and low eye strain */
+  --accent-color: #6fffe9;
+  --card-bg: #111a30;
+  --border-color: #2b3a5c;
+  --font-main: 'Inter', system-ui, sans-serif;
+  --tactical-grid: block;
+}
+[data-theme='tactical'] h1,
+[data-theme='tactical'] h2,
+[data-theme='tactical'] h3,
+[data-theme='tactical'] .accent-text {
+  color: #5bc0be !important;
+}
+[data-theme='tactical'] .btn-3d {
+  background-color: #111a30 !important;
+  color: #6fffe9 !important;
+  border: 1.5px solid #2b3a5c !important;
+  box-shadow: 0px 3px 0px #2b3a5c !important;
+  border-radius: 8px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+[data-theme='tactical'] .btn-3d::after {
+  display: none !important;
+}
+[data-theme='tactical'] .btn-3d:active {
+  box-shadow: none !important;
+  transform: translateY(2px) !important;
+}
+
+/* Faint blueprint military grid */
+.tactical-grid-overlay {
+  display: var(--tactical-grid);
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(91, 192, 190, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(91, 192, 190, 0.03) 1px, transparent 1px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* MIDNIGHT OBSIDIAN (Neon Glows) */
+[data-theme='midnight'] {
+  --bg-color: #040508;
+  --text-color: #f8fafc;
+  --accent-color: #22d3ee;
+  --card-bg: #090b11;
+  --border-color: #0891b2;
+  --font-main: 'Outfit', sans-serif;
+}
+[data-theme='midnight'] body {
+  background-image: radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.04) 0px, transparent 50%),
+                    radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.04) 0px, transparent 50%);
+}
+[data-theme='midnight'] .btn-3d {
+  background-color: #090b11 !important;
+  color: #22d3ee !important;
+  border: 2px solid #0891b2 !important;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2) !important;
+  text-shadow: 0 0 5px rgba(6, 182, 212, 0.4) !important;
+}
+[data-theme='midnight'] .btn-3d::after {
+  display: none !important;
+}
+[data-theme='midnight'] .btn-3d:hover {
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.5) !important;
+}
+[data-theme='midnight'] .btn-3d:active {
+  transform: scale(0.97) !important;
+}
+
