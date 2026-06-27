@@ -134,6 +134,52 @@ ${trimmedText}
   }
 
   /**
+   * Generates a short hint for an incorrect quiz answer.
+   * Always uses the cheapest Groq model (llama-3.1-8b-instant).
+   */
+  public static async generateHint(
+    apiKey: string,
+    question: string,
+    wrongAnswer: string,
+    correctAnswerIndex: number,
+    options: string[]
+  ): Promise<string> {
+    const correctAnswer = options[correctAnswerIndex];
+    const prompt = `A student answered a reading comprehension question incorrectly.
+
+Question: "${question}"
+Their wrong answer: "${wrongAnswer}"
+
+Give a short, helpful hint (1-2 sentences max) that nudges them toward the right answer WITHOUT directly revealing it. Do not say what the correct answer is.`;
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',   // cheapest available Groq model
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4,
+        max_tokens: 120
+      })
+    });
+
+    if (!response.ok) {
+      // Silently fail – just return a generic nudge
+      return 'Think carefully about the details mentioned in the text. Re-read the relevant section and try again.';
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content?.trim() ||
+      'Think carefully about the details mentioned in the text. Re-read the relevant section and try again.';
+
+    void correctAnswer; // suppress unused-var warning; we intentionally avoid revealing it
+  }
+
+
+  /**
    * Generates book recommendations using either Gemini or Groq.
    */
   public static async recommendBooks(

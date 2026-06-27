@@ -124,8 +124,8 @@ export const PathView: React.FC<PathViewProps> = ({
     setUploadError(null);
     if (!file) return;
 
-    if (!file.name.endsWith('.epub') && !file.name.endsWith('.pdf')) {
-      setUploadError('Invalid file type. Please upload a valid .epub or .pdf book.');
+    if (!file.name.endsWith('.epub')) {
+      setUploadError('Invalid file type. Please upload a valid .epub book.');
       return;
     }
 
@@ -213,13 +213,13 @@ export const PathView: React.FC<PathViewProps> = ({
           </div>
         </div>
 
-        {/* Dynamic EPUB/PDF Uploader inside Retro command panel */}
+        {/* EPUB Uploader inside Retro command panel */}
         <div className="mt-8 border border-[var(--border-color)] p-3 text-[11px] flex flex-col gap-2">
           <p className="font-bold">UPGRADE_FIRMWARE.SYS</p>
           <label className="border border-dashed border-[var(--border-color)] hover:bg-[var(--text-color)]/10 p-2 text-center cursor-pointer block">
             <input 
               type="file" 
-              accept=".epub,.pdf" 
+              accept=".epub" 
               className="hidden" 
               onChange={handleFileChange} 
               disabled={isParsing}
@@ -332,18 +332,18 @@ export const PathView: React.FC<PathViewProps> = ({
           )}
         </div>
 
-        {/* EPUB / PDF Upload Panel */}
+        {/* EPUB Upload Panel */}
         <div className="w-full bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-2xl p-4 mb-6 shadow-sm">
           {!isSidebar && (
             <p className="text-[10px] text-gray-400 font-bold mb-3">
-              Upload your own book in `.epub` or `.pdf` format to parse it client-side.
+              Upload your own book in `.epub` format to parse it client-side.
             </p>
           )}
 
           <label className="w-full flex flex-col items-center justify-center border-4 border-dashed border-duo-gray hover:border-duo-blue/40 rounded-xl p-3 cursor-pointer transition-colors relative">
             <input 
               type="file" 
-              accept=".epub,.pdf" 
+              accept=".epub" 
               className="hidden" 
               onChange={handleFileChange} 
               disabled={isParsing}
@@ -361,7 +361,7 @@ export const PathView: React.FC<PathViewProps> = ({
             ) : (
               <div className="flex flex-col items-center gap-1 py-0.5">
                 <Upload className="w-6 h-6 text-gray-400" />
-                <span className="text-[9px] font-black text-gray-500 uppercase">Select EPUB or PDF</span>
+                <span className="text-[9px] font-black text-gray-500 uppercase">Select EPUB</span>
               </div>
             )}
           </label>

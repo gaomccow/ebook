@@ -33,6 +33,10 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
 
+  // Hint state (only fetched on wrong answer via cheapest Groq model)
+  const [hint, setHint] = useState<string | null>(null);
+  const [hintLoading, setHintLoading] = useState(false);
+
   // Load quiz from Gemini/Groq
   useEffect(() => {
     let active = true;
@@ -69,7 +73,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   };
 
   // Handle Answer Validation
-  const handleCheckAnswer = () => {
+  const handleCheckAnswer = async () => {
     if (selectedOptionIndex === null || isAnswered || !quizData) return;
     
     const question = quizData.questions[currentQuestionIndex];
@@ -77,6 +81,26 @@ export const QuizView: React.FC<QuizViewProps> = ({
     
     setIsCorrect(correct);
     setIsAnswered(true);
+    setHint(null);
+
+    // Only call AI (cheapest Groq model) when the answer is WRONG
+    if (!correct && apiKey.trim()) {
+      setHintLoading(true);
+      try {
+        const h = await GeminiClient.generateHint(
+          apiKey,
+          question.question,
+          question.options[selectedOptionIndex],
+          question.correctAnswerIndex,
+          question.options
+        );
+        setHint(h);
+      } catch {
+        setHint('Re-read the relevant part of the text carefully and try again.');
+      } finally {
+        setHintLoading(false);
+      }
+    }
   };
 
   // Handle Next Question or Completion
@@ -87,6 +111,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
       // If incorrect, reset the current question so they can try again
       setSelectedOptionIndex(null);
       setIsAnswered(false);
+      setHint(null);
       return;
     }
 
@@ -96,6 +121,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
       setSelectedOptionIndex(null);
       setIsAnswered(false);
       setIsCorrect(false);
+      setHint(null);
     } else {
       // Quiz completed successfully!
       onSuccess();
@@ -294,11 +320,15 @@ export const QuizView: React.FC<QuizViewProps> = ({
                 <span>{isCorrect ? 'Excellent! You got it.' : 'Not quite right!'}</span>
               </div>
               
-              {/* Explanation text */}
+              {/* Hint / feedback text */}
               <p className="text-xs font-bold leading-relaxed mb-4 text-left max-w-sm opacity-90">
                 {isCorrect 
-                  ? 'Great detail comprehension!' 
-                  : currentQuestion.explanation
+                  ? 'Great detail comprehension!'
+                  : hintLoading
+                  ? '💡 Getting a hint...'
+                  : hint
+                  ? `💡 Hint: ${hint}`
+                  : 'Not quite — try re-reading the relevant section.'
                 }
               </p>
 

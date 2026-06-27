@@ -14,6 +14,7 @@ import { ProgressionManager } from './services/ProgressionManager';
 import type { UserStats } from './services/ProgressionManager';
 import { EpubParser } from './services/EpubParser';
 import { GeminiClient } from './services/GeminiClient';
+import { IDBStorage } from './services/IDBStorage';
 import type { Language } from './utils/translations';
 
 // Default static reading material (Deep Focus guide)
@@ -103,10 +104,20 @@ function App() {
     const cached = localStorage.getItem('gamified_reader_sections');
     return cached ? JSON.parse(cached) : DEFAULT_SECTIONS;
   });
-  const [contentMap, setContentMap] = useState<Record<string, string>>(() => {
-    const cached = localStorage.getItem('gamified_reader_content');
-    return cached ? JSON.parse(cached) : DEFAULT_CONTENT;
-  });
+  // contentMap is loaded async from IDB (large data – avoids localStorage quota)
+  const [contentMap, setContentMap] = useState<Record<string, string>>(DEFAULT_CONTENT);
+
+  // Load contentMap from IDB on mount
+  useEffect(() => {
+    const activeId = localStorage.getItem('gamified_reader_active_book_id') || 'book_default';
+    if (activeId === 'book_default') {
+      setContentMap(DEFAULT_CONTENT);
+      return;
+    }
+    IDBStorage.getItem<Record<string, string>>(`epub_content_${activeId}`).then(stored => {
+      if (stored) setContentMap(stored);
+    });
+  }, []);
   
   const [activeSection, setActiveSection] = useState<SectionNode | null>(null);
   const [isParsing, setIsParsing] = useState(false);
@@ -236,47 +247,40 @@ function App() {
       setActiveImages({});
       localStorage.setItem('gamified_reader_book_title', 'Mastering Deep Focus');
       localStorage.setItem('gamified_reader_sections', JSON.stringify(DEFAULT_SECTIONS));
-      localStorage.setItem('gamified_reader_content', JSON.stringify(DEFAULT_CONTENT));
     } else {
       // Find book data from dynamic storage cache if it exists
       const bookData = library.find(b => b.id === id);
       if (bookData) {
         setActiveBookTitle(bookData.title);
         localStorage.setItem('gamified_reader_book_title', bookData.title);
-        
-        // Cache mapping for uploaded books is saved in localStorage
+
         const storedSections = localStorage.getItem(`epub_sections_${id}`);
-        const storedContent = localStorage.getItem(`epub_content_${id}`);
-        const storedImages = localStorage.getItem(`epub_images_${id}`);
-        
-        if (storedSections && storedContent) {
-          setSections(JSON.parse(storedSections));
-          setContentMap(JSON.parse(storedContent));
+        if (storedSections) {
+          const parsedSections = JSON.parse(storedSections);
+          setSections(parsedSections);
           localStorage.setItem('gamified_reader_sections', storedSections);
-          localStorage.setItem('gamified_reader_content', storedContent);
         }
-        
-        if (storedImages) {
-          setActiveImages(JSON.parse(storedImages));
-        } else {
-          setActiveImages({});
-        }
+
+        // Load large content from IDB
+        IDBStorage.getItem<Record<string, string>>(`epub_content_${id}`).then(stored => {
+          if (stored) setContentMap(stored);
+        });
+
+        // Load images from IDB
+        IDBStorage.getItem<Record<string, string>>(`epub_images_${id}`).then(stored => {
+          setActiveImages(stored ?? {});
+        });
       }
     }
 
     setView('path');
   };
 
-  // EPUB/PDF file parser callback
+  // EPUB file parser callback
   const handleEpubUpload = async (file: File) => {
     setIsParsing(true);
     try {
-      let parsedBook;
-      if (file.name.endsWith('.pdf')) {
-        parsedBook = await EpubParser.parsePdf(file);
-      } else {
-        parsedBook = await EpubParser.parse(file);
-      }
+      const parsedBook = await EpubParser.parse(file);
       
       const bookId = `book_${Date.now()}`;
       
@@ -292,17 +296,15 @@ function App() {
         mappedContents[`${bookId}_${ch.id}`] = ch.content;
       });
 
-      // Save components specifics
+      // Save section metadata to localStorage (small)
       localStorage.setItem(`epub_sections_${bookId}`, JSON.stringify(mappedSections));
-      localStorage.setItem(`epub_content_${bookId}`, JSON.stringify(mappedContents));
 
-      if (parsedBook.images) {
-        localStorage.setItem(`epub_images_${bookId}`, JSON.stringify(parsedBook.images));
-        setActiveImages(parsedBook.images);
-      } else {
-        localStorage.setItem(`epub_images_${bookId}`, JSON.stringify({}));
-        setActiveImages({});
-      }
+      // Save large content + images to IndexedDB (no quota limit)
+      await IDBStorage.setItem(`epub_content_${bookId}`, mappedContents);
+
+      const imageMap = parsedBook.images ?? {};
+      await IDBStorage.setItem(`epub_images_${bookId}`, imageMap);
+      setActiveImages(imageMap);
 
       // Register inside progression manager shelf
       progressionManager.registerUploadedBook(
@@ -322,7 +324,6 @@ function App() {
       localStorage.setItem('gamified_reader_active_book_id', bookId);
       localStorage.setItem('gamified_reader_book_title', parsedBook.title);
       localStorage.setItem('gamified_reader_sections', JSON.stringify(mappedSections));
-      localStorage.setItem('gamified_reader_content', JSON.stringify(mappedContents));
 
       updateStateFromManager();
       setView('path');

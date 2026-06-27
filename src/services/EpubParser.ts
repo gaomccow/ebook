@@ -303,156 +303,144 @@ export class EpubParser {
   }
 
   /**
-   * Auto-detects structure (chapters/modules) in pasted text and splits it.
-   * Prefers modules/sections (smaller) if both chapters and modules exist.
-   * Supports Vietnamese headings natively (Chương, Phần, Bài, Mục).
+   * DETECTION METHOD 1: Keyword-based chapter detection.
+   * Recognizes lines starting with "Chapter N", "Ch. N", "Chương N",
+   * numbered headings like "1. Title" or "1) Title",
+   * or module/section variants.
+   */
+  private static isKeywordHeading(line: string): boolean {
+    return (
+      /^(?:chapter|ch\.?|chương|phần|part|bài|mục|section|sec\.?|module|mod\.?)\s+[\dIVXivx]+/i.test(line) ||
+      /^\d+[.)\s]\s+[A-Z\u0041-\u005A\u00C0-\u024F]/u.test(line)
+    );
+  }
+
+  /**
+   * DETECTION METHOD 2: All-caps heading detection.
+   * Matches lines that are entirely uppercase (2–80 chars), not pure numbers,
+   * and not boilerplate front-matter noise.
+   */
+  private static isAllCapsHeading(line: string): boolean {
+    if (line.length < 3 || line.length > 80) return false;
+    if (/^[\d\s]+$/.test(line)) return false; // skip pure numbers
+    return line === line.toUpperCase() && /[A-Z]/.test(line);
+  }
+
+  /**
+   * Front-matter keywords that signal pages to skip (title page, copyright, ToC…).
+   */
+  private static readonly FRONT_MATTER_SIGNALS = [
+    /^copyright/i,
+    /^all rights reserved/i,
+    /^published by/i,
+    /^isbn/i,
+    /^\s*\d{3}-\d+/,         // ISBN numbers
+    /^table of contents/i,
+    /^contents$/i,
+    /^dedication/i,
+    /^acknowledgements?/i,
+    /^preface$/i,
+    /^foreword$/i,
+    /^about the author/i,
+    /^printed in/i,
+    /^first (published|edition)/i,
+  ];
+
+  private static isFrontMatterLine(line: string): boolean {
+    return EpubParser.FRONT_MATTER_SIGNALS.some(re => re.test(line.trim()));
+  }
+
+  /**
+   * Finds the index (within lines[]) of the first real chapter heading,
+   * skipping all front-matter. Returns -1 if none found.
+   */
+  private static findFirstChapterLine(lines: string[]): number {
+    // First pass: look for keyword headings
+    for (let i = 0; i < lines.length; i++) {
+      const t = lines[i].trim();
+      if (t.length === 0) continue;
+      if (EpubParser.isKeywordHeading(t)) return i;
+    }
+    // Second pass: look for all-caps headings that are NOT front-matter
+    for (let i = 0; i < lines.length; i++) {
+      const t = lines[i].trim();
+      if (t.length === 0) continue;
+      if (EpubParser.isAllCapsHeading(t) && !EpubParser.isFrontMatterLine(t)) return i;
+    }
+    return -1;
+  }
+
+  /**
+   * Auto-detects chapters in pasted/imported plain text using dual-method detection.
+   * Strips leading front matter, then splits on detected headings.
+   * Falls back to even word-count chunks when no headings are found.
    */
   public static autoDetectAndSplitText(title: string, rawText: string): EpubBook {
-    // Regex pattern definitions
-    const chapterRegex = /^(?:chapter|ch\.|ch|chương|phần)\s+\d+/i;
-    const moduleRegex = /^(?:module|mod\.|mod|section|sec\.|sec|bài|mục)\s+\d+/i;
-
     const lines = rawText.split(/\r?\n/);
-    
-    let chapterCount = 0;
-    let moduleCount = 0;
 
-    lines.forEach(line => {
-      const trimmed = line.trim();
-      if (chapterRegex.test(trimmed)) chapterCount++;
-      if (moduleRegex.test(trimmed)) moduleCount++;
-    });
+    // --- Strip front matter ---
+    const firstChapterLine = EpubParser.findFirstChapterLine(lines);
+    const contentLines = firstChapterLine > 0 ? lines.slice(firstChapterLine) : lines;
 
-    // Determine the division level: prefer modules if available
-    let splitRegex = chapterRegex;
-    let preferredType = 'Chapter';
-    
-    if (moduleCount > 0) {
-      splitRegex = moduleRegex;
-      preferredType = 'Module';
-    } else if (chapterCount === 0) {
-      // Fallback structural regex: matches general numbered headers or general headers
-      splitRegex = /^(?:(?:chapter|ch\.|ch|module|mod\.|mod|section|sec\.|sec|chương|phần|bài|mục|đoạn)\s+\d+)/i;
-    }
-
+    // --- Split on headings (dual-method) ---
     const chapters: EpubChapter[] = [];
-    let currentTitle = `${preferredType} 1`;
+    let currentTitle = 'Part 1';
     let currentLines: string[] = [];
     let partIndex = 1;
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const trimmed = line.trim();
-      
-      if (trimmed.length > 0 && splitRegex.test(trimmed)) {
-        if (currentLines.length > 0) {
-          const content = currentLines.join('\n');
-          const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
-          if (wordCount > 10) {
-            chapters.push({
-              id: `part_${partIndex}`,
-              title: currentTitle,
-              wordCount,
-              content
-            });
-            partIndex++;
-          }
-        }
-        currentTitle = trimmed;
-        currentLines = [];
-      } else {
-        currentLines.push(line);
-      }
-    }
-
-    // Add final chunk
-    if (currentLines.length > 0) {
-      const content = currentLines.join('\n');
-      const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
-      if (wordCount > 5) {
+    const flushChunk = () => {
+      const content = currentLines.join('\n').trim();
+      const wordCount = content.split(/\s+/).filter(Boolean).length;
+      if (wordCount > 10) {
         chapters.push({
           id: `part_${partIndex}`,
           title: currentTitle,
           wordCount,
           content
         });
+        partIndex++;
+      }
+    };
+
+    for (const line of contentLines) {
+      const t = line.trim();
+      const isHeading = EpubParser.isKeywordHeading(t) ||
+                        (EpubParser.isAllCapsHeading(t) && !EpubParser.isFrontMatterLine(t));
+
+      if (isHeading && t.length > 0) {
+        flushChunk();
+        currentTitle = t;
+        currentLines = [];
+      } else {
+        currentLines.push(line);
       }
     }
+    flushChunk();
 
-    // Fallback: If no structured headings were detected, segment text into 1,000-word bite-sized chunks
+    // --- Fallback: even word-count chunks (1 000 words each) ---
     if (chapters.length <= 1) {
-      const allWords = rawText.trim().split(/\s+/).filter(Boolean);
-      const totalWords = allWords.length;
-      
-      if (totalWords > 0) {
-        chapters.length = 0; // reset
+      const allWords = contentLines.join(' ').trim().split(/\s+/).filter(Boolean);
+      if (allWords.length > 0) {
+        chapters.length = 0;
         const chunkSize = 1000;
-        let chunkIdx = 1;
-        
-        for (let i = 0; i < totalWords; i += chunkSize) {
+        let idx = 1;
+        for (let i = 0; i < allWords.length; i += chunkSize) {
           const chunk = allWords.slice(i, i + chunkSize).join(' ');
           chapters.push({
-            id: `part_${chunkIdx}`,
-            title: `Module ${chunkIdx}`,
+            id: `part_${idx}`,
+            title: `Section ${idx}`,
             wordCount: chunk.split(/\s+/).filter(Boolean).length,
             content: chunk
           });
-          chunkIdx++;
+          idx++;
         }
       }
     }
 
     return {
-      title: title.trim() || 'Custom Textbook',
+      title: title.trim() || 'Imported Book',
       author: 'Self-Imported',
       chapters
     };
-  }
-
-  /**
-   * Cleans space fragmentation around diacritical characters typical of client-side PDF extraction.
-   * e.g., "Ph ầ n" -> "Phần", "l ự c" -> "lực", "c ơ" -> "cơ", "đ ạ t" -> "đạt"
-   */
-  public static cleanVietnamesePdfText(text: string): string {
-    let cleaned = text;
-    let prev = '';
-    while (cleaned !== prev) {
-      prev = cleaned;
-      // Merge character with following diacritic marker
-      cleaned = cleaned.replace(/([a-zA-ZđĐ])\s+([àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđĐ])/g, '$1$2');
-      // Merge diacritic marker with following character
-      cleaned = cleaned.replace(/([àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđĐ])\s+([a-zA-ZđĐ])/g, '$1$2');
-      // Merge isolated letters
-      cleaned = cleaned.replace(/(\b[a-zA-ZđĐ])\s+([a-zA-ZđĐ]\b)/g, '$1$2');
-    }
-    return cleaned;
-  }
-
-  /**
-   * Parses a PDF File client-side via PDF.js CDN library.
-   * Auto-detects modules and splits accordingly.
-   */
-  public static async parsePdf(file: File): Promise<EpubBook> {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdfjsLib = (window as any)['pdfjs-dist/build/pdf'];
-    if (!pdfjsLib) {
-      throw new Error('PDF.js library is not loaded. Ensure you are online to fetch it from CDN.');
-    }
-    
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
-    
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const pageText = content.items.map((item: any) => item.str).join(' ');
-      fullText += `Chương ${i}\n${pageText}\n\n`;
-    }
-    
-    const cleanedText = this.cleanVietnamesePdfText(fullText);
-    
-    return this.autoDetectAndSplitText(file.name.replace(/\.pdf$/i, ''), cleanedText);
   }
 }
