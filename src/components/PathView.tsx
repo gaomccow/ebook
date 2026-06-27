@@ -223,7 +223,7 @@ export const PathView: React.FC<PathViewProps> = ({
           <label className="border border-dashed border-[var(--border-color)] hover:bg-[var(--text-color)]/10 p-2 text-center cursor-pointer block">
             <input 
               type="file" 
-              accept=".epub" 
+              accept=".epub,application/epub+zip,application/zip,application/octet-stream" 
               className="hidden" 
               onChange={handleFileChange} 
               disabled={isParsing}
@@ -347,7 +347,7 @@ export const PathView: React.FC<PathViewProps> = ({
           <label className="w-full flex flex-col items-center justify-center border-4 border-dashed border-duo-gray hover:border-duo-blue/40 rounded-xl p-3 cursor-pointer transition-colors relative">
             <input 
               type="file" 
-              accept=".epub" 
+              accept=".epub,application/epub+zip,application/zip,application/octet-stream" 
               className="hidden" 
               onChange={handleFileChange} 
               disabled={isParsing}
