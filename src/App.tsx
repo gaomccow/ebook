@@ -157,9 +157,10 @@ function App() {
   });
   const [reconfigTheme, setReconfigTheme] = useState<string | null>(null);
 
-  // Highlights and Stats visibility toggles
+  // Highlights, Stats and Dock visibility toggles
   const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showDock, setShowDock] = useState(true);
 
   // Localization and Images states
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('gamified_reader_language') as Language) || 'en');
@@ -664,9 +665,39 @@ function App() {
       />
 
       {/* Floating Navigation Dock (hidden in Focus Mode, Quiz, or Theme Transition) */}
+      <AnimatePresence>
+        {showDock && !isFocusMode && view !== 'quiz' && !reconfigTheme && (
+          <motion.div 
+            initial={{ y: 80, opacity: 0, x: '-50%' }}
+            animate={{ y: 0, opacity: 1, x: '-50%' }}
+            exit={{ y: 80, opacity: 0, x: '-50%' }}
+            transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+            className="fixed bottom-6 left-1/2 z-50 transform -translate-x-1/2"
+          >
+            <FloatingDock items={dockItems} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Half-transparent Slider Toggle at the bottom right corner */}
       {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-          <FloatingDock items={dockItems} />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border border-slate-200/20 dark:border-slate-800/20 rounded-full px-3 py-2 shadow-lg select-none">
+          <span className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+            {language === 'vi' ? 'THANH PHỤ' : 'DOCK'}
+          </span>
+          <button
+            onClick={() => setShowDock(prev => !prev)}
+            className={`w-9 h-5 rounded-full p-0.5 relative flex items-center transition-colors cursor-pointer
+              ${showDock ? 'bg-duo-blue' : 'bg-slate-300 dark:bg-slate-700'}
+            `}
+          >
+            <motion.div 
+              layout
+              className="w-4 h-4 rounded-full bg-white shadow-md"
+              animate={{ x: showDock ? 16 : 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            />
+          </button>
         </div>
       )}
 
