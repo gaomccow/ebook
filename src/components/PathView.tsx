@@ -35,6 +35,7 @@ interface PathViewProps {
   // Localization
   language: Language;
   onLanguageChange: (lang: Language) => void;
+  onStartTour?: () => void;
 }
 
 export const PathView: React.FC<PathViewProps> = ({
@@ -54,7 +55,8 @@ export const PathView: React.FC<PathViewProps> = ({
   currentTheme = 'default',
   onBackToLibrary,
   language,
-  onLanguageChange
+  onLanguageChange,
+  onStartTour
 }) => {
   const t = (key: string) => {
     const dict = TRANSLATIONS[language] || TRANSLATIONS['en'];
@@ -339,6 +341,7 @@ export const PathView: React.FC<PathViewProps> = ({
         <div className="flex items-center gap-1.5">
           {onBackToLibrary && (
             <button 
+              id="back-to-library-btn"
               onClick={onBackToLibrary}
               className="p-1 hover:bg-slate-100 rounded-full transition-colors shrink-0 text-gray-500 mr-1"
               title="Return to Library Bookshelf"
@@ -357,6 +360,7 @@ export const PathView: React.FC<PathViewProps> = ({
 
           {/* API Key settings Button */}
           <button 
+            id="ai-settings-btn"
             onClick={() => setShowSettings(true)}
             className={`p-1.5 rounded-full border-2 transition-all relative
               ${apiKey 
@@ -372,6 +376,7 @@ export const PathView: React.FC<PathViewProps> = ({
 
           {/* Reset button */}
           <button 
+            id="reset-progress-btn"
             onClick={onResetProgress}
             title="Reset Progress"
             className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
@@ -511,6 +516,7 @@ export const PathView: React.FC<PathViewProps> = ({
                 )}
 
                 <motion.button
+                  id={isAvailable ? "active-progression-node" : undefined}
                   whileHover={!isLocked ? { scale: 1.12 } : {}}
                   whileTap={!isLocked ? { scale: 0.95 } : {}}
                   onClick={() => !isLocked && onSelectSection(section)}
@@ -722,8 +728,10 @@ export const PathView: React.FC<PathViewProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setTutorialStep(0);
-                  setShowTutorial(true);
+                  setShowSettings(false);
+                  if (onStartTour) {
+                    onStartTour();
+                  }
                 }}
                 className="w-full mt-4 py-3 bg-gradient-to-r from-duo-blue to-duo-purple text-white text-xs font-black uppercase tracking-wider rounded-2xl btn-3d flex items-center justify-center gap-2 border border-blue-600/20 shadow-[0_3px_0_0_#1b72a6] dark:shadow-[0_3px_0_0_#6c1cb0]"
               >

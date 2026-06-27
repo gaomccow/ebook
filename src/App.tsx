@@ -85,6 +85,54 @@ To trigger flow, the difficulty of the challenge must perfectly match your skill
 Deep reading mastery is the ultimate form of cognitive sovereignty. In an era where tech companies fight a multi-billion dollar war to capture and monetize your attention, choosing what you focus on is a revolutionary act. Reclaim your mind, one chapter at a time.`
 };
 
+const TOUR_STEPS = [
+  {
+    selector: '#back-to-library-btn',
+    placement: 'bottom',
+    title: { en: 'Lumina Academy Archive 📚', vi: 'Thư Viện Lumina Archive 📚' },
+    description: {
+      en: 'Click here to go back to the library. You can upload new EPUB files, manage your collection, and choose which book to read next.',
+      vi: 'Nhấp vào đây để quay lại thư viện. Bạn có thể tải lên tệp EPUB mới, quản lý bộ sưu tập và chọn cuốn sách tiếp theo.'
+    }
+  },
+  {
+    selector: '#ai-settings-btn',
+    placement: 'bottom',
+    title: { en: 'AI Config Settings 🔑', vi: 'Cài Đặt Cấu Hình AI 🔑' },
+    description: {
+      en: 'Configure your Gemini or Groq API keys here. This enables dynamic comprehension quizzes, contextual explanation highlights, and recommendations.',
+      vi: 'Cấu hình khóa API Gemini hoặc Groq của bạn tại đây. Kích hoạt trắc nghiệm thông minh, phân tích từ vựng AI và gợi ý sách.'
+    }
+  },
+  {
+    selector: '#reset-progress-btn',
+    placement: 'bottom',
+    title: { en: 'Reset Progress 🔄', vi: 'Đặt Lại Tiến Độ 🔄' },
+    description: {
+      en: 'Reset your reading progress for this book if you want to start the gamified path from Unit 1 again.',
+      vi: 'Đặt lại tiến độ đọc của cuốn sách này nếu bạn muốn bắt đầu lại lộ trình học từ Bài 1.'
+    }
+  },
+  {
+    selector: '#active-progression-node',
+    placement: 'top',
+    title: { en: 'Your Reading Milestones 🗺️', vi: 'Các Cột Mốc Đọc Sách 🗺️' },
+    description: {
+      en: 'This is your active reading node. Click it to read the chapter contents. Completed chapters show a green checkmark, while locked chapters remain gray.',
+      vi: 'Đây là cột mốc đọc hiện tại của bạn. Nhấp để đọc nội dung chương. Chương đã hoàn thành hiển thị dấu tích xanh, chương khóa có màu xám.'
+    }
+  },
+  {
+    selector: '#dock-toggle-btn',
+    placement: 'left',
+    title: { en: 'Dock Control Tab ↕', vi: 'Tab Điều Khiển Thanh Phụ ↕' },
+    description: {
+      en: 'Click this half-opaque sidebar arrow handle to collapse or slide up the floating navigation dock. Smoothly toggle screen space whenever you need focus.',
+      vi: 'Nhấp vào tab mũi tên bán trong suốt này để thu gọn hoặc mở rộng thanh điều hướng phụ. Giúp tối đa hóa không gian đọc.'
+    }
+  }
+];
+
 function App() {
   const progressionManager = useMemo(() => new ProgressionManager(), []);
 
@@ -162,6 +210,48 @@ function App() {
   const [showStatsModal, setShowStatsModal] = useState(false);
 
   const [showDock, setShowDock] = useState(true);
+
+  // Guided Tour states
+  const [tourActive, setTourActive] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+
+  // Guided Tour Target Rect tracker
+  useEffect(() => {
+    if (!tourActive) {
+      setTargetRect(null);
+      return;
+    }
+
+    const currentStepDef = TOUR_STEPS[tourStep];
+    if (!currentStepDef) return;
+
+    // Dynamically auto-route views to match tour step requirements
+    if (currentStepDef.selector === '#active-progression-node') {
+      setView('path');
+    }
+
+    const updateRect = () => {
+      const el = document.querySelector(currentStepDef.selector);
+      if (el) {
+        setTargetRect(el.getBoundingClientRect());
+      } else {
+        setTargetRect(null);
+      }
+    };
+
+    updateRect();
+    const timer = setTimeout(updateRect, 150); // slight delay to allow layout animations to settle
+
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('scroll', updateRect, true);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect, true);
+    };
+  }, [tourActive, tourStep]);
 
   // Localization and Images states
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('gamified_reader_language') as Language) || 'en');
@@ -836,6 +926,106 @@ function App() {
             </div>
           </motion.div>
         </AnimatePresence>
+      )}
+
+      {/* Interactive Guided Feature Tour Spotlight & Tooltip Overlay */}
+      {tourActive && targetRect && (
+        <div className="fixed inset-0 z-55 pointer-events-none">
+          {/* Spotlight Highlight Border around target element */}
+          <div 
+            style={{
+              position: 'fixed',
+              top: targetRect.top - 6,
+              left: targetRect.left - 6,
+              width: targetRect.width + 12,
+              height: targetRect.height + 12,
+              boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.65)',
+              borderRadius: '16px',
+              transition: 'all 0.25s ease',
+            }}
+            className="border-4 border-duo-blue animate-pulse pointer-events-auto shadow-inner"
+          />
+
+          {/* Floating Tooltip Container */}
+          <div 
+            style={{
+              position: 'fixed',
+              top: TOUR_STEPS[tourStep].placement === 'bottom' 
+                ? targetRect.bottom + 16 
+                : TOUR_STEPS[tourStep].placement === 'top'
+                  ? targetRect.top - 16
+                  : targetRect.top + targetRect.height / 2,
+              left: TOUR_STEPS[tourStep].placement === 'left'
+                ? targetRect.left - 16
+                : targetRect.left + targetRect.width / 2,
+              transform: TOUR_STEPS[tourStep].placement === 'bottom'
+                ? 'translateX(-50%)'
+                : TOUR_STEPS[tourStep].placement === 'top'
+                  ? 'translate(-50%, -100%)'
+                  : 'translate(-100%, -50%)',
+              transition: 'all 0.25s ease',
+            }}
+            className="w-72 sm:w-80 bg-white rounded-3xl border-4 border-duo-blue p-5 shadow-2xl pointer-events-auto z-[60] flex flex-col gap-2.5 text-left relative"
+          >
+            {/* Arrow pointer decoration */}
+            <div 
+              className={`absolute w-3.5 h-3.5 bg-white border-t-4 border-l-4 border-duo-blue transform 
+                ${TOUR_STEPS[tourStep].placement === 'bottom' 
+                  ? '-top-[10px] left-1/2 -translate-x-1/2 rotate-45 border-b-0 border-r-0' 
+                  : TOUR_STEPS[tourStep].placement === 'top'
+                    ? '-bottom-[10px] left-1/2 -translate-x-1/2 rotate-[225deg] border-t-0 border-l-0'
+                    : '-right-[10px] top-1/2 -translate-y-1/2 rotate-[135deg] border-t-0 border-l-0'
+                }
+              `}
+            />
+
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5 leading-none">
+              <span className="text-[10px] bg-duo-blue text-white px-2 py-0.5 rounded-full font-extrabold font-mono">
+                {tourStep + 1}/{TOUR_STEPS.length}
+              </span>
+              {TOUR_STEPS[tourStep].title[language]}
+            </h3>
+
+            <p className="text-xs text-slate-500 font-bold leading-relaxed">
+              {TOUR_STEPS[tourStep].description[language]}
+            </p>
+
+            <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-100">
+              <button 
+                onClick={() => setTourActive(false)}
+                className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-wide cursor-pointer transition-colors"
+              >
+                {language === 'vi' ? 'Bỏ qua' : 'Skip'}
+              </button>
+
+              <div className="flex gap-2">
+                {tourStep > 0 && (
+                  <button
+                    onClick={() => setTourStep(prev => prev - 1)}
+                    className="px-3 py-1.5 border border-slate-200 text-slate-500 text-[10px] font-extrabold rounded-xl hover:bg-slate-50 cursor-pointer transition-all"
+                  >
+                    {language === 'vi' ? 'Trước' : 'Prev'}
+                  </button>
+                )}
+                {tourStep < TOUR_STEPS.length - 1 ? (
+                  <button
+                    onClick={() => setTourStep(prev => prev + 1)}
+                    className="px-4 py-1.5 bg-duo-blue border-b-2 border-duo-blue-dark text-white text-[10px] font-black rounded-xl hover:brightness-105 cursor-pointer transition-all"
+                  >
+                    {language === 'vi' ? 'Tiếp' : 'Next'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setTourActive(false)}
+                    className="px-4 py-1.5 bg-duo-green border-b-2 border-duo-green-dark text-white text-[10px] font-black rounded-xl hover:brightness-105 cursor-pointer transition-all"
+                  >
+                    {language === 'vi' ? 'Hoàn tất' : 'Finish'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
