@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Check, Trophy, RefreshCw, Key, Upload, BookOpen, AlertCircle, X, ShieldAlert, Sparkles, ChevronLeft } from 'lucide-react';
+import { Lock, Check, Star, Trophy, RefreshCw, Key, Upload, BookOpen, AlertCircle, X, ShieldAlert, Sparkles, ChevronLeft } from 'lucide-react';
 import { TRANSLATIONS } from '../utils/translations';
 import type { Language } from '../utils/translations';
 
