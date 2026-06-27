@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PathView } from './components/PathView';
 import type { SectionNode } from './components/PathView';
 import { ReaderView } from './components/ReaderView';
@@ -161,10 +161,7 @@ function App() {
   const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
 
-  // Draggable Dock Motion Values (knob drag y-offset of 0 to 40 translates to 0 to 120 offset for dock)
-  const dragY = useMotionValue(0);
-  const dockY = useTransform(dragY, [0, 40], [0, 120]);
-  const dockOpacity = useTransform(dragY, [0, 40], [1, 0]);
+  const [showDock, setShowDock] = useState(true);
 
   // Localization and Images states
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('gamified_reader_language') as Language) || 'en');
@@ -669,44 +666,39 @@ function App() {
       />
 
       {/* Floating Navigation Dock (hidden in Focus Mode, Quiz, or Theme Transition) */}
-      {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
-        <motion.div 
-          style={{ y: dockY, opacity: dockOpacity, x: '-50%' }}
-          className="fixed bottom-6 left-1/2 z-40 transform -translate-x-1/2"
-        >
-          <FloatingDock items={dockItems} />
-        </motion.div>
-      )}
-
-      {/* Half-transparent Vertical Slider Toggle at the bottom right corner (Volume-slider styled) */}
-      {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
-        <div 
-          title="Drag up/down or click to toggle dock visibility"
-          className="fixed bottom-6 right-6 z-50 w-9 h-20 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border border-slate-200/20 dark:border-slate-800/20 rounded-full flex flex-col justify-between items-center py-2 px-1 shadow-lg select-none relative"
-        >
-          {/* Vertical Track center line */}
-          <div className="absolute top-4 bottom-4 w-0.5 border-r border-dashed border-slate-400/40 dark:border-slate-600/40 pointer-events-none" />
-
-          {/* Clickable toggle area */}
-          <div 
-            onClick={() => {
-              const target = dragY.get() > 20 ? 0 : 40;
-              animate(dragY, target, { type: 'spring', stiffness: 350, damping: 25 });
-            }}
-            className="absolute inset-0 rounded-full cursor-pointer z-10"
-          />
-
-          {/* Draggable Knob */}
-          <motion.div
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 40 }}
-            dragElastic={0.05}
-            dragMomentum={false}
-            style={{ y: dragY }}
-            className="w-6 h-6 rounded-full bg-white dark:bg-slate-200 shadow-md cursor-grab active:cursor-grabbing flex items-center justify-center border border-slate-300/30 dark:border-slate-600/30 text-[9px] font-black text-slate-400 dark:text-slate-600 z-20"
+      <AnimatePresence>
+        {showDock && !isFocusMode && view !== 'quiz' && !reconfigTheme && (
+          <motion.div 
+            initial={{ y: 80, opacity: 0, x: '-50%' }}
+            animate={{ y: 0, opacity: 1, x: '-50%' }}
+            exit={{ y: 80, opacity: 0, x: '-50%' }}
+            transition={{ type: 'spring', damping: 22, stiffness: 200 }}
+            className="fixed bottom-6 left-1/2 z-40 transform -translate-x-1/2"
           >
-            ↕
+            <FloatingDock items={dockItems} />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Half-transparent Oversized Horizontal Sliding Switch (Lever) at the bottom right corner */}
+      {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/20 dark:border-slate-800/20 rounded-full px-4 py-2.5 shadow-lg select-none">
+          <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+            {language === 'vi' ? 'THANH PHỤ' : 'DOCK'}
+          </span>
+          <button
+            onClick={() => setShowDock(prev => !prev)}
+            className={`w-16 h-8 rounded-full p-1 relative flex items-center transition-colors cursor-pointer
+              ${showDock ? 'bg-duo-blue' : 'bg-slate-300 dark:bg-slate-700'}
+            `}
+          >
+            <motion.div 
+              layout
+              className="w-6 h-6 rounded-full bg-white shadow-md"
+              animate={{ x: showDock ? 32 : 0 }}
+              transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+            />
+          </button>
         </div>
       )}
 
