@@ -60,7 +60,10 @@ export const PathView: React.FC<PathViewProps> = ({
   language,
   onLanguageChange
 }) => {
-  const t = (key: string) => (TRANSLATIONS[language] as any)[key] || (TRANSLATIONS['en'] as any)[key];
+  const t = (key: string) => {
+    const dict = TRANSLATIONS[language] || TRANSLATIONS['en'];
+    return (dict as any)[key] || (TRANSLATIONS['en'] as any)[key] || key;
+  };
   // Settings popover visibility
   const [showSettings, setShowSettings] = useState(false);
   const [tempKey, setTempKey] = useState(apiKey);
@@ -95,11 +98,12 @@ export const PathView: React.FC<PathViewProps> = ({
 
   const getSectionStatus = (index: number) => {
     const section = sections[index];
-    const isCompleted = completedSections.includes(section.id);
+    const completed = completedSections || [];
+    const isCompleted = completed.includes(section.id);
     
     if (isCompleted) return 'completed';
     
-    const firstIncompleteIndex = sections.findIndex(s => !completedSections.includes(s.id));
+    const firstIncompleteIndex = sections.findIndex(s => !completed.includes(s.id));
     if (index === firstIncompleteIndex || (firstIncompleteIndex === -1 && index === 0)) {
       return 'available';
     }

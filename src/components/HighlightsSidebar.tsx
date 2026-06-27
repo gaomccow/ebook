@@ -33,7 +33,10 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
   onToggleFocusMode,
   language
 }) => {
-  const t = (key: string) => (TRANSLATIONS[language] as any)[key] || (TRANSLATIONS['en'] as any)[key];
+  const t = (key: string) => {
+    const dict = TRANSLATIONS[language] || TRANSLATIONS['en'];
+    return (dict as any)[key] || (TRANSLATIONS['en'] as any)[key] || key;
+  };
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNoteText, setEditNoteText] = useState('');
 
@@ -81,7 +84,7 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
           {/* Streak */}
           <div className="bg-duo-orange/10 rounded-2xl p-3 border-2 border-duo-orange-dark/20 text-center flex flex-col items-center justify-center">
             <Flame className="w-6 h-6 text-duo-orange fill-duo-orange mb-1" />
-            <span className="text-lg font-black text-duo-orange-dark">{streak} Day{streak !== 1 && 's'}</span>
+            <span className="text-lg font-black text-duo-orange-dark">{streak || 0} Day{(streak || 0) !== 1 && 's'}</span>
             <span className="text-[9px] font-black text-duo-orange-dark/80 uppercase">Streak</span>
           </div>
         </div>
@@ -94,13 +97,13 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
             <BookMarked className="w-4 h-4 text-duo-blue" /> Study Highlights
           </span>
           <span className="text-[10px] bg-[var(--bg-color)] border border-[var(--border-color)] font-black text-gray-400 px-2 py-0.5 rounded-full">
-            {highlights.length} Clips
+            {(highlights || []).length} Clips
           </span>
         </div>
 
         {/* Highlights Scroller */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 no-scrollbar">
-          {highlights.length === 0 ? (
+          {(!highlights || highlights.length === 0) ? (
             <div className="flex flex-col items-center justify-center text-center py-12 text-gray-400">
               <span className="text-3xl mb-2">💡</span>
               <p className="text-xs font-extrabold uppercase tracking-wide">No highlights yet</p>
@@ -110,6 +113,7 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
             </div>
           ) : (
             highlights.map((hl) => {
+              if (!hl) return null;
               const isEditing = editingId === hl.id;
 
               return (
@@ -128,12 +132,12 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
 
                   {/* Section Title tag */}
                   <span className="text-[9px] font-black text-duo-yellow-dark uppercase bg-duo-yellow/20 px-2 py-0.5 rounded-full w-fit max-w-[80%] truncate">
-                    {hl.sectionTitle}
+                    {hl.sectionTitle || 'General'}
                   </span>
 
                   {/* Text clip */}
                   <p className="text-xs font-medium italic border-l-2 border-duo-yellow/40 pl-2 leading-relaxed text-wrap text-inherit opacity-90">
-                    "{hl.text}"
+                    "{hl.text || ''}"
                   </p>
 
                   {/* Note block */}

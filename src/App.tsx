@@ -359,8 +359,10 @@ function App() {
     const currentIndex = sections.findIndex(s => s.id === activeSection.id);
     if (currentIndex > 0) {
       const prevSection = sections[currentIndex - 1];
-      const isCompleted = stats.completedSections.includes(prevSection.id);
-      const isFirstIncomplete = sections.findIndex(s => !stats.completedSections.includes(s.id)) === currentIndex - 1;
+      if (!prevSection) return;
+      const completed = stats.completedSections || [];
+      const isCompleted = completed.includes(prevSection.id);
+      const isFirstIncomplete = sections.findIndex(s => !completed.includes(s.id)) === currentIndex - 1;
       
       if (isCompleted || isFirstIncomplete || currentIndex - 1 === 0) {
         setActiveSection(prevSection);
@@ -371,10 +373,12 @@ function App() {
   const handleNextSection = () => {
     if (!activeSection) return;
     const currentIndex = sections.findIndex(s => s.id === activeSection.id);
-    if (currentIndex < sections.length - 1) {
+    if (currentIndex < sections.length - 1 && currentIndex !== -1) {
       const nextSection = sections[currentIndex + 1];
-      const isCompleted = stats.completedSections.includes(nextSection.id);
-      const firstIncompleteIndex = sections.findIndex(s => !stats.completedSections.includes(s.id));
+      if (!nextSection) return;
+      const completed = stats.completedSections || [];
+      const isCompleted = completed.includes(nextSection.id);
+      const firstIncompleteIndex = sections.findIndex(s => !completed.includes(s.id));
       const isUnlocked = currentIndex + 1 <= firstIncompleteIndex || firstIncompleteIndex === -1;
       
       if (isCompleted || isUnlocked) {
@@ -386,6 +390,7 @@ function App() {
   // Triggered when completing reading
   const handleCompleteReading = (wordCount: number) => {
     if (!activeSection) return;
+    setIsFocusMode(false);
 
     if (apiKey.trim()) {
       setPendingCompletion({ id: activeSection.id, wordCount });
@@ -545,6 +550,7 @@ function App() {
       onBack={() => {
         setView('path');
         setActiveSection(null);
+        setIsFocusMode(false);
       }}
       onComplete={handleCompleteReading}
       hasVerificationActive={!!apiKey.trim()}

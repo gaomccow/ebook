@@ -41,13 +41,29 @@ export class ProgressionManager {
    * Load state from localStorage.
    */
   private loadState(): UnifiedState {
+    const defaultUser: UserStats = {
+      xp: 0,
+      level: 1,
+      streak: 0,
+      lastReadDate: null,
+      unlockedThemes: ['default'],
+      unlockedFeatures: [],
+      currentTheme: 'default',
+      completedSections: []
+    };
+
     try {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
         const parsed = JSON.parse(data);
-        // Ensure default properties exist
         if (parsed.user && parsed.library) {
-          return parsed;
+          return {
+            user: {
+              ...defaultUser,
+              ...parsed.user
+            },
+            library: parsed.library
+          };
         }
       }
     } catch (e) {
