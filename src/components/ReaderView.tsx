@@ -650,7 +650,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       </header>
 
       {/* Draggable Bookmark Ribbon hanging below the sticky progress header */}
-      <div className="absolute top-[72px] right-6 z-50 flex flex-col items-center">
+      <div id="tour-bookmark-ribbon" className="absolute top-[72px] right-6 z-50 flex flex-col items-center">
         {/* Toast Notification */}
         <AnimatePresence>
           {bookmarkToast && (

@@ -139,6 +139,7 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
       <AnimatePresence initial={false}>
         {showLeftSidebar && (
           <motion.aside
+            id="tour-learning-path"
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 310, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
@@ -153,7 +154,7 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
       </AnimatePresence>
 
       {/* Center Main Column */}
-      <main className="flex-1 h-full overflow-hidden flex flex-col relative bg-[var(--bg-color)] text-[var(--text-color)] z-10">
+      <main id="tour-focus-reader" className="flex-1 h-full overflow-hidden flex flex-col relative bg-[var(--bg-color)] text-[var(--text-color)] z-10">
         <AnimatePresence mode="wait">
           {view === 'library' && (
             <motion.div
@@ -215,6 +216,7 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
       <AnimatePresence initial={false}>
         {showRightSidebar && (
           <motion.aside
+            id="tour-highlights-sidebar"
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 310, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}

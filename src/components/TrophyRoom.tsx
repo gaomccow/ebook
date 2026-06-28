@@ -6,6 +6,7 @@ import { Leaderboard } from './Leaderboard';
 import { TRANSLATIONS } from '../utils/translations';
 import type { Language } from '../utils/translations';
 import { ALL_FONTS_LIST } from '../utils/fonts';
+import { useTour } from '../services/TourContext';
 
 
 export interface BookItem {
@@ -102,6 +103,17 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   const [carouselIndex, setCarouselIndex] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<'library' | 'leaderboard'>('library');
   const t = (key: string) => (TRANSLATIONS[language] as any)[key] || (TRANSLATIONS['en'] as any)[key];
+
+  const { currentStep, isTourActive } = useTour();
+  React.useEffect(() => {
+    if (isTourActive && currentStep) {
+      if (currentStep.targetId === 'tour-leaderboard-tab') {
+        setActiveTab('leaderboard');
+      } else if (currentStep.targetId === 'tour-xp-shop') {
+        setActiveTab('library');
+      }
+    }
+  }, [currentStep, isTourActive]);
 
   const velocityData = useMemo(() => {
     const base = Math.min(100, Math.max(10, totalXP % 150));
@@ -222,6 +234,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
               📚 {t('bookshelf')}
             </button>
             <button
+              id="tour-leaderboard-tab"
               onClick={() => setActiveTab('leaderboard')}
               className={`px-6 py-3 font-black text-xs uppercase tracking-wider border-b-4 -mb-1 z-10 transition-all
                 ${activeTab === 'leaderboard'
@@ -461,7 +474,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
           </div>
 
           {/* XP Shop Economy */}
-          <div className="flex flex-col gap-3 mt-4">
+          <div id="tour-xp-shop" className="flex flex-col gap-3 mt-4">
             <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
               <Palette className="w-4 h-4 text-duo-purple" />
               {t('xpShop')}

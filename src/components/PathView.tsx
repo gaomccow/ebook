@@ -327,7 +327,7 @@ export const PathView: React.FC<PathViewProps> = ({
           title: language === 'vi' ? 'Thống Kê Đọc & Trạng Thái' : 'Focus Analytics',
           desc: language === 'vi' 
             ? 'Theo dõi thời gian đọc dự kiến, mức độ tập trung, từ vựng đã highlight và tiến độ XP.' 
-            : 'Audit your reading speeds, estimated time remaining, total highlight cards, and streak achievements.'
+            : 'Audit your estimated time remaining, total highlight cards, and streak achievements.'
         }
       ]
     }
