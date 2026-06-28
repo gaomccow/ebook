@@ -209,34 +209,39 @@ body {
 /* FROSTED GLASSMORPHISM (DARK) */
 [data-theme='glass_dark'] {
   --bg-color: transparent;
-  --text-color: #f3f4f6;
+  --text-color: #ffffff;
   --accent-color: #818cf8;
-  --card-bg: rgba(17, 24, 39, 0.06);
-  --border-color: rgba(255, 255, 255, 0.06);
+  --card-bg: rgba(17, 24, 39, 0.04);
+  --border-color: rgba(255, 255, 255, 0.35);
   --font-main: 'Outfit', sans-serif;
 }
 [data-theme='glass_dark'] body {
-  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.16) 0px, transparent 50%),
-              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.16) 0px, transparent 50%),
+  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.2) 0px, transparent 50%),
+              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.2) 0px, transparent 50%),
               #030712;
   background-attachment: fixed;
 }
 [data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
-  background: rgba(255, 255, 255, 0.03) !important;
-  color: #f3f4f6 !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(20px) saturate(160%) !important;
-  box-shadow: none !important;
-  transition: all 0.2s ease !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 50%, rgba(255, 255, 255, 0.06) 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 9999px !important;
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.5), 
+              inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35),
+              0 6px 16px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 [data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
   display: none !important;
 }
 [data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.12) 100%) !important;
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.65), 
+              0 8px 24px rgba(0, 0, 0, 0.45) !important;
 }
 [data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
-  transform: scale(0.97) !important;
+  transform: scale(0.96) !important;
 }
 
 /* FROSTED GLASSMORPHISM (LIGHT) */
@@ -244,41 +249,62 @@ body {
   --bg-color: transparent;
   --text-color: #1e293b;
   --accent-color: #6366f1;
-  --card-bg: rgba(255, 255, 255, 0.06);
-  --border-color: rgba(0, 0, 0, 0.04);
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --border-color: rgba(255, 255, 255, 0.55);
   --font-main: 'Outfit', sans-serif;
 }
 [data-theme='glass_light'] body {
-  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.14) 0px, transparent 50%),
+              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.14) 0px, transparent 50%),
               #f8fafc;
   background-attachment: fixed;
 }
 [data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
-  background: rgba(0, 0, 0, 0.02) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.04) 50%, rgba(255, 255, 255, 0.09) 100%) !important;
   color: #1e293b !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  backdrop-filter: blur(20px) saturate(160%) !important;
-  box-shadow: none !important;
-  transition: all 0.2s ease !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  border-radius: 9999px !important;
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.7), 
+              inset 0 -1px 1px 0 rgba(0, 0, 0, 0.15),
+              0 6px 16px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 [data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
   display: none !important;
 }
 [data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):hover {
-  background: rgba(0, 0, 0, 0.06) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.15) 100%) !important;
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8), 
+              0 8px 24px rgba(0, 0, 0, 0.15) !important;
 }
 [data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
-  transform: scale(0.97) !important;
+  transform: scale(0.96) !important;
 }
 
-/* Distort anything underneath class elements */
+/* Distort anything underneath class elements (Real Liquid Glass Panes) */
 [data-theme='glass_dark'] [class*="bg-[var(--card-bg)]"],
+[data-theme='glass_dark'] .backdrop-blur-3xl,
+[data-theme='glass_dark'] .backdrop-blur-lg {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.005) 50%, rgba(255, 255, 255, 0.03) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.45), 
+              inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.4), 
+              0 16px 48px 0 rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(48px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(210%) !important;
+}
+
 [data-theme='glass_light'] [class*="bg-[var(--card-bg)]"],
-[data-theme='glass_dark'] .backdrop-blur-lg,
+[data-theme='glass_light'] .backdrop-blur-3xl,
 [data-theme='glass_light'] .backdrop-blur-lg {
-  backdrop-filter: blur(32px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(180%) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.01) 50%, rgba(255, 255, 255, 0.04) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.75), 
+              inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.15), 
+              0 16px 48px 0 rgba(0, 0, 0, 0.18) !important;
+  backdrop-filter: blur(48px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(210%) !important;
 }
 
 /* ATMOSPHERIC GRADIENT (Abstract Mesh) */
