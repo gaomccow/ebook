@@ -50,10 +50,12 @@ const TopographicBackground: React.FC = () => (
   </div>
 );
 
+const DEFAULT_GOOGLE_CLIENT_ID = '394432842247-sei6s8ettqcmq012o65d5nhrn7k3371.apps.googleusercontent.com';
+
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin, language }) => {
   const [email, setEmail] = useState('');
   const [showConfig, setShowConfig] = useState(false);
-  const [clientId, setClientId] = useState(() => localStorage.getItem('readable_google_client_id') || '');
+  const [clientId, setClientId] = useState(() => localStorage.getItem('readable_google_client_id') || DEFAULT_GOOGLE_CLIENT_ID);
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -73,14 +75,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, language }) => {
   };
 
   const handleGoogleLogin = () => {
-    const activeClientId = localStorage.getItem('readable_google_client_id');
-    if (!activeClientId) {
-      alert(language === 'vi'
-        ? 'Vui lòng nhấn "Google Client ID Config" và nhập Google Cloud OAuth Client ID của bạn!'
-        : 'Please click "Google Client ID Config" and set your Google Cloud OAuth Client ID first!');
-      setShowConfig(true);
-      return;
-    }
+    const activeClientId = localStorage.getItem('readable_google_client_id') || DEFAULT_GOOGLE_CLIENT_ID;
 
     if (typeof window === 'undefined' || !(window as any).google) {
       alert(language === 'vi'
