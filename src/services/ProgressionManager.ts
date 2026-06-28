@@ -17,7 +17,9 @@ export interface UserStats {
   lastReadDate: string | null;
   unlockedThemes: string[];
   unlockedFeatures: string[];
+  unlockedFonts: string[];
   currentTheme: string;
+  currentFont: string;
   completedSections: string[];
 }
 
@@ -48,7 +50,9 @@ export class ProgressionManager {
       lastReadDate: null,
       unlockedThemes: ['default'],
       unlockedFeatures: [],
+      unlockedFonts: ['font_inter'],
       currentTheme: 'default',
+      currentFont: 'font_inter',
       completedSections: []
     };
 
@@ -80,7 +84,9 @@ export class ProgressionManager {
         lastReadDate: null,
         unlockedThemes: ['default'],
         unlockedFeatures: [],
+        unlockedFonts: ['font_inter'],
         currentTheme: 'default',
+        currentFont: 'font_inter',
         completedSections: []
       },
       library: [
@@ -320,6 +326,31 @@ export class ProgressionManager {
   }
 
   /**
+   * Purchase/unlock a custom font.
+   */
+  public unlockFont(font: string, cost: number): boolean {
+    if (this.state.user.xp < cost) return false;
+    if (!this.state.user.unlockedFonts) {
+      this.state.user.unlockedFonts = ['font_inter'];
+    }
+    if (this.state.user.unlockedFonts.includes(font)) return true;
+
+    this.state.user.xp -= cost;
+    this.state.user.unlockedFonts.push(font);
+    this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
+    this.saveState();
+    return true;
+  }
+
+  /**
+   * Applies the font globally or to the state.
+   */
+  public applyFont(font: string): void {
+    this.state.user.currentFont = font;
+    this.saveState();
+  }
+
+  /**
    * Applies the theme attribute globally to DOM.
    */
   public applyTheme(theme: string): void {
@@ -341,7 +372,9 @@ export class ProgressionManager {
         lastReadDate: null,
         unlockedThemes: ['default'],
         unlockedFeatures: [],
+        unlockedFonts: ['font_inter'],
         currentTheme: 'default',
+        currentFont: 'font_inter',
         completedSections: []
       },
       library: [

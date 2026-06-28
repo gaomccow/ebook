@@ -569,6 +569,20 @@ function App() {
     }
   };
 
+  const handleUnlockFont = (font: string, cost: number) => {
+    const success = progressionManager.unlockFont(font, cost);
+    if (success) {
+      updateStateFromManager();
+    } else {
+      alert('Insufficient XP to unlock this font.');
+    }
+  };
+
+  const handleSelectFont = (font: string) => {
+    progressionManager.applyFont(font);
+    updateStateFromManager();
+  };
+
   const handleSelectTheme = (theme: string) => {
     triggerThemeReconfigAnimation(theme);
   };
@@ -609,11 +623,15 @@ function App() {
       library={library}
       unlockedThemes={stats.unlockedThemes}
       unlockedFeatures={stats.unlockedFeatures}
+      unlockedFonts={stats.unlockedFonts}
       currentTheme={stats.currentTheme}
+      currentFont={stats.currentFont}
       onSelectBook={handleSelectBook}
       onUnlockTheme={handleUnlockTheme}
       onUnlockFeature={handleUnlockFeature}
+      onUnlockFont={handleUnlockFont}
       onSelectTheme={handleSelectTheme}
+      onSelectFont={handleSelectFont}
       isDesktop={isDesktop}
       recommendations={recommendations}
       recommendationsLoading={recommendationsLoading}
@@ -663,6 +681,7 @@ function App() {
       onToggleFocusMode={() => setIsFocusMode(prev => !prev)}
       isDesktop={isDesktop}
       currentTheme={stats.currentTheme}
+      currentFont={stats.currentFont}
       hasDistractionShield={stats.unlockedFeatures.includes('distraction_shield')}
       images={activeImages}
       language={language}

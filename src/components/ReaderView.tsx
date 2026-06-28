@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, X, Sparkles, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, X, Sparkles, Bookmark, BookmarkCheck, Volume2 } from 'lucide-react';
 import type { SectionNode } from './PathView';
 import type { Language } from '../utils/translations';
+import { allFontItems } from '../utils/fonts';
 
 interface ReaderViewProps {
   section: SectionNode;
@@ -21,6 +22,7 @@ interface ReaderViewProps {
 
   // Themes and shop extensions
   currentTheme: string;
+  currentFont?: string;
   hasDistractionShield: boolean;
   
   // Book illustration images map
@@ -45,6 +47,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   onToggleFocusMode,
   isDesktop,
   currentTheme,
+  currentFont = 'font_inter',
   hasDistractionShield,
   images = {},
   language = 'en',
@@ -81,6 +84,16 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
 
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
+
+  // Celebrity voice synthesis states
+  const [celebText, setCelebText] = useState('');
+  const [showCelebModal, setShowCelebModal] = useState(false);
+  const [selectedVoiceToken, setSelectedVoiceToken] = useState('TM:pgdraamqpbke'); // Default Morgan Freeman
+  const [selectedVoiceName, setSelectedVoiceName] = useState('Morgan Freeman');
+  const [synthesisState, setSynthesisState] = useState<'idle' | 'requesting' | 'processing' | 'success' | 'error'>('idle');
+  const [synthesisMessage, setSynthesisMessage] = useState('');
+  const [celebAudioUrl, setCelebAudioUrl] = useState<string | null>(null);
+  const celebAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Sync bookmarks list when book changes
   useEffect(() => {
@@ -185,6 +198,135 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       }
       handleToggleBookmarkAt(idx, rawText);
     }
+  };
+
+  const startCelebritySynthesis = async () => {
+    if (!celebText.trim()) return;
+    
+    setSynthesisState('requesting');
+    setSynthesisMessage('Connecting to AI Voice Synthesizer...');
+    setCelebAudioUrl(null);
+
+    try {
+      const payload = {
+        tts_model_token: selectedVoiceToken,
+        uuid_idoc: '00000000-0000-0000-0000-000000000000',
+        inference_text: celebText
+      };
+
+      const proxyUrl = `/api/fakeyou/tts`;
+      
+      const response = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send text to celebrity voice model.');
+      }
+
+      const initData = await response.json();
+      if (!initData.success || !initData.inference_job_token) {
+        throw new Error(initData.error_message || 'Vocal synthesis request rejected.');
+      }
+
+      const jobToken = initData.inference_job_token;
+      setSynthesisState('processing');
+      setSynthesisMessage('Queueing job on AI cluster... (polling voice state)');
+
+      let attempts = 0;
+      const maxAttempts = 60;
+      const pollInterval = 2000;
+
+      const checkJobStatus = async () => {
+        if (attempts >= maxAttempts) {
+          setSynthesisState('error');
+          setSynthesisMessage('Vocal rendering timed out. Please try again.');
+          return;
+        }
+
+        attempts++;
+        try {
+          const statusUrl = `/api/fakeyou/tts/job/${jobToken}`;
+          const statusRes = await fetch(statusUrl);
+          
+          if (!statusRes.ok) {
+            throw new Error('Network error polling status.');
+          }
+
+          const statusData = await statusRes.json();
+          if (!statusData.success) {
+            throw new Error(statusData.error_message || 'Status retrieval failed.');
+          }
+
+          const state = statusData.state;
+          const status = state.status;
+
+          if (status === 'complete_success') {
+            const finalPath = statusData.state.maybe_public_bucket_wav_audio_path;
+            const fullAudioUrl = `https://cdn.fakeyou.com${finalPath}`;
+            setCelebAudioUrl(fullAudioUrl);
+            setSynthesisState('success');
+            setSynthesisMessage('Vocal rendering complete!');
+            
+            if (celebAudioRef.current) {
+              celebAudioRef.current.src = fullAudioUrl;
+              celebAudioRef.current.play();
+            }
+          } else if (status === 'failed' || status === 'dead') {
+            setSynthesisState('error');
+            setSynthesisMessage('Job aborted by AI server. Text may be too long.');
+          } else {
+            const progressMsg = status === 'started' 
+              ? 'Vocal waves active: rendering waveforms...'
+              : `Waiting in server queue... (attempt ${attempts})`;
+            setSynthesisMessage(progressMsg);
+            setTimeout(checkJobStatus, pollInterval);
+          }
+        } catch (e: any) {
+          setSynthesisState('error');
+          setSynthesisMessage(`Polling error: ${e.message}`);
+        }
+      };
+
+      setTimeout(checkJobStatus, pollInterval);
+
+    } catch (error: any) {
+      console.error('Celebrity TTS failed:', error);
+      setSynthesisState('error');
+      setSynthesisMessage(error.message || 'An error occurred during celebrity TTS synthesis.');
+    }
+  };
+
+  const handleSpeakPara = (text: string) => {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Prioritize high quality voices matching active language
+    const langPrefix = language === 'vi' ? 'vi' : 'en';
+    const targetVoice = voices.find(v => {
+      const name = v.name.toLowerCase();
+      const lang = v.lang.toLowerCase();
+      const isTargetLang = lang.startsWith(langPrefix);
+      
+      return isTargetLang && (
+        name.includes('natural') || 
+        name.includes('premium') || 
+        name.includes('siri') || 
+        name.includes('google') || 
+        name.includes('online')
+      );
+    }) || voices.find(v => v.lang.toLowerCase().startsWith(langPrefix)); // fallback to any matching language voice
+    
+    if (targetVoice) {
+      utterance.voice = targetVoice;
+    }
+    
+    window.speechSynthesis.speak(utterance);
   };
 
   // Auto-scroll on mount/chapter change if a bookmark is present
@@ -413,6 +555,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       }
     };
   }, [content]);
+
+  const fontItem = allFontItems[currentFont];
+  const fontClassName = fontItem ? fontItem.className : 'font-sans font-normal';
 
   const paragraphs = content.split('\n\n').filter(p => p.trim() !== '');
 
@@ -651,6 +796,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           max-w-2xl mx-auto w-full p-6 md:p-10 shadow-sm border-4 border-[var(--border-color)]
           ${currentTheme === 'gradient' ? 'bg-black/25 backdrop-blur-md text-white border-white/20' : 'bg-[var(--card-bg)]'}
           ${currentTheme === 'retro' ? 'border-2 border-dashed' : 'rounded-3xl'}
+          ${fontClassName}
         `}>
           
           {currentTheme !== 'retro' && (
@@ -713,7 +859,21 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                   className="relative group/para pr-8 pl-8 -mx-8 py-1 rounded-xl transition-all hover:bg-slate-200/5"
                 >
                   {/* Precise Paragraph Bookmark Handle (Faded on hover, active when bookmarked) */}
-                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 flex items-center z-20">
+                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 flex items-center gap-1.5 z-20">
+                    {/* Speak paragraph button */}
+                    <button
+                      onClick={() => {
+                        setCelebText(p);
+                        setCelebAudioUrl(null);
+                        setSynthesisState('idle');
+                        setShowCelebModal(true);
+                      }}
+                      className="p-1 text-slate-300 dark:text-slate-600 hover:text-duo-blue opacity-0 group-hover/para:opacity-100 transition-all hover:scale-110"
+                      title="Read aloud this paragraph"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                    </button>
+
                     {isBookmarked ? (
                       <button
                         onClick={() => handleClearBookmarkAt(index)}
@@ -929,6 +1089,183 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                   {language === 'vi' ? 'Đóng' : 'Close'}
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Celebrity Voice Synthesizer Dialog/Overlay */}
+      <AnimatePresence>
+        {showCelebModal && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-55 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.9, y: 25, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 25, opacity: 0 }}
+              className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border-4 border-duo-blue p-6 shadow-2xl relative flex flex-col max-h-[85vh] text-slate-800 dark:text-white z-56"
+            >
+              {/* Close Button */}
+              <button 
+                onClick={() => {
+                  if (celebAudioRef.current) {
+                    celebAudioRef.current.pause();
+                  }
+                  setShowCelebModal(false);
+                  setSynthesisState('idle');
+                }}
+                className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <h3 className="text-lg font-black flex items-center gap-2 mb-1.5 text-duo-blue">
+                <Volume2 className="w-5 h-5" />
+                {language === 'vi' ? 'Trình Đọc Giọng Người Nổi Tiếng' : 'Celebrity Voice Synthesizer'}
+              </h3>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-4">
+                Powered by FakeYou AI voice clusters
+              </p>
+
+              {/* Text Snippet Preview */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 p-3 rounded-2xl text-xs text-gray-500 dark:text-gray-400 font-bold mb-5 italic max-h-24 overflow-y-auto leading-relaxed">
+                "{celebText}"
+              </div>
+
+              {synthesisState === 'idle' && (
+                <div className="flex flex-col gap-4 flex-1">
+                  <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Choose Narrator:</span>
+                  
+                  {/* Voice Options Grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => {
+                        setSelectedVoiceToken('TM:pgdraamqpbke');
+                        setSelectedVoiceName('Morgan Freeman');
+                      }}
+                      className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 cursor-pointer transition-all ${
+                        selectedVoiceToken === 'TM:pgdraamqpbke'
+                          ? 'border-duo-blue bg-duo-blue/5'
+                          : 'border-slate-100 dark:border-slate-800 hover:border-slate-200'
+                      }`}
+                    >
+                      <span className="text-2xl">🎙️</span>
+                      <span className="text-xs font-black text-center">Morgan Freeman</span>
+                      <span className="text-[9px] font-bold text-slate-400">Deep & Authoritative</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSelectedVoiceToken('TM:8tqdfch2r3c3');
+                        setSelectedVoiceName('David Attenborough');
+                      }}
+                      className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 cursor-pointer transition-all ${
+                        selectedVoiceToken === 'TM:8tqdfch2r3c3'
+                          ? 'border-duo-blue bg-duo-blue/5'
+                          : 'border-slate-100 dark:border-slate-800 hover:border-slate-200'
+                      }`}
+                    >
+                      <span className="text-2xl">🌍</span>
+                      <span className="text-xs font-black text-center">David Attenborough</span>
+                      <span className="text-[9px] font-bold text-slate-400">Calm & Naturalist</span>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={startCelebritySynthesis}
+                    className="w-full mt-2 py-3.5 bg-duo-blue border-b-4 border-duo-blue-dark text-white text-xs font-black uppercase tracking-widest rounded-2xl btn-3d cursor-pointer"
+                  >
+                    Synthesize {selectedVoiceName} Voice
+                  </button>
+
+                  <div className="text-center pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      onClick={() => {
+                        handleSpeakPara(celebText);
+                        setShowCelebModal(false);
+                      }}
+                      className="text-[10px] font-black text-slate-400 hover:text-duo-blue uppercase tracking-wide cursor-pointer transition-colors"
+                    >
+                      ⚡ Instant Browser Voice (Robotic/Samantha)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {(synthesisState === 'requesting' || synthesisState === 'processing') && (
+                <div className="flex flex-col items-center justify-center py-8 gap-4 flex-1">
+                  <div className="relative w-16 h-16 flex items-center justify-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                      className="absolute inset-0 border-4 border-duo-blue border-t-transparent rounded-full"
+                    />
+                    <span className="text-lg">🎙️</span>
+                  </div>
+                  
+                  <div className="text-center flex flex-col gap-1">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                      Synthesizing {selectedVoiceName}
+                    </span>
+                    <p className="text-xs text-slate-500 font-bold animate-pulse px-4">
+                      {synthesisMessage}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {synthesisState === 'success' && (
+                <div className="flex flex-col items-center justify-center py-6 gap-4 flex-1">
+                  <span className="text-4xl animate-bounce">🎉</span>
+                  <div className="text-center">
+                    <span className="text-xs font-black uppercase tracking-wider text-duo-green">
+                      Voice Synthesized!
+                    </span>
+                    <p className="text-xs text-slate-400 font-bold mt-1">
+                      Now playing {selectedVoiceName}'s narration.
+                    </p>
+                  </div>
+
+                  {/* Hidden/Native HTML Audio tag for control */}
+                  <audio
+                    ref={celebAudioRef}
+                    src={celebAudioUrl || undefined}
+                    controls
+                    className="w-full max-w-xs mt-2 border-2 border-slate-100 rounded-xl"
+                  />
+                </div>
+              )}
+
+              {synthesisState === 'error' && (
+                <div className="flex flex-col items-center justify-center py-6 gap-4 flex-1">
+                  <span className="text-4xl">⚠️</span>
+                  <div className="text-center px-4">
+                    <span className="text-xs font-black uppercase tracking-wider text-red-500">
+                      Synthesis Failed
+                    </span>
+                    <p className="text-xs text-slate-500 font-bold mt-1">
+                      {synthesisMessage}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 w-full mt-2">
+                    <button
+                      onClick={() => setSynthesisState('idle')}
+                      className="flex-1 py-3 border border-slate-200 text-slate-500 text-xs font-extrabold rounded-2xl hover:bg-slate-50 cursor-pointer"
+                    >
+                      Try Again
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleSpeakPara(celebText);
+                        setShowCelebModal(false);
+                      }}
+                      className="flex-1 py-3 bg-slate-100 text-slate-600 text-xs font-black rounded-2xl cursor-pointer"
+                    >
+                      Use Default Voice
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </div>
         )}

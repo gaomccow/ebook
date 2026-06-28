@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Source+Sans+3:wght@300;400;600;700;900&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Merriweather:wght@300;400;700;900&family=JetBrains+Mono:wght@100;300;400;500;700;800&family=IBM+Plex+Mono:wght@100;200;300;400;500;600;700&family=Intel+One+Mono:wght@300;400&family=Atkinson+Hyperlegible:wght@400;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Lexend:wght@100;300;400;500;700;900&family=Inter:wght@100..900&display=swap');
 @import "tailwindcss";
+
 
 @theme {
   --color-duo-green: #58cc02;
@@ -331,4 +332,44 @@ body {
 [data-theme='midnight'] .btn-3d:active {
   transform: scale(0.97) !important;
 }
+
+/* Custom Reading Font Utilities using Attribute Selectors to prevent compilation warnings */
+[class*="font-['Plus_Jakarta_Sans']"] {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+[class*="font-['Source_Sans_3']"] {
+  font-family: 'Source Sans 3', sans-serif !important;
+}
+[class*="font-['Times_New_Roman']"] {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+[class*="font-['EB_Garamond']"] {
+  font-family: 'EB Garamond', serif !important;
+}
+[class*="font-['Merriweather']"] {
+  font-family: 'Merriweather', serif !important;
+}
+[class*="font-['JetBrains_Mono']"] {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+[class*="font-['IBM_Plex_Mono']"] {
+  font-family: 'IBM Plex Mono', monospace !important;
+}
+[class*="font-['Intel_One_Mono']"] {
+  font-family: 'Intel One Mono', monospace !important;
+}
+[class*="font-['Atkinson_Hyperlegible']"] {
+  font-family: 'Atkinson Hyperlegible', sans-serif !important;
+}
+[class*="font-['Atkinson_Hyperlegible_Next']"] {
+  font-family: 'Atkinson Hyperlegible', sans-serif !important;
+}
+[class*="font-['Space_Grotesk']"] {
+  font-family: 'Space Grotesk', sans-serif !important;
+}
+[class*="font-['Lexend']"] {
+  font-family: 'Lexend', sans-serif !important;
+}
+
+
 

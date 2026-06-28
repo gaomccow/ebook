@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Star, Flame, Trophy, Palette, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Award, Sparkles } from 'lucide-react';
+import { Star, Flame, Trophy, Palette, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Award, Sparkles, Type } from 'lucide-react';
 import { VelocityChart } from './VelocityChart';
 import { Leaderboard } from './Leaderboard';
 import { TRANSLATIONS } from '../utils/translations';
 import type { Language } from '../utils/translations';
+import { ALL_FONTS_LIST } from '../utils/fonts';
+
 
 export interface BookItem {
   id: string;
@@ -42,11 +44,15 @@ interface TrophyRoomProps {
   library: BookItem[];
   unlockedThemes: string[];
   unlockedFeatures: string[];
+  unlockedFonts?: string[];
   currentTheme: string;
+  currentFont?: string;
   onSelectBook: (id: string) => void;
   onUnlockTheme: (theme: string, cost: number) => void;
   onUnlockFeature: (feature: string, cost: number) => void;
+  onUnlockFont?: (font: string, cost: number) => void;
   onSelectTheme: (theme: string) => void;
+  onSelectFont?: (font: string) => void;
   isDesktop: boolean;
   
   // Recommendations extensions
@@ -75,11 +81,15 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   library,
   unlockedThemes,
   unlockedFeatures,
+  unlockedFonts = ['font_inter'],
   currentTheme,
+  currentFont = 'font_inter',
   onSelectBook,
   onUnlockTheme,
   onUnlockFeature,
+  onUnlockFont,
   onSelectTheme,
+  onSelectFont,
   isDesktop,
   recommendations,
   recommendationsLoading,
@@ -526,6 +536,74 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                           `}
                         >
                           Unlock • {item.cost} XP
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Font Shop Economy */}
+          <div className="flex flex-col gap-3 mt-8">
+            <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+              <Type className="w-4 h-4 text-duo-blue" />
+              Typography Engine Tiers
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {ALL_FONTS_LIST.map((font) => {
+                const isUnlocked = unlockedFonts.includes(font.id);
+                const isActive = currentFont === font.id;
+                const canAfford = totalXP >= font.cost;
+
+                return (
+                  <div 
+                    key={font.id}
+                    className={`bg-[var(--card-bg)] rounded-3xl border-4 border-[var(--border-color)] p-4 flex items-center justify-between shadow-[0_6px_0_0_var(--border-color)] relative overflow-hidden transition-all
+                      ${isActive ? 'border-duo-blue bg-duo-blue/5 shadow-[0_6px_0_0_var(--border-color)]' : ''}
+                    `}
+                  >
+                    <div className="flex-1 pr-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-gray-800">{font.name}</span>
+                        <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase bg-duo-blue/10 text-duo-blue-dark">
+                          {font.id.startsWith('font_inter') || font.id.startsWith('font_plus') || font.id.startsWith('font_source') ? 'Tier 1' :
+                           font.id.startsWith('font_times') || font.id.startsWith('font_eb') || font.id.startsWith('font_merri') ? 'Tier 2' :
+                           font.id.startsWith('font_jet') || font.id.startsWith('font_ibm') || font.id.startsWith('font_intel') ? 'Tier 3' : 'Tier 4'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-bold mt-1 leading-snug">
+                        {font.description}
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 flex flex-col gap-2">
+                      {isUnlocked ? (
+                        <button
+                          onClick={() => onSelectFont && onSelectFont(font.id)}
+                          className={`px-4 py-2 text-xs font-black uppercase rounded-2xl btn-3d
+                            ${isActive 
+                              ? 'bg-duo-blue border-duo-blue-dark text-white shadow-[0_3px_0_0_#1899d6]'
+                              : 'bg-white border-duo-gray text-gray-500 shadow-[0_3px_0_0_#e5e5e5]'
+                            }
+                          `}
+                        >
+                          {isActive ? t('unlocked') : t('apply')}
+                        </button>
+                      ) : (
+                        <button
+                          disabled={!canAfford}
+                          onClick={() => onUnlockFont && onUnlockFont(font.id, font.cost)}
+                          className={`px-3 py-2 text-[10px] font-black uppercase rounded-2xl btn-3d
+                            ${canAfford
+                              ? 'bg-duo-yellow border-duo-yellow-dark text-gray-800 shadow-[0_3px_0_0_#e6b400]'
+                              : 'bg-duo-gray border-duo-gray text-gray-400 shadow-none cursor-not-allowed'
+                            }
+                          `}
+                        >
+                          Unlock • {font.cost} XP
                         </button>
                       )}
                     </div>
