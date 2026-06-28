@@ -21,7 +21,7 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({ items, className = '
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className={`mx-auto flex h-16 items-end gap-4 rounded-2xl bg-white/80 dark:bg-slate-900/80 border-4 border-slate-300 dark:border-slate-800 px-4 pb-3 shadow-[0_8px_0_0_#e5e5e5] dark:shadow-[0_8px_0_0_#0f172a] backdrop-blur-md z-50 ${className}`}
+      className={`mx-auto flex h-16 items-end gap-4 rounded-2xl bg-[var(--card-bg)]/80 border-4 border-[var(--border-color)] px-4 pb-3 shadow-[0_8px_0_0_var(--border-color)] backdrop-blur-md z-50 ${className}`}
     >
       {items.map((item, idx) => (
         <DockIcon 
@@ -69,10 +69,10 @@ const DockIcon: React.FC<DockIconProps> = ({ title, icon, onClick, active, disab
         style={{ width, height }}
         className={`flex items-center justify-center rounded-2xl border-2 transition-all shadow-sm group relative
           ${disabled 
-            ? 'opacity-40 cursor-not-allowed bg-slate-100 border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-900' 
+            ? 'opacity-40 cursor-not-allowed bg-[var(--card-bg)] border-[var(--border-color)] text-slate-400' 
             : active 
             ? 'bg-duo-blue border-duo-blue-dark text-white shadow-[0_3px_0_0_#1899d6]' 
-            : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-500 hover:text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700'
+            : 'bg-[var(--card-bg)] hover:bg-[var(--card-bg)]/80 border-[var(--border-color)] text-[var(--text-color)] opacity-85 hover:opacity-100'
           }
         `}
       >

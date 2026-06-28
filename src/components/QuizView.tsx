@@ -187,12 +187,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const progressPercent = ((currentQuestionIndex) / totalQuestions) * 100;
 
   return (
-    <div className="flex flex-col h-screen bg-white max-w-lg mx-auto w-full relative overflow-hidden">
+    <div className="flex flex-col h-screen bg-[var(--bg-color)] text-[var(--text-color)] max-w-lg mx-auto w-full relative overflow-hidden">
       {/* Header with back button and stepper bar */}
-      <header className="px-4 py-4 border-b-4 border-duo-gray flex items-center gap-4 shrink-0">
+      <header className="px-4 py-4 border-b-4 border-[var(--border-color)] flex items-center gap-4 shrink-0">
         <button 
           onClick={onBack}
-          className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+          className="p-1.5 hover:bg-slate-500/10 rounded-full transition-colors"
           aria-label="Back"
         >
           <ArrowLeft className="w-6 h-6 text-gray-500" />
@@ -221,8 +221,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
           <div className="w-12 h-12 rounded-2xl bg-duo-blue flex items-center justify-center text-white shrink-0 shadow-md">
             <HelpCircle className="w-6 h-6" />
           </div>
-          <div className="bg-duo-gray-light border-2 border-duo-gray rounded-2xl rounded-tl-none p-4 shadow-sm relative">
-            <h3 className="text-lg font-black text-gray-800 leading-snug">
+          <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] rounded-2xl rounded-tl-none p-4 shadow-sm relative text-[var(--text-color)]">
+            <h3 className="text-lg font-black text-[var(--text-color)] leading-snug">
               {currentQuestion.question}
             </h3>
           </div>
@@ -232,7 +232,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
         <div className="flex flex-col gap-4">
           {currentQuestion.options.map((option, idx) => {
             const isSelected = selectedOptionIndex === idx;
-            let cardStyle = 'border-2 border-duo-gray bg-white shadow-[0_4px_0_0_#e5e5e5] text-gray-700';
+            let cardStyle = 'border-2 border-[var(--border-color)] bg-[var(--card-bg)] shadow-[0_4px_0_0_var(--border-color)] text-[var(--text-color)]';
 
             if (isSelected) {
               cardStyle = 'border-2 border-duo-blue bg-duo-blue/5 text-duo-blue-dark font-bold shadow-[0_4px_0_0_#1899d6] translate-y-0.5';
@@ -245,7 +245,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
               } else if (isSelected && !isCorrectAnswer) {
                 cardStyle = 'border-2 border-red-500 bg-red-50 text-red-700 font-bold shadow-[0_4px_0_0_#ef4444] translate-y-0.5';
               } else {
-                cardStyle = 'border-2 border-duo-gray bg-gray-50 text-gray-400 opacity-60 pointer-events-none shadow-none';
+                cardStyle = 'border-2 border-[var(--border-color)] bg-[var(--card-bg)] text-gray-400 opacity-60 pointer-events-none shadow-none';
               }
             }
 
@@ -276,7 +276,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
       </main>
 
       {/* Dynamic Bouncy Action Bar (Slide up when check/next is available) */}
-      <div className="absolute bottom-0 left-0 right-0 z-30 shrink-0 bg-white border-t-4 border-duo-gray p-4 flex flex-col items-center">
+      <div className="absolute bottom-0 left-0 right-0 z-30 shrink-0 bg-[var(--card-bg)] border-t-4 border-[var(--border-color)] p-4 flex flex-col items-center">
         <AnimatePresence mode="wait">
           {!isAnswered ? (
             <motion.div 

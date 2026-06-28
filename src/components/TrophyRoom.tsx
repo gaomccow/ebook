@@ -67,6 +67,7 @@ interface TrophyRoomProps {
 
 const SHOP_ITEMS: ShopItem[] = [
   { id: 't_default', name: 'Default Classic', type: 'theme', cost: 0, description: 'Bright, clean, bouncy Duolingo vector layout.', value: 'default' },
+  { id: 't_dark', name: 'Dark Mode', type: 'theme', cost: 0, description: 'Sleek, highly readable deep dark theme for late night reading.', value: 'dark' },
   { id: 't_retro', name: 'Retro Terminal', type: 'theme', cost: 100, description: 'Scanlines, amber text, and generated ASCII bounding boxes.', value: 'retro' },
   { id: 't_gradient', name: 'Atmospheric Gradient', type: 'theme', cost: 500, description: 'Shifting mesh gradient with full-screen distraction-free reader.', value: 'gradient' },
   { id: 't_tactical', name: 'Tactical Dashboard', type: 'theme', cost: 1000, description: 'Aerospace layout with telemetry stats (Comp, Time, Quality).', value: 'tactical' },
@@ -487,7 +488,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                   >
                     <div className="flex-1 pr-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm text-gray-800">{item.name}</span>
+                        <span className="font-extrabold text-sm text-[var(--text-color)]">{item.name}</span>
                         <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase
                           ${item.type === 'theme' ? 'bg-duo-purple/10 text-duo-purple' : 'bg-duo-blue/10 text-duo-blue-dark'}
                         `}>
@@ -567,7 +568,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                   >
                     <div className="flex-1 pr-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm text-gray-800">{font.name}</span>
+                        <span className="font-extrabold text-sm text-[var(--text-color)]">{font.name}</span>
                         <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase bg-duo-blue/10 text-duo-blue-dark">
                           {font.id.startsWith('font_inter') || font.id.startsWith('font_plus') || font.id.startsWith('font_source') ? 'Tier 1' :
                            font.id.startsWith('font_times') || font.id.startsWith('font_eb') || font.id.startsWith('font_merri') ? 'Tier 2' :

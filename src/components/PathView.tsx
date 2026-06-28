@@ -585,16 +585,16 @@ export const PathView: React.FC<PathViewProps> = ({
               initial={{ scale: 0.9, y: 20, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="w-full max-w-sm bg-white rounded-3xl border-4 border-duo-gray p-6 shadow-xl relative"
+              className="w-full max-w-sm bg-[var(--card-bg)] rounded-3xl border-4 border-[var(--border-color)] p-6 shadow-xl relative text-[var(--text-color)]"
             >
               <button 
                 onClick={() => setShowSettings(false)}
-                className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:bg-slate-500/10 hover:text-gray-600 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <h2 className="text-xl font-black text-gray-800 flex items-center gap-2 mb-2">
+              <h2 className="text-xl font-black text-[var(--text-color)] flex items-center gap-2 mb-2">
                 <Key className="w-5 h-5 text-duo-blue" />
                 AI API Settings
               </h2>
@@ -617,7 +617,7 @@ export const PathView: React.FC<PathViewProps> = ({
                     className={`flex-1 py-2 text-xs font-extrabold rounded-xl border-2 transition-all btn-3d
                       ${aiProvider === 'gemini'
                         ? 'bg-duo-blue border-duo-blue-dark text-white shadow-[0_3px_0_0_#1899d6]'
-                        : 'bg-white border-duo-gray text-gray-500 shadow-[0_3px_0_0_#e5e5e5]'
+                        : 'bg-[var(--card-bg)] border-[var(--border-color)] text-[var(--text-color)]/80 shadow-[0_3px_0_0_var(--border-color)]'
                       }
                     `}
                   >
@@ -632,7 +632,7 @@ export const PathView: React.FC<PathViewProps> = ({
                     className={`flex-1 py-2 text-xs font-extrabold rounded-xl border-2 transition-all btn-3d
                       ${aiProvider === 'groq'
                         ? 'bg-duo-purple border-duo-purple-dark text-white shadow-[0_3px_0_0_#8c25e0]'
-                        : 'bg-white border-duo-gray text-gray-500 shadow-[0_3px_0_0_#e5e5e5]'
+                        : 'bg-[var(--card-bg)] border-[var(--border-color)] text-[var(--text-color)]/80 shadow-[0_3px_0_0_var(--border-color)]'
                       }
                     `}
                   >
@@ -654,7 +654,7 @@ export const PathView: React.FC<PathViewProps> = ({
                     className={`flex-1 py-2 text-xs font-extrabold rounded-xl border-2 transition-all btn-3d
                       ${language === 'en'
                         ? 'bg-duo-blue border-duo-blue-dark text-white shadow-[0_3px_0_0_#1899d6]'
-                        : 'bg-white border-duo-gray text-gray-500 shadow-[0_3px_0_0_#e5e5e5]'
+                        : 'bg-[var(--card-bg)] border-[var(--border-color)] text-[var(--text-color)]/80 shadow-[0_3px_0_0_var(--border-color)]'
                       }
                     `}
                   >
@@ -669,7 +669,7 @@ export const PathView: React.FC<PathViewProps> = ({
                     className={`flex-1 py-2 text-xs font-extrabold rounded-xl border-2 transition-all btn-3d
                       ${language === 'vi'
                         ? 'bg-duo-purple border-duo-purple-dark text-white shadow-[0_3px_0_0_#8c25e0]'
-                        : 'bg-white border-duo-gray text-gray-500 shadow-[0_3px_0_0_#e5e5e5]'
+                        : 'bg-[var(--card-bg)] border-[var(--border-color)] text-[var(--text-color)]/80 shadow-[0_3px_0_0_var(--border-color)]'
                       }
                     `}
                   >
@@ -688,7 +688,7 @@ export const PathView: React.FC<PathViewProps> = ({
                     placeholder={aiProvider === 'gemini' ? 'AIzaSy...' : 'gsk_...'}
                     value={tempKey}
                     onChange={(e) => setTempKey(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-duo-gray focus:border-duo-blue focus:outline-none font-medium text-sm text-gray-800"
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-[var(--border-color)] focus:border-duo-blue focus:outline-none font-medium text-sm text-[var(--text-color)] bg-[var(--card-bg)]"
                   />
                 </div>
 
@@ -712,7 +712,7 @@ export const PathView: React.FC<PathViewProps> = ({
                       onApiKeyChange('');
                       setShowSettings(false);
                     }}
-                    className="flex-1 py-3 rounded-xl btn-3d btn-3d-gray border-red-200 text-red-500 text-xs font-black"
+                    className="flex-1 py-3 rounded-xl btn-3d bg-[var(--card-bg)] border-red-200 text-red-500 text-xs font-black"
                   >
                     Clear Key
                   </button>
@@ -751,7 +751,7 @@ export const PathView: React.FC<PathViewProps> = ({
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 30, opacity: 0 }}
-              className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border-4 border-slate-300 dark:border-slate-800 p-6 shadow-2xl relative flex flex-col justify-between max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-lg bg-[var(--card-bg)] rounded-3xl border-4 border-[var(--border-color)] p-6 shadow-2xl relative flex flex-col justify-between max-h-[90vh] overflow-y-auto text-[var(--text-color)]"
             >
               {/* Close Button */}
               <button 

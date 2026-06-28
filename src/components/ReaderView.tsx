@@ -963,28 +963,28 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
               initial={{ scale: 0.9, y: 20, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="w-full max-w-xl bg-white rounded-3xl border-4 border-duo-gray p-6 shadow-2xl relative flex flex-col max-h-[80vh] text-gray-800 z-56"
+              className="w-full max-w-xl bg-[var(--card-bg)] rounded-3xl border-4 border-[var(--border-color)] p-6 shadow-2xl relative flex flex-col max-h-[80vh] text-[var(--text-color)] z-56"
             >
               {/* Close Button */}
               <button 
                 onClick={() => setExplainingText('')}
-                className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-slate-500/10 hover:text-gray-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <h2 className="text-lg font-black text-gray-800 flex items-center gap-2 mb-2">
+              <h2 className="text-lg font-black text-[var(--text-color)] flex items-center gap-2 mb-2">
                 <Sparkles className="w-5 h-5 text-duo-purple fill-duo-purple/20" />
                 {language === 'vi' ? 'AI Giải Thích' : 'AI Explanation'}
               </h2>
 
               {/* Source Highlight Quote Box */}
-              <div className="bg-slate-50 border-l-4 border-duo-purple p-3 rounded-r-2xl text-xs text-gray-500 font-bold mb-4 italic max-h-24 overflow-y-auto leading-relaxed border-y border-r border-slate-100">
+              <div className="bg-slate-500/15 border-l-4 border-duo-purple p-3 rounded-r-2xl text-xs text-[var(--text-color)]/80 font-bold mb-4 italic max-h-24 overflow-y-auto leading-relaxed border-y border-r border-[var(--border-color)]/30">
                 "{explainingText}"
               </div>
 
               {/* Scrollable Explanation Body */}
-              <div className="flex-1 overflow-y-auto pr-1 no-scrollbar leading-relaxed text-sm font-semibold text-slate-700">
+              <div className="flex-1 overflow-y-auto pr-1 no-scrollbar leading-relaxed text-sm font-semibold text-[var(--text-color)]/90">
                 {explanationLoading ? (
                   <div className="flex flex-col items-center justify-center py-10 gap-3">
                     <motion.div
@@ -997,7 +997,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                     </span>
                   </div>
                 ) : (
-                  <div className="prose prose-sm text-gray-700 whitespace-pre-line text-justify leading-relaxed font-semibold">
+                  <div className="prose prose-sm text-[var(--text-color)]/90 whitespace-pre-line text-justify leading-relaxed font-semibold">
                     {activeExplanation}
                   </div>
                 )}
@@ -1025,17 +1025,17 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
               initial={{ scale: 0.9, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 15, opacity: 0 }}
-              className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border-4 border-duo-gray p-6 shadow-2xl relative flex flex-col max-h-[70vh] text-gray-800 z-56"
+              className="w-full max-w-md bg-[var(--card-bg)] rounded-3xl border-4 border-[var(--border-color)] p-6 shadow-2xl relative flex flex-col max-h-[70vh] text-[var(--text-color)] z-56"
             >
               {/* Close button */}
               <button
                 onClick={() => setShowBookmarkModal(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-slate-500/10 hover:text-gray-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <h3 className="text-lg font-black text-gray-800 dark:text-white flex items-center gap-2 mb-3">
+              <h3 className="text-lg font-black text-[var(--text-color)] flex items-center gap-2 mb-3">
                 <Bookmark className="w-5 h-5 text-duo-orange fill-duo-orange/20" />
                 {language === 'vi' ? 'Chọn Dấu Trang' : 'Select Bookmark'}
               </h3>
@@ -1102,7 +1102,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
               initial={{ scale: 0.9, y: 25, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 25, opacity: 0 }}
-              className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border-4 border-duo-blue p-6 shadow-2xl relative flex flex-col max-h-[85vh] text-slate-800 dark:text-white z-56"
+              className="w-full max-w-md bg-[var(--card-bg)] rounded-3xl border-4 border-duo-blue p-6 shadow-2xl relative flex flex-col max-h-[85vh] text-[var(--text-color)] z-56"
             >
               {/* Close Button */}
               <button 
@@ -1113,7 +1113,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                   setShowCelebModal(false);
                   setSynthesisState('idle');
                 }}
-                className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-slate-500/10 hover:text-gray-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

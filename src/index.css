@@ -303,6 +303,31 @@ body {
   pointer-events: none;
 }
 
+/* FREE DARK MODE (Highly Readable Slate Dark Theme) */
+[data-theme='dark'] {
+  --bg-color: #0b0f19;
+  --text-color: #f1f5f9;
+  --accent-color: #38bdf8;
+  --card-bg: #111827;
+  --border-color: #1f2937;
+  --font-main: 'Outfit', sans-serif;
+}
+[data-theme='dark'] body {
+  background-color: #0b0f19;
+}
+[data-theme='dark'] .btn-3d {
+  background-color: #1f2937 !important;
+  color: #f1f5f9 !important;
+  border: 2px solid #374151 !important;
+  box-shadow: 0 4px 0 0 #111827 !important;
+}
+[data-theme='dark'] .btn-3d::after {
+  background-color: #111827 !important;
+}
+[data-theme='dark'] .btn-3d:active {
+  transform: translateY(4px) !important;
+}
+
 /* MIDNIGHT OBSIDIAN (Neon Glows) */
 [data-theme='midnight'] {
   --bg-color: #040508;
