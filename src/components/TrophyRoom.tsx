@@ -68,6 +68,7 @@ interface TrophyRoomProps {
 const SHOP_ITEMS: ShopItem[] = [
   { id: 't_default', name: 'Default Classic', type: 'theme', cost: 0, description: 'Bright, clean, bouncy Duolingo vector layout.', value: 'default' },
   { id: 't_dark', name: 'Dark Mode', type: 'theme', cost: 0, description: 'Sleek, highly readable deep dark theme for late night reading.', value: 'dark' },
+  { id: 't_glass', name: 'Frosted Glassmorphism', type: 'theme', cost: 300, description: 'Modern translucent panels, subtle blurs, and a glowing backdrop.', value: 'glass' },
   { id: 't_retro', name: 'Retro Terminal', type: 'theme', cost: 100, description: 'Scanlines, amber text, and generated ASCII bounding boxes.', value: 'retro' },
   { id: 't_gradient', name: 'Atmospheric Gradient', type: 'theme', cost: 500, description: 'Shifting mesh gradient with full-screen distraction-free reader.', value: 'gradient' },
   { id: 't_tactical', name: 'Tactical Dashboard', type: 'theme', cost: 1000, description: 'Aerospace layout with telemetry stats (Comp, Time, Quality).', value: 'tactical' },

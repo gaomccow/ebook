@@ -169,43 +169,32 @@ body {
 
 /* RETRO TERMINAL (Pixel Art / ASCII) */
 [data-theme='retro'] {
-  --bg-color: #080c08;
+  --bg-color: #0b0f0b;
   --text-color: #e2e8f0; /* Soft warm silver for high-readability body text */
   --accent-color: #4ade80; /* Brighter phosphor green for indicators/accents */
-  --card-bg: #0e140e;
-  --border-color: #22c55e;
-  --font-main: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --card-bg: #121812;
+  --border-color: #166534;
+  --font-main: 'Outfit', 'Inter', system-ui, sans-serif;
   --scanline-display: block;
 }
 [data-theme='retro'] h1,
 [data-theme='retro'] h2,
 [data-theme='retro'] h3 {
   color: #4ade80 !important;
-  text-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
 }
 [data-theme='retro'] .btn-3d {
-  background-color: #080c08 !important;
+  background-color: #0b0f0b !important;
   color: #4ade80 !important;
-  border: 2px solid #22c55e !important;
-  border-radius: 0px !important;
-  box-shadow: 4px 4px 0px #22c55e !important;
-  transform: none !important;
-  text-shadow: none !important;
+  border: 2px solid #166534 !important;
+  box-shadow: 0 4px 0 0 #121812 !important;
 }
 [data-theme='retro'] .btn-3d::after {
-  display: none !important;
+  background-color: #121812 !important;
 }
 [data-theme='retro'] .btn-3d:active {
-  box-shadow: 1px 1px 0px #22c55e !important;
-  transform: translate(3px, 3px) !important;
+  transform: translateY(4px) !important;
 }
-[data-theme='retro'] header,
-[data-theme='retro'] main,
-[data-theme='retro'] aside,
-[data-theme='retro'] div,
-[data-theme='retro'] button {
-  border-radius: 0px !important;
-}
+
 
 /* Retro Scanline CRT Overlay - subtle and low-opacity to maintain readability */
 .retro-scanlines {
@@ -218,25 +207,58 @@ body {
   pointer-events: none;
 }
 
+/* FROSTED GLASSMORPHISM */
+[data-theme='glass'] {
+  --bg-color: transparent;
+  --text-color: #f3f4f6;
+  --accent-color: #818cf8;
+  --card-bg: rgba(17, 24, 39, 0.45);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --font-main: 'Outfit', sans-serif;
+}
+[data-theme='glass'] body {
+  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+              #030712;
+  background-attachment: fixed;
+}
+[data-theme='glass'] .btn-3d {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #f3f4f6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+[data-theme='glass'] .btn-3d::after {
+  display: none !important;
+}
+[data-theme='glass'] .btn-3d:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+[data-theme='glass'] .btn-3d:active {
+  transform: scale(0.97) !important;
+}
+
 /* ATMOSPHERIC GRADIENT (Abstract Mesh) */
 [data-theme='gradient'] {
   --bg-color: transparent;
   --text-color: #f8fafc; /* Warm bright slate for readability */
   --accent-color: #ff9600;
-  --card-bg: rgba(15, 23, 42, 0.82); /* Semi-opaque dark slate background to easily read white text over active gradients */
-  --border-color: rgba(255, 255, 255, 0.15);
+  --card-bg: rgba(15, 23, 42, 0.9); /* Opaque dark slate background to easily read white text over active gradients */
+  --border-color: rgba(255, 255, 255, 0.1);
   --font-main: 'Outfit', sans-serif;
 }
 [data-theme='gradient'] body {
-  background: linear-gradient(45deg, #090d16, #110e2b, #1d0729, #0d0010);
+  background: linear-gradient(45deg, #090a12, #0d0c1e, #130722, #060108);
   background-size: 400% 400%;
-  animation: shift-gradient 25s ease infinite;
+  animation: shift-gradient 80s ease infinite;
   background-attachment: fixed;
 }
 [data-theme='gradient'] .btn-3d {
   background: rgba(255, 255, 255, 0.08) !important;
   color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   backdrop-filter: blur(8px) !important;
   box-shadow: none !important;
   transition: all 0.2s ease !important;
@@ -261,7 +283,7 @@ body {
 [data-theme='tactical'] {
   --bg-color: #080d1a;
   --text-color: #e2e8f0; /* Silver gray body text for high readability and low eye strain */
-  --accent-color: #6fffe9;
+  --accent-color: #4fd1c5;
   --card-bg: #111a30;
   --border-color: #2b3a5c;
   --font-main: 'Inter', system-ui, sans-serif;
@@ -271,11 +293,11 @@ body {
 [data-theme='tactical'] h2,
 [data-theme='tactical'] h3,
 [data-theme='tactical'] .accent-text {
-  color: #5bc0be !important;
+  color: #4fd1c5 !important;
 }
 [data-theme='tactical'] .btn-3d {
   background-color: #111a30 !important;
-  color: #6fffe9 !important;
+  color: #4fd1c5 !important;
   border: 1.5px solid #2b3a5c !important;
   box-shadow: 0px 3px 0px #2b3a5c !important;
   border-radius: 8px !important;
@@ -297,8 +319,8 @@ body {
   top: 0; left: 0; bottom: 0; right: 0;
   background-size: 40px 40px;
   background-image: 
-    linear-gradient(to right, rgba(91, 192, 190, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(91, 192, 190, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(91, 192, 190, 0.008) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(91, 192, 190, 0.008) 1px, transparent 1px);
   z-index: 1;
   pointer-events: none;
 }
@@ -330,32 +352,28 @@ body {
 
 /* MIDNIGHT OBSIDIAN (Neon Glows) */
 [data-theme='midnight'] {
-  --bg-color: #040508;
+  --bg-color: #06080c;
   --text-color: #f8fafc;
-  --accent-color: #22d3ee;
-  --card-bg: #090b11;
-  --border-color: #0891b2;
+  --accent-color: #38bdf8;
+  --card-bg: #0d1117;
+  --border-color: #1f2937;
   --font-main: 'Outfit', sans-serif;
 }
 [data-theme='midnight'] body {
-  background-image: radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.04) 0px, transparent 50%),
-                    radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.04) 0px, transparent 50%);
+  background-image: radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.03) 0px, transparent 50%),
+                    radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.03) 0px, transparent 50%);
 }
 [data-theme='midnight'] .btn-3d {
-  background-color: #090b11 !important;
-  color: #22d3ee !important;
-  border: 2px solid #0891b2 !important;
-  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2) !important;
-  text-shadow: 0 0 5px rgba(6, 182, 212, 0.4) !important;
+  background-color: #0d1117 !important;
+  color: #38bdf8 !important;
+  border: 2px solid #1f2937 !important;
+  box-shadow: 0 4px 0 0 #06080c !important;
 }
 [data-theme='midnight'] .btn-3d::after {
-  display: none !important;
-}
-[data-theme='midnight'] .btn-3d:hover {
-  box-shadow: 0 0 15px rgba(6, 182, 212, 0.5) !important;
+  background-color: #06080c !important;
 }
 [data-theme='midnight'] .btn-3d:active {
-  transform: scale(0.97) !important;
+  transform: translateY(4px) !important;
 }
 
 /* Custom Reading Font Utilities using Attribute Selectors to prevent compilation warnings */
