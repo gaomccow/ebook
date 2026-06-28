@@ -104,6 +104,13 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   const [activeTab, setActiveTab] = React.useState<'library' | 'leaderboard'>('library');
   const t = (key: string) => (TRANSLATIONS[language] as any)[key] || (TRANSLATIONS['en'] as any)[key];
 
+  const authName = React.useMemo(() => {
+    return localStorage.getItem('readable_auth_name') || 'readable.app User';
+  }, []);
+  const authPicture = React.useMemo(() => {
+    return localStorage.getItem('readable_auth_picture') || null;
+  }, []);
+
   const { currentStep, isTourActive } = useTour();
   React.useEffect(() => {
     if (isTourActive && currentStep) {
@@ -155,12 +162,20 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
             {/* Profile Stats Card (Duolingo Style) */}
             <div className="bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-3xl p-4 shadow-[0_6px_0_0_var(--border-color)] flex flex-col gap-3">
               <div className="flex items-center gap-3">
-                {/* Bouncy Circle Icon */}
-                <div className="w-12 h-12 bg-duo-purple text-white font-black text-lg rounded-2xl flex items-center justify-center border-2 border-duo-purple-dark shadow-sm">
-                  L{level}
-                </div>
+                {/* Bouncy Circle Icon / Profile picture */}
+                {authPicture ? (
+                  <img 
+                    src={authPicture} 
+                    alt={authName}
+                    className="w-12 h-12 rounded-2xl border-2 border-duo-purple-dark shadow-sm object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-duo-purple text-white font-black text-lg rounded-2xl flex items-center justify-center border-2 border-duo-purple-dark shadow-sm shrink-0">
+                    L{level}
+                  </div>
+                )}
                 <div>
-                  <h2 className="font-black text-sm">Lumina Reader</h2>
+                  <h2 className="font-black text-sm">{authName}</h2>
                   <p className="text-[9px] text-gray-400 font-extrabold uppercase">Level {level} Explorer</p>
                 </div>
               </div>
@@ -193,7 +208,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
           </div>
 
           <div className="mt-8 text-center text-[10px] font-extrabold text-gray-400">
-            <p>LUMINA ACADEMY ARCHIVE</p>
+            <p>READABLE.APP LIBRARY ARCHIVE</p>
           </div>
         </aside>
       )}

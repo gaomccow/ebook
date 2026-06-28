@@ -53,7 +53,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   // Combine user with bots
   const leaderboardList = useMemo(() => {
     const userRow: Competitor = {
-      name: 'You (Lumina Reader)',
+      name: 'You (readable.app)',
       avatar: '🦉',
       xp: totalXP,
       words: userWordsRead,

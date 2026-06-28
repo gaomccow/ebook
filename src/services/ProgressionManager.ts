@@ -93,7 +93,7 @@ export class ProgressionManager {
         {
           id: 'book_default',
           title: 'Mastering Deep Focus',
-          author: 'Lumina Explorer',
+          author: 'readable.app Explorer',
           sectionsCount: 5,
           wordCount: 1274,
           progress: 0,
@@ -381,7 +381,7 @@ export class ProgressionManager {
         {
           id: 'book_default',
           title: 'Mastering Deep Focus',
-          author: 'Lumina Explorer',
+          author: 'readable.app Explorer',
           sectionsCount: 5,
           wordCount: 1274,
           progress: 0,

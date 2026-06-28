@@ -146,7 +146,7 @@ export function parseBookText(rawText: string): ChapterNode[] {
 // ==========================================
 
 const sampleBookText = `
-LUMINA PUBLISHING HOUSE
+READABLE.APP PUBLISHING HOUSE
 All rights reserved © 2026
 
 TABLE OF CONTENTS

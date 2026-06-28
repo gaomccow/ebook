@@ -20,6 +20,7 @@ import { Home, Compass, BookOpen, Highlighter, Flame, ChevronUp, ChevronDown, He
 import { FloatingDock } from './components/ui/FloatingDock';
 import { TourProvider, useTour } from './services/TourContext';
 import { SpotlightOverlay } from './components/SpotlightOverlay';
+import { LoginView } from './components/LoginView';
 
 // Default static reading material (Deep Focus guide)
 const DEFAULT_SECTIONS: SectionNode[] = [
@@ -169,6 +170,23 @@ function AppContent() {
 
   // Synchronize view routing to match active Tour Step requirements
   const { currentStep, isTourActive, startTour } = useTour();
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('readable_auth_email') !== null;
+  });
+
+  const handleLogin = (email: string) => {
+    localStorage.setItem('readable_auth_email', email);
+    setIsAuthenticated(true);
+    setView('library');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('readable_auth_email');
+    localStorage.removeItem('readable_auth_name');
+    localStorage.removeItem('readable_auth_picture');
+    setIsAuthenticated(false);
+  };
+
   useEffect(() => {
     if (isTourActive && currentStep) {
       setIsFocusMode(false); // Force focus mode off so elements are visible
@@ -372,7 +390,7 @@ function AppContent() {
 
   // Restore Default static book
   const handleRestoreDefault = () => {
-    if (window.confirm('Clear custom uploads and return to Lumina Guide?')) {
+    if (window.confirm('Clear custom uploads and return to readable.app Guide?')) {
       handleSelectBook('book_default');
     }
   };
@@ -594,6 +612,7 @@ function AppContent() {
       language={language}
       onLanguageChange={handleLanguageChange}
       onStartTour={startTour}
+      onLogout={handleLogout}
     />
   );
 
@@ -700,6 +719,10 @@ function AppContent() {
   const hideSidebarsForTheme = (stats.currentTheme === 'gradient' || stats.currentTheme === 'glass_dark' || stats.currentTheme === 'glass_light') && view === 'reader';
   const hasLeftSidebar = isDesktop && !isFocusMode && view !== 'quiz' && view !== 'library' && !hideSidebarsForTheme;
   const dockLeftVal = hasLeftSidebar ? 'calc(50vw + 155px)' : '50vw';
+
+  if (!isAuthenticated) {
+    return <LoginView onLogin={handleLogin} language={language} />;
+  }
 
   return (
     <div className="min-h-screen">

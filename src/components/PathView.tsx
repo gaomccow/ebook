@@ -36,6 +36,7 @@ interface PathViewProps {
   language: Language;
   onLanguageChange: (lang: Language) => void;
   onStartTour?: () => void;
+  onLogout?: () => void;
 }
 
 export const PathView: React.FC<PathViewProps> = ({
@@ -56,7 +57,8 @@ export const PathView: React.FC<PathViewProps> = ({
   onBackToLibrary,
   language,
   onLanguageChange,
-  onStartTour
+  onStartTour,
+  onLogout
 }) => {
   const t = (key: string) => {
     const dict = TRANSLATIONS[language] || TRANSLATIONS['en'];
@@ -148,8 +150,8 @@ export const PathView: React.FC<PathViewProps> = ({
       <div className="flex flex-col h-full bg-[var(--bg-color)] text-[var(--text-color)] p-4 font-mono select-none overflow-y-auto no-scrollbar border-r-2 border-[var(--border-color)]">
         {/* Terminal Header */}
         <div className="shrink-0 mb-4 border-b border-[var(--border-color)]/30 pb-2 text-[11px] opacity-80">
-          <p>LUMINA TERMINAL v1.0.84</p>
-          <p>(C) LUMINA CORP. SYSTEM STACK ACTIVE.</p>
+          <p>readable.app TERMINAL v1.0.84</p>
+          <p>(C) readable.app CORP. SYSTEM STACK ACTIVE.</p>
         </div>
 
         {/* Back Button (CD ..) */}
@@ -164,9 +166,9 @@ export const PathView: React.FC<PathViewProps> = ({
 
         {/* CLI output simulating DIR command */}
         <div className="flex flex-col gap-1.5 text-xs">
-          <p className="opacity-80">C:\LUMINA\ARCHIVE&gt; dir /w</p>
+          <p className="opacity-80">C:\READABLE\ARCHIVE&gt; dir /w</p>
           <p className="text-[11px] opacity-70">Volume in drive C is ACTIVE_LIBRARY</p>
-          <p className="text-[11px] opacity-70">Directory of C:\\LUMINA\\{pathCommand}</p>
+          <p className="text-[11px] opacity-70">Directory of C:\\READABLE\\{pathCommand}</p>
           
           <div className="h-px bg-[var(--border-color)]/20 my-1" />
 
@@ -214,7 +216,7 @@ export const PathView: React.FC<PathViewProps> = ({
           </p>
           
           <div className="flex items-center gap-1.5 mt-3">
-            <span>C:\LUMINA\{pathCommand}&gt;</span>
+            <span>C:\READABLE\{pathCommand}&gt;</span>
             <span className="w-2.5 h-4 bg-[var(--text-color)] animate-pulse" />
           </div>
         </div>
@@ -248,7 +250,7 @@ export const PathView: React.FC<PathViewProps> = ({
 
   const tutorialSlides = [
     {
-      title: language === 'vi' ? 'Chào mừng đến với Lumina Reader! 📚' : 'Welcome to Lumina Reader! 📚',
+      title: language === 'vi' ? 'Chào mừng đến với readable.app! 📚' : 'Welcome to readable.app! 📚',
       subtitle: language === 'vi' 
         ? 'Rèn luyện khả năng tập trung đọc sách dài hạn thông qua lộ trình được trò chơi hóa.' 
         : 'Reclaim your focus and build reading stamina through a winding path layout.',
@@ -738,6 +740,19 @@ export const PathView: React.FC<PathViewProps> = ({
                 <HelpCircle className="w-4 h-4 text-white" />
                 {language === 'vi' ? 'Xem Hướng Dẫn Sử Dụng' : 'Show App Tutorial Guide'}
               </button>
+
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSettings(false);
+                    onLogout();
+                  }}
+                  className="w-full mt-3 py-3 bg-red-500 text-white text-xs font-black uppercase tracking-wider rounded-2xl btn-3d flex items-center justify-center gap-2 border border-red-600/20 shadow-[0_3px_0_0_#c92a2a] active:translate-y-[4px] active:border-b-0 transition-all"
+                >
+                  {language === 'vi' ? 'Đăng Xuất' : 'Sign Out / Exit'}
+                </button>
+              )}
             </motion.div>
           </div>
         )}
