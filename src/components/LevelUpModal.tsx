@@ -113,7 +113,7 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
               transition: { type: 'spring', damping: 20, stiffness: 150 }
             }}
             exit={{ scale: 0.85, y: 30, opacity: 0 }}
-            className="w-full max-w-md bg-white rounded-3xl border-4 border-duo-gray p-6 text-center shadow-[0_16px_0_0_#e5e5e5] relative overflow-hidden"
+            className="w-full max-w-md bg-[var(--card-bg)] rounded-3xl border-4 border-[var(--border-color)] p-6 text-center shadow-[0_16px_0_0_var(--border-color)] relative overflow-hidden text-[var(--text-color)]"
           >
             {/* Header Ribbon / Star */}
             <div className="flex justify-center mb-4">
@@ -121,7 +121,7 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                 initial={{ rotate: -180, scale: 0 }}
                 animate={{ rotate: 0, scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                className="w-24 h-24 bg-duo-yellow rounded-full border-4 border-white flex items-center justify-center shadow-lg"
+                className="w-24 h-24 bg-duo-yellow rounded-full border-4 border-[var(--border-color)] flex items-center justify-center shadow-lg"
               >
                 <Star className="w-12 h-12 text-white fill-white" />
               </motion.div>
@@ -140,7 +140,7 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="text-gray-500 font-bold mt-1 text-sm uppercase tracking-wider"
+              className="text-gray-400 font-bold mt-1 text-sm uppercase tracking-wider"
             >
               {isFirstTime ? "You've earned new rewards!" : "Review session completed"}
             </motion.p>
@@ -187,11 +187,11 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7 }}
-                className="bg-gray-50 rounded-xl p-3 text-left text-xs font-semibold text-gray-500 mb-6 border border-gray-200"
+                className="bg-[var(--bg-color)] rounded-xl p-3 text-left text-xs font-semibold text-[var(--text-color)]/80 mb-6 border border-[var(--border-color)]"
               >
                 <div className="flex justify-between mb-1">
                   <span>Reading Base XP:</span>
-                  <span className="font-bold text-gray-700">{baseXP} XP</span>
+                  <span className="font-bold text-[var(--text-color)]">{baseXP} XP</span>
                 </div>
                 {streakBonus > 0 && (
                   <div className="flex justify-between mb-1 text-duo-orange-dark">
@@ -201,8 +201,8 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                     <span className="font-bold">+{streakBonus} XP</span>
                   </div>
                 )}
-                <div className="h-px bg-gray-200 my-2"></div>
-                <div className="flex justify-between text-sm font-extrabold text-gray-800">
+                <div className="h-px bg-[var(--border-color)] my-2"></div>
+                <div className="flex justify-between text-sm font-extrabold text-[var(--text-color)]">
                   <span>Total XP Balance:</span>
                   <span className="text-duo-purple flex items-center gap-1">
                     <Sparkles className="w-4 h-4 fill-current" /> {newTotalXP} XP

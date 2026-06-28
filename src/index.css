@@ -182,33 +182,32 @@ body {
 [data-theme='retro'] h3 {
   color: #4ade80 !important;
 }
-[data-theme='retro'] .btn-3d {
+[data-theme='retro'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
   background-color: #0b0f0b !important;
   color: #4ade80 !important;
   border: 2px solid #166534 !important;
   box-shadow: 0 4px 0 0 #121812 !important;
 }
-[data-theme='retro'] .btn-3d::after {
+[data-theme='retro'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
   background-color: #121812 !important;
 }
-[data-theme='retro'] .btn-3d:active {
+[data-theme='retro'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
   transform: translateY(4px) !important;
 }
-
 
 /* Retro Scanline CRT Overlay - subtle and low-opacity to maintain readability */
 .retro-scanlines {
   display: var(--scanline-display);
   position: fixed;
   top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.03) 50%);
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.015) 50%);
   background-size: 100% 6px;
   z-index: 9999;
   pointer-events: none;
 }
 
-/* FROSTED GLASSMORPHISM */
-[data-theme='glass'] {
+/* FROSTED GLASSMORPHISM (DARK) */
+[data-theme='glass_dark'] {
   --bg-color: transparent;
   --text-color: #f3f4f6;
   --accent-color: #818cf8;
@@ -216,13 +215,13 @@ body {
   --border-color: rgba(255, 255, 255, 0.08);
   --font-main: 'Outfit', sans-serif;
 }
-[data-theme='glass'] body {
+[data-theme='glass_dark'] body {
   background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
               radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
               #030712;
   background-attachment: fixed;
 }
-[data-theme='glass'] .btn-3d {
+[data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
   background: rgba(255, 255, 255, 0.06) !important;
   color: #f3f4f6 !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -230,13 +229,46 @@ body {
   box-shadow: none !important;
   transition: all 0.2s ease !important;
 }
-[data-theme='glass'] .btn-3d::after {
+[data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
   display: none !important;
 }
-[data-theme='glass'] .btn-3d:hover {
+[data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):hover {
   background: rgba(255, 255, 255, 0.12) !important;
 }
-[data-theme='glass'] .btn-3d:active {
+[data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
+  transform: scale(0.97) !important;
+}
+
+/* FROSTED GLASSMORPHISM (LIGHT) */
+[data-theme='glass_light'] {
+  --bg-color: transparent;
+  --text-color: #1e293b;
+  --accent-color: #6366f1;
+  --card-bg: rgba(255, 255, 255, 0.55);
+  --border-color: rgba(0, 0, 0, 0.06);
+  --font-main: 'Outfit', sans-serif;
+}
+[data-theme='glass_light'] body {
+  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.08) 0px, transparent 50%),
+              #f8fafc;
+  background-attachment: fixed;
+}
+[data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #1e293b !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+[data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
+  display: none !important;
+}
+[data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
   transform: scale(0.97) !important;
 }
 
@@ -255,7 +287,7 @@ body {
   animation: shift-gradient 80s ease infinite;
   background-attachment: fixed;
 }
-[data-theme='gradient'] .btn-3d {
+[data-theme='gradient'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
   background: rgba(255, 255, 255, 0.08) !important;
   color: white !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -263,13 +295,13 @@ body {
   box-shadow: none !important;
   transition: all 0.2s ease !important;
 }
-[data-theme='gradient'] .btn-3d::after {
+[data-theme='gradient'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
   display: none !important;
 }
-[data-theme='gradient'] .btn-3d:hover {
+[data-theme='gradient'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):hover {
   background: rgba(255, 255, 255, 0.15) !important;
 }
-[data-theme='gradient'] .btn-3d:active {
+[data-theme='gradient'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
   transform: scale(0.97) !important;
 }
 
@@ -295,7 +327,7 @@ body {
 [data-theme='tactical'] .accent-text {
   color: #4fd1c5 !important;
 }
-[data-theme='tactical'] .btn-3d {
+[data-theme='tactical'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
   background-color: #111a30 !important;
   color: #4fd1c5 !important;
   border: 1.5px solid #2b3a5c !important;
@@ -304,10 +336,10 @@ body {
   text-transform: uppercase !important;
   letter-spacing: 1px !important;
 }
-[data-theme='tactical'] .btn-3d::after {
+[data-theme='tactical'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
   display: none !important;
 }
-[data-theme='tactical'] .btn-3d:active {
+[data-theme='tactical'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
   box-shadow: none !important;
   transform: translateY(2px) !important;
 }
@@ -337,16 +369,16 @@ body {
 [data-theme='dark'] body {
   background-color: #0b0f19;
 }
-[data-theme='dark'] .btn-3d {
+[data-theme='dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
   background-color: #1f2937 !important;
   color: #f1f5f9 !important;
   border: 2px solid #374151 !important;
   box-shadow: 0 4px 0 0 #111827 !important;
 }
-[data-theme='dark'] .btn-3d::after {
+[data-theme='dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
   background-color: #111827 !important;
 }
-[data-theme='dark'] .btn-3d:active {
+[data-theme='dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
   transform: translateY(4px) !important;
 }
 
@@ -363,16 +395,16 @@ body {
   background-image: radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.03) 0px, transparent 50%),
                     radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.03) 0px, transparent 50%);
 }
-[data-theme='midnight'] .btn-3d {
+[data-theme='midnight'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
   background-color: #0d1117 !important;
   color: #38bdf8 !important;
   border: 2px solid #1f2937 !important;
   box-shadow: 0 4px 0 0 #06080c !important;
 }
-[data-theme='midnight'] .btn-3d::after {
+[data-theme='midnight'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
   background-color: #06080c !important;
 }
-[data-theme='midnight'] .btn-3d:active {
+[data-theme='midnight'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
   transform: translateY(4px) !important;
 }
 

@@ -757,7 +757,7 @@ function App() {
   const currentLevel = Math.floor(stats.xp / 100) + 1;
   const xpIntoCurrentLevel = stats.xp % 100;
 
-  const hideSidebarsForTheme = (stats.currentTheme === 'gradient' || stats.currentTheme === 'glass') && view === 'reader';
+  const hideSidebarsForTheme = (stats.currentTheme === 'gradient' || stats.currentTheme === 'glass_dark' || stats.currentTheme === 'glass_light') && view === 'reader';
   const hasLeftSidebar = isDesktop && !isFocusMode && view !== 'quiz' && view !== 'library' && !hideSidebarsForTheme;
   const dockLeftVal = hasLeftSidebar ? 'calc(50vw + 155px)' : '50vw';
 
