@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, Check } from 'lucide-react';
 import { auth as firebaseAuth } from '../services/firebase';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential, signInAnonymously } from 'firebase/auth';
 
 interface LoginViewProps {
   onLogin: (email: string) => void;
@@ -68,9 +68,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, language }) => {
   const [clientId, setClientId] = useState(getActiveClientId);
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim().length > 0) {
+      try {
+        await signInAnonymously(firebaseAuth);
+      } catch (err) {
+        console.error('Anonymous Firebase login failed:', err);
+      }
       onLogin(email);
     }
   };
