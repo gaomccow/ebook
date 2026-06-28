@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { storage as firebaseStorage } from './services/firebase';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { db } from './services/firebase';
+import { doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 
 interface BookPayload {
   bookId: string;
@@ -185,6 +185,36 @@ function AppContent() {
     return localStorage.getItem('readable_auth_email') !== null;
   });
 
+  const uploadBookToFirestore = async (email: string, payload: BookPayload) => {
+    try {
+      // 1. Upload book metadata
+      await setDoc(doc(db, 'users', email, 'books', payload.bookId), {
+        bookId: payload.bookId,
+        title: payload.title,
+        author: payload.author,
+        sections: payload.sections
+      });
+
+      // 2. Upload chapters
+      const chapPromises = Object.entries(payload.contents).map(([chId, content]) => {
+        return setDoc(doc(db, 'users', email, 'books', payload.bookId, 'chapters', chId), { content });
+      });
+
+      // 3. Upload images (filtering out overly large files to remain safe)
+      const imgPromises = Object.entries(payload.images).map(([imgId, base64]) => {
+        if (base64 && base64.length < 800000) {
+          return setDoc(doc(db, 'users', email, 'books', payload.bookId, 'images', imgId), { base64 });
+        }
+        return Promise.resolve();
+      });
+
+      await Promise.all([...chapPromises, ...imgPromises]);
+      console.log(`Cloud Backup: Successfully stored "${payload.title}" in Firestore!`);
+    } catch (err) {
+      console.error(`Cloud Backup failed for book ${payload.bookId}:`, err);
+    }
+  };
+
   const syncMissingBooks = async (email: string) => {
     try {
       const libraryBooks = progressionManager.getLibrary();
@@ -192,26 +222,39 @@ function AppContent() {
         const bookId = book.id;
         const localSections = localStorage.getItem(`epub_sections_${bookId}`);
         if (!localSections) {
-          console.log(`Sync: Book "${book.title}" (${bookId}) is missing locally. Downloading...`);
+          console.log(`Sync: Book "${book.title}" (${bookId}) is missing locally. Downloading from Firestore...`);
           try {
-            const fileRef = ref(firebaseStorage, `users/${email}/books/${bookId}.json`);
-            const url = await getDownloadURL(fileRef);
-            const res = await fetch(url);
-            const payload = await res.json() as BookPayload;
+            const bookSnap = await getDoc(doc(db, 'users', email, 'books', bookId));
+            if (bookSnap.exists()) {
+              const bookData = bookSnap.data();
+              const sections = bookData.sections || [];
 
-            if (payload && payload.sections && payload.contents) {
+              // Fetch chapters from Firestore collection
+              const chaptersSnap = await getDocs(collection(db, 'users', email, 'books', bookId, 'chapters'));
+              const contents: Record<string, string> = {};
+              chaptersSnap.forEach((docSnap) => {
+                contents[docSnap.id] = docSnap.data().content || '';
+              });
+
+              // Fetch images from Firestore collection
+              const imagesSnap = await getDocs(collection(db, 'users', email, 'books', bookId, 'images'));
+              const images: Record<string, string> = {};
+              imagesSnap.forEach((docSnap) => {
+                images[docSnap.id] = docSnap.data().base64 || '';
+              });
+
               // Restore locally
-              localStorage.setItem(`epub_sections_${bookId}`, JSON.stringify(payload.sections));
-              await IDBStorage.setItem(`epub_content_${bookId}`, payload.contents);
-              await IDBStorage.setItem(`epub_images_${bookId}`, payload.images || {});
+              localStorage.setItem(`epub_sections_${bookId}`, JSON.stringify(sections));
+              await IDBStorage.setItem(`epub_content_${bookId}`, contents);
+              await IDBStorage.setItem(`epub_images_${bookId}`, images);
 
-              console.log(`Sync: Successfully restored book: "${payload.title}"`);
+              console.log(`Sync: Successfully restored book: "${bookData.title}"`);
 
               // Force reload state if current active book is the one we downloaded
               const currentActiveTitle = localStorage.getItem('gamified_reader_book_title');
-              if (currentActiveTitle === payload.title) {
-                setSections(payload.sections);
-                setActiveImages(payload.images || {});
+              if (currentActiveTitle === bookData.title) {
+                setSections(sections);
+                setActiveImages(images);
               }
             }
           } catch (dlErr) {
@@ -224,6 +267,37 @@ function AppContent() {
     }
   };
 
+  const migrateLocalBooksToCloud = async (email: string) => {
+    try {
+      const libraryBooks = progressionManager.getLibrary();
+      for (const book of libraryBooks) {
+        const bookId = book.id;
+        const localSections = localStorage.getItem(`epub_sections_${bookId}`);
+        if (localSections) {
+          try {
+            const contents = await IDBStorage.getItem<Record<string, string>>(`epub_content_${bookId}`);
+            const images = await IDBStorage.getItem<Record<string, string>>(`epub_images_${bookId}`) || {};
+            if (contents) {
+              const payload: BookPayload = {
+                bookId,
+                title: book.title,
+                author: book.author,
+                sections: JSON.parse(localSections),
+                contents,
+                images
+              };
+              await uploadBookToFirestore(email, payload);
+            }
+          } catch (migErr) {
+            console.error(`Migration: Failed to upload local book ${bookId}:`, migErr);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Migration: Error checking local books:', err);
+    }
+  };
+
   const syncState = () => {
     setStats(progressionManager.getStats());
     setLibrary(progressionManager.getLibrary() as BookItem[]);
@@ -231,6 +305,7 @@ function AppContent() {
     const email = localStorage.getItem('readable_auth_email');
     if (email) {
       syncMissingBooks(email);
+      migrateLocalBooksToCloud(email);
     }
   };
 
@@ -433,21 +508,22 @@ function AppContent() {
         parsedBook.chapters.reduce((acc, c) => acc + c.wordCount, 0)
       );
 
-      // Upload parsed payload to Firebase Storage if authenticated
+      // Upload parsed payload to Firestore if authenticated
       const email = localStorage.getItem('readable_auth_email');
       if (email) {
-        const payload: BookPayload = {
-          bookId,
-          title: parsedBook.title,
-          author: parsedBook.author,
-          sections: mappedSections,
-          contents: mappedContents,
-          images: imageMap
-        };
-        const fileRef = ref(firebaseStorage, `users/${email}/books/${bookId}.json`);
-        uploadString(fileRef, JSON.stringify(payload)).catch(uploadErr => {
-          console.error('Failed to backup book payload to Firebase Storage:', uploadErr);
-        });
+        try {
+          const payload: BookPayload = {
+            bookId,
+            title: parsedBook.title,
+            author: parsedBook.author,
+            sections: mappedSections,
+            contents: mappedContents,
+            images: imageMap
+          };
+          uploadBookToFirestore(email, payload);
+        } catch (fbErr) {
+          console.error('Firestore backup initialization failed:', fbErr);
+        }
       }
 
       // Load book details directly
