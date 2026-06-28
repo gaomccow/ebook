@@ -838,6 +838,10 @@ function AppContent() {
     />
   );
 
+  const authEmail = localStorage.getItem('readable_auth_email');
+  const authName = localStorage.getItem('readable_auth_name') || 'readable.app User';
+  const authPicture = localStorage.getItem('readable_auth_picture') || null;
+
   const dockItems = [
     {
       title: language === 'vi' ? 'Thư viện' : 'Library',
@@ -867,8 +871,16 @@ function AppContent() {
       active: showHighlightsSidebar
     },
     {
-      title: language === 'vi' ? 'Học lực' : 'XP Stats',
-      icon: <Flame className="w-full h-full text-duo-orange fill-duo-orange" />,
+      title: authPicture ? (language === 'vi' ? 'Hồ sơ' : 'Profile') : (language === 'vi' ? 'Học lực' : 'XP Stats'),
+      icon: authPicture ? (
+        <img 
+          src={authPicture} 
+          alt="Profile" 
+          className="w-7 h-7 rounded-full border border-duo-orange object-cover shadow-sm mx-auto shrink-0"
+        />
+      ) : (
+        <Flame className="w-full h-full text-duo-orange fill-duo-orange" />
+      ),
       onClick: () => setShowStatsModal(true),
       active: showStatsModal
     },
@@ -969,6 +981,36 @@ function AppContent() {
               <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-6">
                 {language === 'vi' ? 'Thống kê hoạt động học tập' : 'Personal Progression Matrix'}
               </p>
+
+              {/* Logged in User Profile account card */}
+              {authEmail && (
+                <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 mb-6 text-left">
+                  {authPicture ? (
+                    <img 
+                      src={authPicture} 
+                      alt={authName}
+                      className="w-10 h-10 rounded-xl border border-duo-purple object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-duo-purple text-white font-black text-sm rounded-xl flex items-center justify-center shrink-0">
+                      L{currentLevel}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black truncate">{authName}</p>
+                    <p className="text-[9px] text-gray-400 font-bold truncate leading-none mt-0.5">{authEmail}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowStatsModal(false);
+                      handleLogout();
+                    }}
+                    className="px-2.5 py-1.5 bg-red-100 dark:bg-red-950/40 hover:bg-red-200 text-red-600 dark:text-red-400 font-black text-[9px] uppercase tracking-wider rounded-xl transition-all shrink-0 cursor-pointer"
+                  >
+                    {language === 'vi' ? 'Đăng xuất' : 'Logout'}
+                  </button>
+                </div>
+              )}
 
               {/* Stats grid */}
               <div className="grid grid-cols-2 gap-4 mb-6">
