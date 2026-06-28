@@ -475,7 +475,12 @@ function AppContent() {
     try {
       const parsedBook = await EpubParser.parse(file);
       
-      const bookId = `book_${Date.now()}`;
+      const existingBooks = progressionManager.getLibrary();
+      const duplicateBook = existingBooks.find(b => 
+        b.title.toLowerCase() === parsedBook.title.toLowerCase() &&
+        (b.author || '').toLowerCase() === (parsedBook.author || '').toLowerCase()
+      );
+      const bookId = duplicateBook ? duplicateBook.id : `book_${Date.now()}`;
       
       const mappedSections: SectionNode[] = parsedBook.chapters.map(ch => ({
         id: `${bookId}_${ch.id}`,
