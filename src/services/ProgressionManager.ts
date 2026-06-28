@@ -133,11 +133,32 @@ export class ProgressionManager {
       const userDocRef = doc(db, 'users', email);
       const snap = await getDoc(userDocRef);
       if (snap.exists()) {
-        const cloudState = snap.data() as UnifiedState;
+        const cloudState = snap.data() as any;
+        
+        // Auto-heal malformed/flat library fields in the cloud database
+        if (cloudState) {
+          if (!cloudState.library) {
+            // Check if library items were written as root-level numeric fields (e.g. "0", "1")
+            const numericKeys = Object.keys(cloudState).filter(k => !isNaN(Number(k)));
+            if (numericKeys.length > 0) {
+              cloudState.library = numericKeys
+                .sort((a, b) => Number(a) - Number(b))
+                .map(k => cloudState[k] as BookArchiveItem);
+            } else {
+              cloudState.library = [];
+            }
+          } else if (!Array.isArray(cloudState.library)) {
+            // Convert map index shape to array
+            cloudState.library = Object.entries(cloudState.library)
+              .sort((a, b) => Number(a[0]) - Number(b[0]))
+              .map(entry => entry[1] as BookArchiveItem);
+          }
+        }
+
         if (cloudState && cloudState.user && cloudState.library) {
           // Merge libraries: take union of all book catalog items
           const mergedLibrary = [...this.state.library];
-          cloudState.library.forEach(cloudBook => {
+          cloudState.library.forEach((cloudBook: BookArchiveItem) => {
             const localIdx = mergedLibrary.findIndex(b => b.id === cloudBook.id);
             if (localIdx === -1) {
               mergedLibrary.push(cloudBook);
