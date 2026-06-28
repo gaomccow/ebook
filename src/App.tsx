@@ -174,10 +174,16 @@ function AppContent() {
     return localStorage.getItem('readable_auth_email') !== null;
   });
 
+  const syncState = () => {
+    setStats(progressionManager.getStats());
+    setLibrary(progressionManager.getLibrary() as BookItem[]);
+  };
+
   const handleLogin = (email: string) => {
     localStorage.setItem('readable_auth_email', email);
     setIsAuthenticated(true);
     setView('library');
+    progressionManager.syncFromFirebase(email, syncState);
   };
 
   const handleLogout = () => {
@@ -186,6 +192,14 @@ function AppContent() {
     localStorage.removeItem('readable_auth_picture');
     setIsAuthenticated(false);
   };
+
+  // Sync state on app load if already authenticated
+  useEffect(() => {
+    const email = localStorage.getItem('readable_auth_email');
+    if (email) {
+      progressionManager.syncFromFirebase(email, syncState);
+    }
+  }, []);
 
   useEffect(() => {
     if (isTourActive && currentStep) {

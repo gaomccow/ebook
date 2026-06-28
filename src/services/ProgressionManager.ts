@@ -1,3 +1,6 @@
+import { db } from './firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
 export interface BookArchiveItem {
   id: string;
   title: string;
@@ -111,8 +114,59 @@ export class ProgressionManager {
   public saveState(): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+
+      // Sync asynchronously to Firestore if user email is logged in
+      const email = localStorage.getItem('readable_auth_email');
+      if (email) {
+        const userDocRef = doc(db, 'users', email);
+        setDoc(userDocRef, this.state).catch((err) => {
+          console.error('Failed to save state to Firestore:', err);
+        });
+      }
     } catch (e) {
       console.error('Failed to save unified reader state', e);
+    }
+  }
+
+  /**
+   * Sync data from Cloud Firestore to local client.
+   */
+  public async syncFromFirebase(email: string, onUpdate: () => void): Promise<void> {
+    try {
+      const userDocRef = doc(db, 'users', email);
+      const snap = await getDoc(userDocRef);
+      if (snap.exists()) {
+        const cloudState = snap.data() as UnifiedState;
+        if (cloudState && cloudState.user && cloudState.library) {
+          const localXP = this.state.user.xp;
+          const cloudXP = cloudState.user.xp;
+
+          // Merge: resolve highest XP score or progress
+          if (cloudXP > localXP) {
+            this.state = {
+              user: { 
+                ...this.state.user, 
+                ...cloudState.user,
+                // keep themes and fonts locally configurable/selected
+                currentTheme: this.state.user.currentTheme || cloudState.user.currentTheme,
+                currentFont: this.state.user.currentFont || cloudState.user.currentFont
+              },
+              library: cloudState.library
+            };
+            // Update local storage representation
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+          } else {
+            // If local stats are ahead or equal, push local state to Cloud
+            await setDoc(userDocRef, this.state);
+          }
+        }
+      } else {
+        // Create initial cloud backup
+        await setDoc(userDocRef, this.state);
+      }
+      onUpdate();
+    } catch (err) {
+      console.error('Failed to sync from Firebase:', err);
     }
   }
 

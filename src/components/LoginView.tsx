@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, Check } from 'lucide-react';
+import { auth as firebaseAuth } from '../services/firebase';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 
 interface LoginViewProps {
   onLogin: (email: string) => void;
@@ -99,20 +101,36 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, language }) => {
         callback: async (response: any) => {
           if (response && response.access_token) {
             try {
-              const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${response.access_token}` },
-              });
-              const info = await res.json();
-              if (info && info.email) {
-                localStorage.setItem('readable_auth_name', info.name || '');
-                localStorage.setItem('readable_auth_picture', info.picture || '');
-                onLogin(info.email);
+              // Authenticate with Firebase using Google Access Token
+              const credential = GoogleAuthProvider.credential(null, response.access_token);
+              const userCredential = await signInWithCredential(firebaseAuth, credential);
+              const user = userCredential.user;
+
+              if (user && user.email) {
+                localStorage.setItem('readable_auth_name', user.displayName || '');
+                localStorage.setItem('readable_auth_picture', user.photoURL || '');
+                onLogin(user.email);
               } else {
                 onLogin('google-user@readable.app');
               }
             } catch (err) {
-              console.error('Fetch profile details failed:', err);
-              onLogin('google-user@readable.app');
+              console.error('Firebase Google Auth failed, trying profile fetch fallback:', err);
+              try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${response.access_token}` },
+                });
+                const info = await res.json();
+                if (info && info.email) {
+                  localStorage.setItem('readable_auth_name', info.name || '');
+                  localStorage.setItem('readable_auth_picture', info.picture || '');
+                  onLogin(info.email);
+                } else {
+                  onLogin('google-user@readable.app');
+                }
+              } catch (fallbackErr) {
+                console.error('Fetch profile details fallback failed:', fallbackErr);
+                onLogin('google-user@readable.app');
+              }
             }
           }
         },
