@@ -1,5 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { storage as firebaseStorage } from './services/firebase';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+
+interface BookPayload {
+  bookId: string;
+  title: string;
+  author: string;
+  sections: any[];
+  contents: Record<string, string>;
+  images: Record<string, string>;
+}
 import { PathView } from './components/PathView';
 import type { SectionNode } from './components/PathView';
 import { ReaderView } from './components/ReaderView';
@@ -174,9 +185,53 @@ function AppContent() {
     return localStorage.getItem('readable_auth_email') !== null;
   });
 
+  const syncMissingBooks = async (email: string) => {
+    try {
+      const libraryBooks = progressionManager.getLibrary();
+      for (const book of libraryBooks) {
+        const bookId = book.id;
+        const localSections = localStorage.getItem(`epub_sections_${bookId}`);
+        if (!localSections) {
+          console.log(`Sync: Book "${book.title}" (${bookId}) is missing locally. Downloading...`);
+          try {
+            const fileRef = ref(firebaseStorage, `users/${email}/books/${bookId}.json`);
+            const url = await getDownloadURL(fileRef);
+            const res = await fetch(url);
+            const payload = await res.json() as BookPayload;
+
+            if (payload && payload.sections && payload.contents) {
+              // Restore locally
+              localStorage.setItem(`epub_sections_${bookId}`, JSON.stringify(payload.sections));
+              await IDBStorage.setItem(`epub_content_${bookId}`, payload.contents);
+              await IDBStorage.setItem(`epub_images_${bookId}`, payload.images || {});
+
+              console.log(`Sync: Successfully restored book: "${payload.title}"`);
+
+              // Force reload state if current active book is the one we downloaded
+              const currentActiveTitle = localStorage.getItem('gamified_reader_book_title');
+              if (currentActiveTitle === payload.title) {
+                setSections(payload.sections);
+                setActiveImages(payload.images || {});
+              }
+            }
+          } catch (dlErr) {
+            console.error(`Sync: Failed to download book payload for ${bookId}:`, dlErr);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Sync: Error checking missing books:', err);
+    }
+  };
+
   const syncState = () => {
     setStats(progressionManager.getStats());
     setLibrary(progressionManager.getLibrary() as BookItem[]);
+
+    const email = localStorage.getItem('readable_auth_email');
+    if (email) {
+      syncMissingBooks(email);
+    }
   };
 
   const handleLogin = (email: string) => {
@@ -377,6 +432,23 @@ function AppContent() {
         mappedSections.length,
         parsedBook.chapters.reduce((acc, c) => acc + c.wordCount, 0)
       );
+
+      // Upload parsed payload to Firebase Storage if authenticated
+      const email = localStorage.getItem('readable_auth_email');
+      if (email) {
+        const payload: BookPayload = {
+          bookId,
+          title: parsedBook.title,
+          author: parsedBook.author,
+          sections: mappedSections,
+          contents: mappedContents,
+          images: imageMap
+        };
+        const fileRef = ref(firebaseStorage, `users/${email}/books/${bookId}.json`);
+        uploadString(fileRef, JSON.stringify(payload)).catch(uploadErr => {
+          console.error('Failed to backup book payload to Firebase Storage:', uploadErr);
+        });
+      }
 
       // Load book details directly
       setActiveBookId(bookId);
