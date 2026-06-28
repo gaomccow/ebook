@@ -52,10 +52,18 @@ const TopographicBackground: React.FC = () => (
 
 const DEFAULT_GOOGLE_CLIENT_ID = '394432842247-sei6s8ettqcmq012o65d5nhrn7k3371.apps.googleusercontent.com';
 
+const getActiveClientId = () => {
+  const stored = localStorage.getItem('readable_google_client_id');
+  if (stored && stored.includes('.apps.googleusercontent.com') && stored.trim().length > 30) {
+    return stored.trim();
+  }
+  return DEFAULT_GOOGLE_CLIENT_ID;
+};
+
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin, language }) => {
   const [email, setEmail] = useState('');
   const [showConfig, setShowConfig] = useState(false);
-  const [clientId, setClientId] = useState(() => localStorage.getItem('readable_google_client_id') || DEFAULT_GOOGLE_CLIENT_ID);
+  const [clientId, setClientId] = useState(getActiveClientId);
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -75,7 +83,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, language }) => {
   };
 
   const handleGoogleLogin = () => {
-    const activeClientId = localStorage.getItem('readable_google_client_id') || DEFAULT_GOOGLE_CLIENT_ID;
+    const activeClientId = getActiveClientId();
 
     if (typeof window === 'undefined' || !(window as any).google) {
       alert(language === 'vi'
