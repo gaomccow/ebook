@@ -795,9 +795,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         <div className={`
           max-w-2xl mx-auto w-full p-6 md:p-10 shadow-sm border-4 border-[var(--border-color)]
           ${currentTheme === 'gradient' || currentTheme === 'glass_dark'
-            ? 'bg-black/35 backdrop-blur-lg text-white border-white/10'
+            ? 'bg-black/5 backdrop-blur-3xl text-white border-white/5'
             : currentTheme === 'glass_light'
-            ? 'bg-white/35 backdrop-blur-lg text-slate-800 border-white/40 shadow-lg'
+            ? 'bg-white/5 backdrop-blur-3xl text-slate-800 border-white/10 shadow-lg'
             : 'bg-[var(--card-bg)]'
           }
           ${currentTheme === 'retro' ? 'border-2 border-dashed' : 'rounded-3xl'}

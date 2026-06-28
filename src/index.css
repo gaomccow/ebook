@@ -211,21 +211,21 @@ body {
   --bg-color: transparent;
   --text-color: #f3f4f6;
   --accent-color: #818cf8;
-  --card-bg: rgba(17, 24, 39, 0.45);
-  --border-color: rgba(255, 255, 255, 0.08);
+  --card-bg: rgba(17, 24, 39, 0.06);
+  --border-color: rgba(255, 255, 255, 0.06);
   --font-main: 'Outfit', sans-serif;
 }
 [data-theme='glass_dark'] body {
-  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.16) 0px, transparent 50%),
+              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.16) 0px, transparent 50%),
               #030712;
   background-attachment: fixed;
 }
 [data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   color: #f3f4f6 !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
   box-shadow: none !important;
   transition: all 0.2s ease !important;
 }
@@ -233,7 +233,7 @@ body {
   display: none !important;
 }
 [data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):hover {
-  background: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 [data-theme='glass_dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
   transform: scale(0.97) !important;
@@ -244,21 +244,21 @@ body {
   --bg-color: transparent;
   --text-color: #1e293b;
   --accent-color: #6366f1;
-  --card-bg: rgba(255, 255, 255, 0.55);
-  --border-color: rgba(0, 0, 0, 0.06);
+  --card-bg: rgba(255, 255, 255, 0.06);
+  --border-color: rgba(0, 0, 0, 0.04);
   --font-main: 'Outfit', sans-serif;
 }
 [data-theme='glass_light'] body {
-  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.08) 0px, transparent 50%),
+  background: radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+              radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
               #f8fafc;
   background-attachment: fixed;
 }
 [data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
-  background: rgba(0, 0, 0, 0.04) !important;
+  background: rgba(0, 0, 0, 0.02) !important;
   color: #1e293b !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
   box-shadow: none !important;
   transition: all 0.2s ease !important;
 }
@@ -266,10 +266,19 @@ body {
   display: none !important;
 }
 [data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):hover {
-  background: rgba(0, 0, 0, 0.08) !important;
+  background: rgba(0, 0, 0, 0.06) !important;
 }
 [data-theme='glass_light'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
   transform: scale(0.97) !important;
+}
+
+/* Distort anything underneath class elements */
+[data-theme='glass_dark'] [class*="bg-[var(--card-bg)]"],
+[data-theme='glass_light'] [class*="bg-[var(--card-bg)]"],
+[data-theme='glass_dark'] .backdrop-blur-lg,
+[data-theme='glass_light'] .backdrop-blur-lg {
+  backdrop-filter: blur(32px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(180%) !important;
 }
 
 /* ATMOSPHERIC GRADIENT (Abstract Mesh) */
