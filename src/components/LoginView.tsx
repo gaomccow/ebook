@@ -52,7 +52,7 @@ const TopographicBackground: React.FC = () => (
   </div>
 );
 
-const DEFAULT_GOOGLE_CLIENT_ID = '394432842247-sei6s8ettqcmq012o65d5nhrn7k3371.apps.googleusercontent.com';
+const DEFAULT_GOOGLE_CLIENT_ID = '402229559463-t12fua9d7iqcmtf128u9ivknshr6og3e.apps.googleusercontent.com';
 
 const getActiveClientId = () => {
   const stored = localStorage.getItem('readable_google_client_id');
