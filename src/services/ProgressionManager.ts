@@ -128,9 +128,6 @@ export class ProgressionManager {
     }
   }
 
-  /**
-   * Sync data from Cloud Firestore to local client.
-   */
   public async syncFromFirebase(email: string, onUpdate: () => void): Promise<void> {
     try {
       const userDocRef = doc(db, 'users', email);
@@ -138,27 +135,62 @@ export class ProgressionManager {
       if (snap.exists()) {
         const cloudState = snap.data() as UnifiedState;
         if (cloudState && cloudState.user && cloudState.library) {
-          const localXP = this.state.user.xp;
-          const cloudXP = cloudState.user.xp;
+          // Merge libraries: take union of all book catalog items
+          const mergedLibrary = [...this.state.library];
+          cloudState.library.forEach(cloudBook => {
+            const localIdx = mergedLibrary.findIndex(b => b.id === cloudBook.id);
+            if (localIdx === -1) {
+              mergedLibrary.push(cloudBook);
+            } else {
+              // Take the higher reading progress
+              if (cloudBook.progress > mergedLibrary[localIdx].progress) {
+                mergedLibrary[localIdx] = cloudBook;
+              }
+            }
+          });
 
-          // Merge: resolve highest XP score or progress
-          if (cloudXP > localXP) {
-            this.state = {
-              user: { 
-                ...this.state.user, 
-                ...cloudState.user,
-                // keep themes and fonts locally configurable/selected
-                currentTheme: this.state.user.currentTheme || cloudState.user.currentTheme,
-                currentFont: this.state.user.currentFont || cloudState.user.currentFont
-              },
-              library: cloudState.library
-            };
-            // Update local storage representation
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
-          } else {
-            // If local stats are ahead or equal, push local state to Cloud
-            await setDoc(userDocRef, this.state);
-          }
+          // Merge completed sections: take unique union
+          const mergedCompleted = Array.from(new Set([
+            ...(this.state.user.completedSections || []),
+            ...(cloudState.user.completedSections || [])
+          ]));
+
+          // Resolve maximum stats
+          const mergedXP = Math.max(this.state.user.xp, cloudState.user.xp);
+          const mergedLevel = Math.max(this.state.user.level, cloudState.user.level);
+          const mergedStreak = Math.max(this.state.user.streak, cloudState.user.streak);
+
+          this.state = {
+            user: {
+              ...this.state.user,
+              xp: mergedXP,
+              level: mergedLevel,
+              streak: mergedStreak,
+              completedSections: mergedCompleted,
+              unlockedThemes: Array.from(new Set([
+                ...(this.state.user.unlockedThemes || []),
+                ...(cloudState.user.unlockedThemes || [])
+              ])),
+              unlockedFeatures: Array.from(new Set([
+                ...(this.state.user.unlockedFeatures || []),
+                ...(cloudState.user.unlockedFeatures || [])
+              ])),
+              unlockedFonts: Array.from(new Set([
+                ...(this.state.user.unlockedFonts || []),
+                ...(cloudState.user.unlockedFonts || [])
+              ])),
+              currentTheme: this.state.user.currentTheme || cloudState.user.currentTheme,
+              currentFont: this.state.user.currentFont || cloudState.user.currentFont,
+              lastReadDate: this.state.user.lastReadDate || cloudState.user.lastReadDate
+            },
+            library: mergedLibrary
+          };
+
+          // Save merged state locally
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+
+          // Save merged state back to Firestore
+          await setDoc(userDocRef, this.state);
         }
       } else {
         // Create initial cloud backup
