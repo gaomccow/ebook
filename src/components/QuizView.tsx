@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle, AlertTriangle, HelpCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertTriangle, HelpCircle, Loader2, X, BookOpen } from 'lucide-react';
 import { GeminiClient } from '../services/GeminiClient';
 import type { QuizData, QuizQuestion } from '../services/GeminiClient';
 
@@ -12,6 +12,7 @@ interface QuizViewProps {
   sectionContent: string;
   onBack: () => void;
   onSuccess: () => void;
+  isDesktop: boolean;
 }
 
 export const QuizView: React.FC<QuizViewProps> = ({
@@ -21,8 +22,10 @@ export const QuizView: React.FC<QuizViewProps> = ({
   sectionTitle,
   sectionContent,
   onBack,
-  onSuccess
+  onSuccess,
+  isDesktop
 }) => {
+  const [showPassage, setShowPassage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quizData, setQuizData] = useState<QuizData | null>(null);
@@ -187,8 +190,10 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const progressPercent = ((currentQuestionIndex) / totalQuestions) * 100;
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--bg-color)] text-[var(--text-color)] max-w-lg mx-auto w-full relative overflow-hidden">
-      {/* Header with back button and stepper bar */}
+    <div className={`flex flex-col h-screen bg-[var(--bg-color)] text-[var(--text-color)] transition-all duration-300 w-full relative overflow-hidden
+      ${showPassage ? 'max-w-5xl' : 'max-w-lg'} mx-auto
+    `}>
+      {/* Header with back button, stepper bar and view passage button */}
       <header className="px-4 py-4 border-b-4 border-[var(--border-color)] flex items-center gap-4 shrink-0">
         <button 
           onClick={onBack}
@@ -212,141 +217,207 @@ export const QuizView: React.FC<QuizViewProps> = ({
             {currentQuestionIndex + 1} / {totalQuestions}
           </span>
         </div>
+
+        {/* Toggle Reading Passage Button */}
+        <button
+          onClick={() => setShowPassage(prev => !prev)}
+          className={`px-3 py-1.5 rounded-xl border-2 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shrink-0 btn-3d
+            ${showPassage 
+              ? 'bg-duo-purple border-duo-purple-dark text-white shadow-[0_3px_0_0_#8c25e0]'
+              : 'bg-white dark:bg-slate-800 border-[var(--border-color)] text-gray-500 dark:text-gray-300 shadow-[0_3px_0_0_var(--border-color)]'
+            }
+          `}
+          title="Toggle reading passage sidebar"
+        >
+          <BookOpen className="w-4 h-4 shrink-0" />
+          <span className="hidden sm:inline">
+            {showPassage ? 'Hide Passage' : 'View Passage'}
+          </span>
+        </button>
       </header>
 
-      {/* Question Content */}
-      <main className="flex-1 overflow-y-auto px-6 py-6 pb-40">
-        {/* Animated Question bubble */}
-        <div className="flex items-start gap-3 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-duo-blue flex items-center justify-center text-white shrink-0 shadow-md">
-            <HelpCircle className="w-6 h-6" />
-          </div>
-          <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] rounded-2xl rounded-tl-none p-4 shadow-sm relative text-[var(--text-color)]">
-            <h3 className="text-lg font-black text-[var(--text-color)] leading-snug">
-              {currentQuestion.question}
-            </h3>
-          </div>
-        </div>
-
-        {/* Option Cards */}
-        <div className="flex flex-col gap-4">
-          {currentQuestion.options.map((option, idx) => {
-            const isSelected = selectedOptionIndex === idx;
-            let cardStyle = 'border-2 border-[var(--border-color)] bg-[var(--card-bg)] shadow-[0_4px_0_0_var(--border-color)] text-[var(--text-color)]';
-
-            if (isSelected) {
-              cardStyle = 'border-2 border-duo-blue bg-duo-blue/5 text-duo-blue-dark font-bold shadow-[0_4px_0_0_#1899d6] translate-y-0.5';
-            }
-
-            if (isAnswered) {
-              const isCorrectAnswer = idx === currentQuestion.correctAnswerIndex;
-              if (isCorrectAnswer) {
-                cardStyle = 'border-2 border-duo-green bg-duo-green/5 text-duo-green-dark font-extrabold shadow-[0_4px_0_0_#46a302] translate-y-0.5';
-              } else if (isSelected && !isCorrectAnswer) {
-                cardStyle = 'border-2 border-red-500 bg-red-50 text-red-700 font-bold shadow-[0_4px_0_0_#ef4444] translate-y-0.5';
-              } else {
-                cardStyle = 'border-2 border-[var(--border-color)] bg-[var(--card-bg)] text-gray-400 opacity-60 pointer-events-none shadow-none';
-              }
-            }
-
-            return (
-              <motion.button
-                key={idx}
-                whileHover={!isAnswered ? { scale: 1.01 } : {}}
-                whileTap={!isAnswered ? { scale: 0.99 } : {}}
-                onClick={() => handleSelectOption(idx)}
-                disabled={isAnswered}
-                className={`w-full p-4 rounded-2xl text-left font-bold transition-all text-sm flex items-center justify-between ${cardStyle}`}
-              >
-                <span>{option}</span>
-                {/* Visual marker inside buttons */}
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-black
-                  ${isSelected && !isAnswered ? 'border-duo-blue text-duo-blue' : 'border-gray-200 text-gray-400'}
-                  ${isAnswered && idx === currentQuestion.correctAnswerIndex ? 'border-duo-green bg-duo-green text-white' : ''}
-                  ${isAnswered && isSelected && idx !== currentQuestion.correctAnswerIndex ? 'border-red-500 bg-red-500 text-white' : ''}
-                `}>
-                  {isAnswered && idx === currentQuestion.correctAnswerIndex ? '✓' : ''}
-                  {isAnswered && isSelected && idx !== currentQuestion.correctAnswerIndex ? '✗' : ''}
-                  {!isAnswered ? String.fromCharCode(65 + idx) : ''}
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
-      </main>
-
-      {/* Dynamic Bouncy Action Bar (Slide up when check/next is available) */}
-      <div className="absolute bottom-0 left-0 right-0 z-30 shrink-0 bg-[var(--card-bg)] border-t-4 border-[var(--border-color)] p-4 flex flex-col items-center">
-        <AnimatePresence mode="wait">
-          {!isAnswered ? (
-            <motion.div 
-              key="check-bar"
-              className="w-full flex justify-center"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
-            >
-              <button
-                disabled={selectedOptionIndex === null}
-                onClick={handleCheckAnswer}
-                className={`
-                  w-full py-4 rounded-2xl font-black text-lg tracking-wide uppercase shadow-md transition-all max-w-sm
-                  ${selectedOptionIndex === null 
-                    ? 'bg-duo-gray text-gray-400 border-2 border-duo-gray shadow-none cursor-not-allowed'
-                    : 'btn-3d btn-3d-blue'
-                  }
-                `}
-              >
-                Check Answer
-              </button>
-            </motion.div>
-          ) : (
+      {/* Main split-pane content area */}
+      <div className="flex flex-1 overflow-hidden relative w-full">
+        {/* Toggleable Passage Sidebar */}
+        <AnimatePresence>
+          {showPassage && (
             <motion.div
-              key="result-bar"
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              transition={{ type: 'spring', damping: 18 }}
-              className={`w-full p-4 rounded-2xl border-4 flex flex-col items-center text-center max-w-md
-                ${isCorrect 
-                  ? 'bg-duo-green/10 border-duo-green text-duo-green-dark shadow-sm' 
-                  : 'bg-red-50 border-red-500 text-red-700 shadow-sm'
-                }
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: isDesktop ? '50%' : '100%', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className={`h-full overflow-hidden flex flex-col border-r-4 border-[var(--border-color)] bg-[var(--card-bg)] shrink-0 z-20 relative
+                ${!isDesktop ? 'absolute inset-0 z-40' : ''}
               `}
             >
-              {/* Response banner */}
-              <div className="flex items-center gap-2 mb-2 font-black text-lg uppercase tracking-wide">
-                <CheckCircle className={`w-6 h-6 ${isCorrect ? 'text-duo-green' : 'text-red-500'}`} />
-                <span>{isCorrect ? 'Excellent! You got it.' : 'Not quite right!'}</span>
+              <div className="px-4 py-3 bg-slate-500/5 border-b-2 border-[var(--border-color)]/20 flex items-center justify-between shrink-0">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                  <BookOpen className="w-3.5 h-3.5 text-duo-purple" /> Reading Passage
+                </span>
+                {!isDesktop && (
+                  <button
+                    onClick={() => setShowPassage(false)}
+                    className="p-1.5 hover:bg-slate-500/10 rounded-full text-slate-500 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-              
-              {/* Hint / feedback text */}
-              <p className="text-xs font-bold leading-relaxed mb-4 text-left max-w-sm opacity-90">
-                {isCorrect 
-                  ? 'Great detail comprehension!'
-                  : hintLoading
-                  ? '💡 Getting a hint...'
-                  : hint
-                  ? `💡 Hint: ${hint}`
-                  : 'Not quite — try re-reading the relevant section.'
-                }
-              </p>
-
-              {/* Action Button */}
-              <button
-                onClick={handleNext}
-                className={`w-full py-3.5 rounded-2xl btn-3d font-extrabold uppercase text-sm tracking-wide max-w-xs
-                  ${isCorrect ? 'btn-3d-green' : 'btn-3d-gray border-red-500! text-red-700!'}
-                `}
-              >
-                {isCorrect 
-                  ? (currentQuestionIndex + 1 === totalQuestions ? 'Complete Quiz' : 'Continue')
-                  : 'Try Again'
-                }
-              </button>
+              <div className="flex-1 overflow-y-auto p-6 select-text no-scrollbar">
+                <h2 className="text-xl font-black mb-4 uppercase tracking-wide border-b-2 border-slate-200/10 pb-2 text-[var(--text-color)]">
+                  {sectionTitle}
+                </h2>
+                <article className="prose prose-slate max-w-none text-left text-[var(--text-color)]">
+                  {sectionContent.split('\n\n').filter(p => p.trim() !== '').map((p, idx) => {
+                    if (p.startsWith('[IMG:') && p.endsWith(']')) return null;
+                    return (
+                      <p key={idx} className="text-sm leading-relaxed mb-4 text-justify opacity-90 text-[var(--text-color)]">
+                        {p}
+                      </p>
+                    );
+                  })}
+                </article>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Quiz Content Pane */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+          <main className="flex-1 overflow-y-auto px-6 py-6 pb-40">
+            {/* Animated Question bubble */}
+            <div className="flex items-start gap-3 mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-duo-blue flex items-center justify-center text-white shrink-0 shadow-md">
+                <HelpCircle className="w-6 h-6" />
+              </div>
+              <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] rounded-2xl rounded-tl-none p-4 shadow-sm relative text-[var(--text-color)]">
+                <h3 className="text-lg font-black text-[var(--text-color)] leading-snug">
+                  {currentQuestion.question}
+                </h3>
+              </div>
+            </div>
+
+            {/* Option Cards */}
+            <div className="flex flex-col gap-4">
+              {currentQuestion.options.map((option, idx) => {
+                const isSelected = selectedOptionIndex === idx;
+                let cardStyle = 'border-2 border-[var(--border-color)] bg-[var(--card-bg)] shadow-[0_4px_0_0_var(--border-color)] text-[var(--text-color)]';
+
+                if (isSelected) {
+                  cardStyle = 'border-2 border-duo-blue bg-duo-blue/5 text-duo-blue-dark font-bold shadow-[0_4px_0_0_#1899d6] translate-y-0.5';
+                }
+
+                if (isAnswered) {
+                  const isCorrectAnswer = idx === currentQuestion.correctAnswerIndex;
+                  if (isCorrectAnswer) {
+                    cardStyle = 'border-2 border-duo-green bg-duo-green/5 text-duo-green-dark font-extrabold shadow-[0_4px_0_0_#46a302] translate-y-0.5';
+                  } else if (isSelected && !isCorrectAnswer) {
+                    cardStyle = 'border-2 border-red-500 bg-red-50 text-red-700 font-bold shadow-[0_4px_0_0_#ef4444] translate-y-0.5';
+                  } else {
+                    cardStyle = 'border-2 border-[var(--border-color)] bg-[var(--card-bg)] text-gray-400 opacity-60 pointer-events-none shadow-none';
+                  }
+                }
+
+                return (
+                  <motion.button
+                    key={idx}
+                    whileHover={!isAnswered ? { scale: 1.01 } : {}}
+                    whileTap={!isAnswered ? { scale: 0.99 } : {}}
+                    onClick={() => handleSelectOption(idx)}
+                    disabled={isAnswered}
+                    className={`w-full p-4 rounded-2xl text-left font-bold transition-all text-sm flex items-center justify-between ${cardStyle}`}
+                  >
+                    <span>{option}</span>
+                    {/* Visual marker inside buttons */}
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-black
+                      ${isSelected && !isAnswered ? 'border-duo-blue text-duo-blue' : 'border-gray-200 text-gray-400'}
+                      ${isAnswered && idx === currentQuestion.correctAnswerIndex ? 'border-duo-green bg-duo-green text-white' : ''}
+                      ${isAnswered && isSelected && idx !== currentQuestion.correctAnswerIndex ? 'border-red-500 bg-red-500 text-white' : ''}
+                    `}>
+                      {isAnswered && idx === currentQuestion.correctAnswerIndex ? '✓' : ''}
+                      {isAnswered && isSelected && idx !== currentQuestion.correctAnswerIndex ? '✗' : ''}
+                      {!isAnswered ? String.fromCharCode(65 + idx) : ''}
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </main>
+
+          {/* Dynamic Bouncy Action Bar (Slide up when check/next is available) */}
+          <div className="absolute bottom-0 left-0 right-0 z-30 shrink-0 bg-[var(--card-bg)] border-t-4 border-[var(--border-color)] p-4 flex flex-col items-center">
+            <AnimatePresence mode="wait">
+              {!isAnswered ? (
+                <motion.div 
+                  key="check-bar"
+                  className="w-full flex justify-center"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 20, opacity: 0 }}
+                >
+                  <button
+                    disabled={selectedOptionIndex === null}
+                    onClick={handleCheckAnswer}
+                    className={`
+                      w-full py-4 rounded-2xl font-black text-lg tracking-wide uppercase shadow-md transition-all max-w-sm
+                      ${selectedOptionIndex === null 
+                        ? 'bg-duo-gray text-gray-400 border-2 border-duo-gray shadow-none cursor-not-allowed'
+                        : 'btn-3d btn-3d-blue'
+                      }
+                    `}
+                  >
+                    Check Answer
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="result-bar"
+                  initial={{ y: 80, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 80, opacity: 0 }}
+                  transition={{ type: 'spring', damping: 18 }}
+                  className={`w-full p-4 rounded-2xl border-4 flex flex-col items-center text-center max-w-md
+                    ${isCorrect 
+                      ? 'bg-duo-green/10 border-duo-green text-duo-green-dark shadow-sm' 
+                      : 'bg-red-50 border-red-500 text-red-700 shadow-sm'
+                    }
+                  `}
+                >
+                  {/* Response banner */}
+                  <div className="flex items-center gap-2 mb-2 font-black text-lg uppercase tracking-wide">
+                    <CheckCircle className={`w-6 h-6 ${isCorrect ? 'text-duo-green' : 'text-red-500'}`} />
+                    <span>{isCorrect ? 'Excellent! You got it.' : 'Not quite right!'}</span>
+                  </div>
+                  
+                  {/* Hint / feedback text */}
+                  <p className="text-xs font-bold leading-relaxed mb-4 text-left max-w-sm opacity-90">
+                    {isCorrect 
+                      ? 'Great detail comprehension!'
+                      : hintLoading
+                      ? '💡 Getting a hint...'
+                      : hint
+                      ? `💡 Hint: ${hint}`
+                      : 'Not quite — try re-reading the relevant section.'
+                    }
+                  </p>
+
+                  {/* Action Button */}
+                  <button
+                    onClick={handleNext}
+                    className={`w-full py-3.5 rounded-2xl btn-3d font-extrabold uppercase text-sm tracking-wide max-w-xs
+                      ${isCorrect ? 'btn-3d-green' : 'btn-3d-gray border-red-500! text-red-700!'}
+                    `}
+                  >
+                    {isCorrect 
+                      ? (currentQuestionIndex + 1 === totalQuestions ? 'Complete Quiz' : 'Continue')
+                      : 'Try Again'
+                    }
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -23,6 +23,7 @@ export interface UserStats {
   unlockedFonts: string[];
   currentTheme: string;
   currentFont: string;
+  currentTextSize: string;
   completedSections: string[];
 }
 
@@ -56,6 +57,7 @@ export class ProgressionManager {
       unlockedFonts: ['font_inter'],
       currentTheme: 'default',
       currentFont: 'font_inter',
+      currentTextSize: 'lg',
       completedSections: []
     };
 
@@ -90,6 +92,7 @@ export class ProgressionManager {
         unlockedFonts: ['font_inter'],
         currentTheme: 'default',
         currentFont: 'font_inter',
+        currentTextSize: 'lg',
         completedSections: []
       },
       library: [
@@ -202,6 +205,7 @@ export class ProgressionManager {
               ])),
               currentTheme: this.state.user.currentTheme || cloudState.user.currentTheme,
               currentFont: this.state.user.currentFont || cloudState.user.currentFont,
+              currentTextSize: this.state.user.currentTextSize || cloudState.user.currentTextSize || 'lg',
               lastReadDate: this.state.user.lastReadDate || cloudState.user.lastReadDate
             },
             library: mergedLibrary
@@ -458,6 +462,14 @@ export class ProgressionManager {
   }
 
   /**
+   * Applies the text size selection.
+   */
+  public selectTextSize(size: string): void {
+    this.state.user.currentTextSize = size;
+    this.saveState();
+  }
+
+  /**
    * Applies the theme attribute globally to DOM.
    */
   public applyTheme(theme: string): void {
@@ -482,6 +494,7 @@ export class ProgressionManager {
         unlockedFonts: ['font_inter'],
         currentTheme: 'default',
         currentFont: 'font_inter',
+        currentTextSize: 'lg',
         completedSections: []
       },
       library: [

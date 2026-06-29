@@ -5,6 +5,17 @@ import type { SectionNode } from './PathView';
 import type { Language } from '../utils/translations';
 import { allFontItems } from '../utils/fonts';
 
+const TEXT_SIZE_KEYS = ['sm', 'base', 'lg', 'xl', '2xl', '3xl'];
+
+const TEXT_SIZE_CLASSES: Record<string, string> = {
+  sm: 'text-sm leading-relaxed',
+  base: 'text-base leading-relaxed',
+  lg: 'text-lg leading-relaxed',
+  xl: 'text-xl leading-relaxed',
+  '2xl': 'text-2xl leading-loose',
+  '3xl': 'text-3xl leading-loose',
+};
+
 interface ReaderViewProps {
   section: SectionNode;
   content: string; 
@@ -23,6 +34,8 @@ interface ReaderViewProps {
   // Themes and shop extensions
   currentTheme: string;
   currentFont?: string;
+  currentTextSize?: string;
+  onSelectTextSize?: (size: string) => void;
   hasDistractionShield: boolean;
   
   // Book illustration images map
@@ -48,6 +61,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   isDesktop,
   currentTheme,
   currentFont = 'font_inter',
+  currentTextSize = 'lg',
+  onSelectTextSize,
   hasDistractionShield,
   images = {},
   language = 'en',
@@ -620,6 +635,39 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
 
           {/* Stats & Actions Header */}
           <div className="flex items-center gap-2.5">
+            {/* Font Size Quick Adjuster */}
+            <div className="flex items-center gap-1 bg-slate-200/10 dark:bg-slate-800/10 border border-[var(--border-color)] rounded-xl p-1 shrink-0">
+              <button
+                onClick={() => {
+                  const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
+                  if (idx > 0 && onSelectTextSize) {
+                    onSelectTextSize(TEXT_SIZE_KEYS[idx - 1]);
+                  }
+                }}
+                disabled={currentTextSize === 'sm'}
+                className="px-2 py-1 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200/20 dark:hover:bg-slate-800/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer select-none text-[var(--text-color)]"
+                title="Decrease Font Size"
+              >
+                A-
+              </button>
+              <span className="text-[9px] font-black uppercase tracking-wider px-1 text-slate-400 shrink-0">
+                {currentTextSize.toUpperCase()}
+              </span>
+              <button
+                onClick={() => {
+                  const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
+                  if (idx < TEXT_SIZE_KEYS.length - 1 && onSelectTextSize) {
+                    onSelectTextSize(TEXT_SIZE_KEYS[idx + 1]);
+                  }
+                }}
+                disabled={currentTextSize === '3xl'}
+                className="px-2 py-1 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200/20 dark:hover:bg-slate-800/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer select-none text-[var(--text-color)]"
+                title="Increase Font Size"
+              >
+                A+
+              </button>
+            </div>
+
             {/* Distraction Shield active indicator */}
             {hasDistractionShield && (
               <span className="flex items-center gap-1 text-[10px] font-black text-duo-green bg-duo-green/10 px-2 py-1 rounded-full uppercase border border-duo-green/30" title="Distraction Shield Active (Auto-hiding UI)">
@@ -848,7 +896,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                     <p 
                       data-para-index={index}
                       onClick={(e) => handleParagraphClick(e, index, p)}
-                      className="text-sm leading-relaxed text-justify cursor-pointer"
+                      className={`${TEXT_SIZE_CLASSES[currentTextSize] || 'text-sm leading-relaxed'} text-justify cursor-pointer`}
                     >
                       {p}
                     </p>
@@ -901,7 +949,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                   <p 
                     data-para-index={index}
                     onClick={(e) => handleParagraphClick(e, index, p)}
-                    className={`text-lg leading-relaxed mb-0 font-normal tracking-wide text-justify text-inherit transition-colors cursor-pointer
+                    className={`${TEXT_SIZE_CLASSES[currentTextSize] || 'text-lg leading-relaxed'} mb-0 font-normal tracking-wide text-justify text-inherit transition-colors cursor-pointer
                       ${isBookmarked ? 'border-l-4 border-duo-orange pl-3 -ml-4 font-bold text-[var(--accent-color)]' : ''}
                     `}
                     style={{ textWrap: 'pretty' }}

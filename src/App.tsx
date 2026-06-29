@@ -179,6 +179,19 @@ function AppContent() {
 
   const [showDock, setShowDock] = useState(true);
 
+  // Synchronize root font-size with selected text size
+  useEffect(() => {
+    const size = stats.currentTextSize || 'lg';
+    let fontSize = '100%';
+    if (size === 'sm') fontSize = '90%';
+    else if (size === 'base') fontSize = '95%';
+    else if (size === 'lg') fontSize = '100%'; // Default
+    else if (size === 'xl') fontSize = '108%';
+    else if (size === '2xl') fontSize = '116%';
+    else if (size === '3xl') fontSize = '125%';
+    document.documentElement.style.fontSize = fontSize;
+  }, [stats.currentTextSize]);
+
   // Synchronize view routing to match active Tour Step requirements
   const { currentStep, isTourActive, startTour } = useTour();
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -603,6 +616,14 @@ function AppContent() {
     }
   };
 
+  const getNextSectionFor = (currentId: string) => {
+    const currentIndex = sections.findIndex(s => s.id === currentId);
+    if (currentIndex !== -1 && currentIndex < sections.length - 1) {
+      return sections[currentIndex + 1];
+    }
+    return null;
+  };
+
   // Triggered when completing reading
   const handleCompleteReading = (wordCount: number) => {
     if (!activeSection) return;
@@ -613,8 +634,14 @@ function AppContent() {
       setView('quiz');
     } else {
       claimRewards(activeSection.id, wordCount);
-      setView('path');
-      setActiveSection(null);
+      const nextSection = getNextSectionFor(activeSection.id);
+      if (nextSection) {
+        setActiveSection(nextSection);
+        setView('reader');
+      } else {
+        setView('path');
+        setActiveSection(null);
+      }
     }
   };
 
@@ -639,9 +666,15 @@ function AppContent() {
   const handleQuizSuccess = () => {
     if (!pendingCompletion) return;
     claimRewards(pendingCompletion.id, pendingCompletion.wordCount);
+    const nextSection = getNextSectionFor(pendingCompletion.id);
     setPendingCompletion(null);
-    setView('path');
-    setActiveSection(null);
+    if (nextSection) {
+      setActiveSection(nextSection);
+      setView('reader');
+    } else {
+      setView('path');
+      setActiveSection(null);
+    }
   };
 
   const handleJumpToSection = (sectionId: string) => {
@@ -698,6 +731,11 @@ function AppContent() {
 
   const handleSelectFont = (font: string) => {
     progressionManager.applyFont(font);
+    updateStateFromManager();
+  };
+
+  const handleSelectTextSize = (size: string) => {
+    progressionManager.selectTextSize(size);
     updateStateFromManager();
   };
 
@@ -802,6 +840,8 @@ function AppContent() {
       isDesktop={isDesktop}
       currentTheme={stats.currentTheme}
       currentFont={stats.currentFont}
+      currentTextSize={stats.currentTextSize || 'lg'}
+      onSelectTextSize={handleSelectTextSize}
       hasDistractionShield={stats.unlockedFeatures.includes('distraction_shield')}
       images={activeImages}
       language={language}
@@ -822,6 +862,7 @@ function AppContent() {
         setPendingCompletion(null);
       }}
       onSuccess={handleQuizSuccess}
+      isDesktop={isDesktop}
     />
   ) : null;
 
@@ -1038,6 +1079,29 @@ function AppContent() {
                     className="h-full bg-duo-blue rounded-full"
                     style={{ width: `${xpIntoCurrentLevel}%` }}
                   />
+                </div>
+              </div>
+
+              {/* UI Text Size Control */}
+              <div className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 p-4 rounded-2xl mb-6 text-left">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-2 text-center md:text-left">
+                  {language === 'vi' ? 'Kích thước chữ UI' : 'UI Text Size'}
+                </span>
+                <div className="flex gap-1 bg-slate-200/20 dark:bg-slate-900/40 rounded-xl p-1 border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                  {['sm', 'base', 'lg', 'xl', '2xl', '3xl'].map((sz) => (
+                    <button
+                      key={sz}
+                      onClick={() => handleSelectTextSize(sz)}
+                      className={`flex-1 py-1 px-2 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer whitespace-nowrap
+                        ${(stats.currentTextSize || 'lg') === sz
+                          ? 'bg-duo-blue text-white shadow-sm'
+                          : 'text-gray-500 dark:text-gray-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
+                        }
+                      `}
+                    >
+                      {sz}
+                    </button>
+                  ))}
                 </div>
               </div>
 
