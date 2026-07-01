@@ -1,6 +1,11 @@
 import { db } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+export interface LibrarySection {
+  id: string;
+  name: string;
+}
+
 export interface BookArchiveItem {
   id: string;
   title: string;
@@ -11,6 +16,8 @@ export interface BookArchiveItem {
   startedAt: string;
   completedAt: string | null;
   masteryLevel: 'none' | 'silver' | 'gold';
+  tags?: string[];
+  sectionId?: string | null;
 }
 
 export interface UserStats {
@@ -25,6 +32,7 @@ export interface UserStats {
   currentFont: string;
   currentTextSize: string;
   completedSections: string[];
+  librarySections?: LibrarySection[];
 }
 
 export interface UnifiedState {
@@ -58,7 +66,11 @@ export class ProgressionManager {
       currentTheme: 'default',
       currentFont: 'font_inter',
       currentTextSize: 'lg',
-      completedSections: []
+      completedSections: [],
+      librarySections: [
+        { id: 'sec_fiction', name: 'Fiction' },
+        { id: 'sec_non_fiction', name: 'Non-Fiction' }
+      ]
     };
 
     try {
@@ -93,7 +105,11 @@ export class ProgressionManager {
         currentTheme: 'default',
         currentFont: 'font_inter',
         currentTextSize: 'lg',
-        completedSections: []
+        completedSections: [],
+        librarySections: [
+          { id: 'sec_fiction', name: 'Fiction' },
+          { id: 'sec_non_fiction', name: 'Non-Fiction' }
+        ]
       },
       library: [
         {
@@ -105,7 +121,9 @@ export class ProgressionManager {
           progress: 0,
           startedAt: todayStr,
           completedAt: null,
-          masteryLevel: 'none'
+          masteryLevel: 'none',
+          tags: ['Focus'],
+          sectionId: 'sec_non_fiction'
         }
       ]
     };
@@ -495,7 +513,11 @@ export class ProgressionManager {
         currentTheme: 'default',
         currentFont: 'font_inter',
         currentTextSize: 'lg',
-        completedSections: []
+        completedSections: [],
+        librarySections: [
+          { id: 'sec_fiction', name: 'Fiction' },
+          { id: 'sec_non_fiction', name: 'Non-Fiction' }
+        ]
       },
       library: [
         {
@@ -507,13 +529,63 @@ export class ProgressionManager {
           progress: 0,
           startedAt: todayStr,
           completedAt: null,
-          masteryLevel: 'none'
+          masteryLevel: 'none',
+          tags: ['Focus'],
+          sectionId: 'sec_non_fiction'
         }
       ]
     };
     this.applyTheme('default');
     this.saveState();
     return this.state;
+  }
+
+  // --- BOOKSHELF SECTIONS & TAGS ---
+
+  public addLibrarySection(name: string): void {
+    if (!this.state.user.librarySections) {
+      this.state.user.librarySections = [];
+    }
+    const id = 'sec_' + Date.now();
+    this.state.user.librarySections.push({ id, name });
+    this.saveState();
+  }
+
+  public renameLibrarySection(id: string, newName: string): void {
+    if (!this.state.user.librarySections) return;
+    const sec = this.state.user.librarySections.find(s => s.id === id);
+    if (sec) {
+      sec.name = newName;
+      this.saveState();
+    }
+  }
+
+  public deleteLibrarySection(id: string): void {
+    if (!this.state.user.librarySections) return;
+    this.state.user.librarySections = this.state.user.librarySections.filter(s => s.id !== id);
+    // Unassign books belonging to this section
+    this.state.library.forEach(book => {
+      if (book.sectionId === id) {
+        book.sectionId = null;
+      }
+    });
+    this.saveState();
+  }
+
+  public setBookSection(bookId: string, sectionId: string | null): void {
+    const book = this.state.library.find(b => b.id === bookId);
+    if (book) {
+      book.sectionId = sectionId;
+      this.saveState();
+    }
+  }
+
+  public updateBookTags(bookId: string, tags: string[]): void {
+    const book = this.state.library.find(b => b.id === bookId);
+    if (book) {
+      book.tags = tags;
+      this.saveState();
+    }
   }
 
   // --- Helper Methods ---

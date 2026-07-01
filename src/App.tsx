@@ -745,6 +745,31 @@ function AppContent() {
     triggerThemeReconfigAnimation(theme);
   };
 
+  const handleAddLibrarySection = (name: string) => {
+    progressionManager.addLibrarySection(name);
+    updateStateFromManager();
+  };
+
+  const handleRenameLibrarySection = (id: string, newName: string) => {
+    progressionManager.renameLibrarySection(id, newName);
+    updateStateFromManager();
+  };
+
+  const handleDeleteLibrarySection = (id: string) => {
+    progressionManager.deleteLibrarySection(id);
+    updateStateFromManager();
+  };
+
+  const handleSetBookSection = (bookId: string, sectionId: string | null) => {
+    progressionManager.setBookSection(bookId, sectionId);
+    updateStateFromManager();
+  };
+
+  const handleUpdateBookTags = (bookId: string, tags: string[]) => {
+    progressionManager.updateBookTags(bookId, tags);
+    updateStateFromManager();
+  };
+
   const triggerThemeReconfigAnimation = (theme: string) => {
     setReconfigTheme(theme);
     setTimeout(() => {
@@ -796,6 +821,12 @@ function AppContent() {
       onGenerateRecommendations={handleGenerateRecommendations}
       apiKey={apiKey}
       language={language}
+      librarySections={stats.librarySections}
+      onAddLibrarySection={handleAddLibrarySection}
+      onRenameLibrarySection={handleRenameLibrarySection}
+      onDeleteLibrarySection={handleDeleteLibrarySection}
+      onSetBookSection={handleSetBookSection}
+      onUpdateBookTags={handleUpdateBookTags}
     />
   );
 
