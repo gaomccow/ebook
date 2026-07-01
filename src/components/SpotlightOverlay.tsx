@@ -161,16 +161,16 @@ export const SpotlightOverlay: React.FC = () => {
             top: tooltipPos.top,
             left: tooltipPos.left,
           }}
-          className="w-80 bg-slate-900/90 border border-slate-700/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.7)] backdrop-blur-md pointer-events-auto z-[102] flex flex-col gap-3 text-left"
+          className="w-80 liquid-glass-tooltip rounded-3xl p-5 pointer-events-auto z-[102] flex flex-col gap-3 text-left text-[var(--text-color)]"
         >
           {/* Header info */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2.5 opacity-80">
             <span className="text-[10px] bg-indigo-500/25 border border-indigo-500/50 text-indigo-300 px-2 py-0.5 rounded-full font-extrabold font-mono tracking-wider">
               STEP {activeStepIndex + 1} OF {steps.length}
             </span>
             <button
               onClick={skipTour}
-              className="p-1 hover:bg-slate-800 rounded-full text-slate-400 hover:text-slate-200 transition-colors"
+              className="p-1 hover:bg-slate-200/10 rounded-full text-[var(--text-color)] opacity-60 hover:opacity-100 transition-colors"
               title="Skip Tour"
             >
               <X className="w-4 h-4" />
@@ -179,10 +179,10 @@ export const SpotlightOverlay: React.FC = () => {
 
           {/* Title and Instruction Body */}
           <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-black text-white uppercase tracking-wider">
+            <h3 className="text-sm font-black text-inherit uppercase tracking-wider">
               {currentStep.title}
             </h3>
-            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+            <p className="text-xs text-inherit opacity-85 leading-relaxed font-medium">
               {currentStep.description}
             </p>
           </div>
@@ -191,7 +191,7 @@ export const SpotlightOverlay: React.FC = () => {
           <div className="flex items-center justify-between pt-2">
             <button
               onClick={skipTour}
-              className="text-[10px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest cursor-pointer transition-colors"
+              className="text-[10px] font-black text-inherit opacity-50 hover:opacity-90 uppercase tracking-widest cursor-pointer transition-colors"
             >
               Skip
             </button>
@@ -200,7 +200,7 @@ export const SpotlightOverlay: React.FC = () => {
               {activeStepIndex > 0 && (
                 <button
                   onClick={prevStep}
-                  className="p-1.5 border border-slate-700 text-slate-300 rounded-xl hover:bg-slate-800 cursor-pointer transition-all flex items-center justify-center"
+                  className="p-1.5 border border-[var(--border-color)] text-inherit rounded-xl hover:bg-slate-200/10 cursor-pointer transition-all flex items-center justify-center"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>

@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { LanguageList } from './components/LanguagePicker';
 import { db } from './services/firebase';
 import { doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 
@@ -26,9 +28,9 @@ import type { UserStats } from './services/ProgressionManager';
 import { EpubParser } from './services/EpubParser';
 import { GeminiClient } from './services/GeminiClient';
 import { IDBStorage } from './services/IDBStorage';
-import type { Language } from './utils/translations';
-import { Home, Compass, BookOpen, Highlighter, Flame, ChevronUp, ChevronDown, HelpCircle } from 'lucide-react';
+import { Home, Compass, BookOpen, Highlighter, Flame, ChevronLeft, ChevronRight, HelpCircle, Globe } from 'lucide-react';
 import { FloatingDock } from './components/ui/FloatingDock';
+import { Tooltip } from './components/ui/Tooltip';
 import { TourProvider, useTour } from './services/TourContext';
 import { SpotlightOverlay } from './components/SpotlightOverlay';
 import { LoginView } from './components/LoginView';
@@ -176,6 +178,7 @@ function AppContent() {
   // Highlights, Stats and Dock visibility toggles
   const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
 
   const [showDock, setShowDock] = useState(true);
 
@@ -362,7 +365,7 @@ function AppContent() {
   }, [currentStep, isTourActive, sections, activeSection]);
 
   // Localization and Images states
-  const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('gamified_reader_language') as Language) || 'en');
+  const { currentLang: language, setLanguage, t } = useLanguage();
   const [activeImages, setActiveImages] = useState<Record<string, string>>({});
 
   // AI recommendations
@@ -436,9 +439,8 @@ function AppContent() {
     localStorage.setItem('gamified_reader_ai_provider', provider);
   };
 
-  const handleLanguageChange = (lang: Language) => {
+  const handleLanguageChange = (lang: any) => {
     setLanguage(lang);
-    localStorage.setItem('gamified_reader_language', lang);
   };
 
   // Select a book from the shelf
@@ -885,19 +887,19 @@ function AppContent() {
 
   const dockItems = [
     {
-      title: language === 'vi' ? 'Thư viện' : 'Library',
+      title: t('library'),
       icon: <Home className="w-full h-full" />,
       onClick: () => setView('library'),
       active: view === 'library'
     },
     {
-      title: language === 'vi' ? 'Bài học' : 'Path Map',
+      title: t('pathMap'),
       icon: <Compass className="w-full h-full" />,
       onClick: () => setView('path'),
       active: view === 'path'
     },
     {
-      title: language === 'vi' ? 'Đọc sách' : 'Active Reader',
+      title: t('activeReader'),
       icon: <BookOpen className="w-full h-full" />,
       onClick: () => {
         if (activeSection) setView('reader');
@@ -906,13 +908,13 @@ function AppContent() {
       disabled: !activeSection
     },
     {
-      title: language === 'vi' ? 'Dấu nổi bật' : 'Highlights',
+      title: t('highlights'),
       icon: <Highlighter className="w-full h-full" />,
       onClick: () => setShowHighlightsSidebar(prev => !prev),
       active: showHighlightsSidebar
     },
     {
-      title: authPicture ? (language === 'vi' ? 'Hồ sơ' : 'Profile') : (language === 'vi' ? 'Học lực' : 'XP Stats'),
+      title: authPicture ? t('profile') : t('xpStats'),
       icon: authPicture ? (
         <img 
           src={authPicture} 
@@ -926,26 +928,30 @@ function AppContent() {
       active: showStatsModal
     },
     {
-      title: language === 'vi' ? 'Hướng dẫn' : 'Guided Tour',
+      title: t('guidedTour'),
       icon: <HelpCircle className="w-full h-full text-indigo-400" />,
       onClick: () => startTour(),
       active: isTourActive
+    },
+    {
+      title: t('language'),
+      icon: <Globe className="w-full h-full text-duo-blue" />,
+      onClick: () => setShowLanguagePicker(prev => !prev),
+      active: showLanguagePicker
     }
   ];
 
   const currentLevel = Math.floor(stats.xp / 100) + 1;
   const xpIntoCurrentLevel = stats.xp % 100;
 
-  const hideSidebarsForTheme = (stats.currentTheme === 'gradient' || stats.currentTheme === 'glass_dark' || stats.currentTheme === 'glass_light') && view === 'reader';
-  const hasLeftSidebar = isDesktop && !isFocusMode && view !== 'quiz' && view !== 'library' && !hideSidebarsForTheme;
-  const dockLeftVal = hasLeftSidebar ? 'calc(50vw + 155px)' : '50vw';
-
   if (!isAuthenticated) {
     return <LoginView onLogin={handleLogin} language={language} />;
   }
 
+  const typoSafeguard = ['vi', 'hi', 'zh'].includes(language) ? 'leading-loose' : 'leading-relaxed';
+
   return (
-    <div className="min-h-screen">
+    <div className={`min-h-screen ${typoSafeguard}`}>
       <FocusLabLayout
         isDesktop={isDesktop}
         view={view}
@@ -961,48 +967,65 @@ function AppContent() {
         highlightsSidebar={highlightsSidebarNode}
       />
 
-      {/* Floating Navigation Dock (hidden in Focus Mode, Quiz, or Theme Transition) */}
+      {/* Floating Navigation Dock & Language Picker (hidden in Focus Mode, Quiz, or Theme Transition) */}
       {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
         <div 
           id="tour-floating-dock"
-          style={{ left: dockLeftVal }}
-          className="fixed bottom-6 -translate-x-1/2 z-40 pointer-events-none"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-3"
         >
           <AnimatePresence>
-            {showDock && (
+            {showLanguagePicker && showDock && (
               <motion.div 
-                initial={{ y: 80, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 80, opacity: 0 }}
+                initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                className="w-48 bg-[var(--card-bg)] border-2 border-[var(--border-color)] rounded-2xl shadow-xl flex flex-col p-2 gap-2 pointer-events-auto mb-1"
+              >
+                <LanguageList onSelect={() => setShowLanguagePicker(false)} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {showDock && (
+              <motion.div
+                initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 50, scale: 0.95 }}
                 transition={{ type: 'spring', damping: 22, stiffness: 200 }}
                 className="pointer-events-auto"
               >
-                <FloatingDock items={dockItems} />
+                <FloatingDock items={dockItems} orientation="horizontal" />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       )}
 
-      {/* Small half-opaque arrow handle on the right side of the screen to show/hide dock */}
+      {/* Small half-opaque arrow handle on the left side of the screen to show/hide dock */}
       {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
-        <button
-          onClick={() => setShowDock(prev => !prev)}
-          className="fixed right-0 top-1/2 transform -translate-y-1/2 z-50 bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md border-l-2 border-y-2 border-slate-300/30 dark:border-slate-700/30 rounded-l-2xl py-3 px-2 flex flex-col items-center gap-1.5 shadow-lg hover:bg-slate-200/75 dark:hover:bg-slate-800/75 cursor-pointer select-none text-slate-500 dark:text-slate-400 hover:text-duo-blue dark:hover:text-cyan-400 transition-all"
-          title={showDock ? "Hide Navigation Dock" : "Show Navigation Dock"}
+        <Tooltip
+          content={showDock ? (language === 'vi' ? 'Ẩn thanh điều hướng' : 'Hide Navigation Dock') : (language === 'vi' ? 'Hiện thanh điều hướng' : 'Show Navigation Dock')}
+          position="right"
+          className="fixed left-0 top-1/2 transform -translate-y-1/2 z-50 inline-flex"
         >
-          {showDock ? (
-            <ChevronDown className="w-4 h-4 animate-pulse" />
-          ) : (
-            <ChevronUp className="w-4 h-4 animate-bounce" />
-          )}
-          <span 
-            style={{ writingMode: 'vertical-lr' }} 
-            className="text-[8px] font-black tracking-widest uppercase mt-0.5"
+          <button
+            onClick={() => setShowDock(prev => !prev)}
+            className="bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md border-r-2 border-y-2 border-slate-300/30 dark:border-slate-700/30 rounded-r-2xl py-3 px-2 flex flex-col items-center gap-1.5 shadow-lg hover:bg-slate-200/75 dark:hover:bg-slate-800/75 cursor-pointer select-none text-slate-500 dark:text-slate-400 hover:text-duo-blue dark:hover:text-cyan-400 transition-all"
           >
-            {showDock ? (language === 'vi' ? 'ẨN' : 'HIDE') : (language === 'vi' ? 'HIỆN' : 'SHOW')}
-          </span>
-        </button>
+            {showDock ? (
+              <ChevronLeft className="w-4 h-4 animate-pulse" />
+            ) : (
+              <ChevronRight className="w-4 h-4 animate-bounce" />
+            )}
+            <span 
+              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }} 
+              className="text-[8px] font-black tracking-widest uppercase mt-0.5"
+            >
+              {showDock ? (language === 'vi' ? 'ẨN' : 'HIDE') : (language === 'vi' ? 'HIỆN' : 'SHOW')}
+            </span>
+          </button>
+        </Tooltip>
       )}
 
       {/* Stats & Progression Info Popover Modal */}
@@ -1193,9 +1216,11 @@ function AppContent() {
 
 function App() {
   return (
-    <TourProvider>
-      <AppContent />
-    </TourProvider>
+    <LanguageProvider>
+      <TourProvider>
+        <AppContent />
+      </TourProvider>
+    </LanguageProvider>
   );
 }
 

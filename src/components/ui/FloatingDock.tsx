@@ -12,21 +12,24 @@ export interface DockItem {
 interface FloatingDockProps {
   items: DockItem[];
   className?: string;
+  orientation?: 'horizontal' | 'vertical';
 }
 
-export const FloatingDock: React.FC<FloatingDockProps> = ({ items, className = '' }) => {
-  const mouseX = useMotionValue(Infinity);
+export const FloatingDock: React.FC<FloatingDockProps> = ({ items, className = '', orientation = 'horizontal' }) => {
+  const mouseVal = useMotionValue(Infinity);
+  const isVertical = orientation === 'vertical';
 
   return (
     <motion.div
-      onMouseMove={(e) => mouseX.set(e.pageX)}
-      onMouseLeave={() => mouseX.set(Infinity)}
-      className={`mx-auto flex h-16 items-end gap-4 rounded-2xl bg-[var(--card-bg)]/80 border-4 border-[var(--border-color)] px-4 pb-3 shadow-[0_8px_0_0_var(--border-color)] backdrop-blur-md z-50 ${className}`}
+      onMouseMove={(e) => mouseVal.set(isVertical ? e.pageY : e.pageX)}
+      onMouseLeave={() => mouseVal.set(Infinity)}
+      className={`mx-auto flex ${isVertical ? 'flex-col w-[68px] items-center gap-4 py-4 px-3' : 'h-[68px] items-end gap-4 px-4 pb-3'} rounded-2xl bg-[var(--card-bg)]/80 border-4 border-[var(--border-color)] shadow-[0_8px_0_0_var(--border-color)] backdrop-blur-md z-50 ${className}`}
     >
       {items.map((item, idx) => (
         <DockIcon 
           key={idx} 
-          mouseX={mouseX} 
+          mouseVal={mouseVal}
+          isVertical={isVertical}
           {...item} 
         />
       ))}
@@ -35,38 +38,36 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({ items, className = '
 };
 
 interface DockIconProps extends DockItem {
-  mouseX: any;
+  mouseVal: any;
+  isVertical: boolean;
 }
 
-const DockIcon: React.FC<DockIconProps> = ({ title, icon, onClick, active, disabled, mouseX }) => {
+const DockIcon: React.FC<DockIconProps> = ({ title, icon, onClick, active, disabled, mouseVal, isVertical }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   // Compute distance from mouse to center of the icon
-  const distance = useTransform(mouseX, (val: number) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+  const distance = useTransform(mouseVal, (val: number) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, y: 0, width: 0, height: 0 };
+    if (isVertical) {
+      return val - bounds.y - bounds.height / 2;
+    }
     return val - bounds.x - bounds.width / 2;
   });
 
   // Scale the width and height of the icon based on mouse proximity (magnification effect)
-  const widthTransform = useTransform(distance, [-150, 0, 150], [42, 68, 42]);
-  const heightTransform = useTransform(distance, [-150, 0, 150], [42, 68, 42]);
+  const sizeTransform = useTransform(distance, [-150, 0, 150], [42, 68, 42]);
 
-  const width = useSpring(widthTransform, {
-    mass: 0.1,
-    stiffness: 150,
-    damping: 12,
-  });
-  const height = useSpring(heightTransform, {
+  const size = useSpring(sizeTransform, {
     mass: 0.1,
     stiffness: 150,
     damping: 12,
   });
 
   return (
-    <div ref={ref} className="relative flex flex-col items-center">
+    <div ref={ref} className="relative flex items-center justify-center">
       <motion.button
         onClick={disabled ? undefined : onClick}
-        style={{ width, height }}
+        style={{ width: size, height: size }}
         className={`flex items-center justify-center rounded-2xl border-2 transition-all shadow-sm group relative
           ${disabled 
             ? 'opacity-40 cursor-not-allowed bg-[var(--card-bg)] border-[var(--border-color)] text-slate-400' 
@@ -81,7 +82,9 @@ const DockIcon: React.FC<DockIconProps> = ({ title, icon, onClick, active, disab
         </div>
 
         {/* Floating Tooltip Label */}
-        <span className="absolute -top-10 scale-0 group-hover:scale-100 transition-all bg-gray-900 text-white font-black text-[9px] uppercase tracking-wider px-2 py-1 rounded-lg border border-gray-700 whitespace-nowrap shadow-md pointer-events-none z-50">
+        <span className={`absolute scale-0 group-hover:scale-100 transition-all duration-200 liquid-glass-tooltip font-black text-[10px] uppercase tracking-wider px-3 py-1.5 whitespace-nowrap pointer-events-none z-50
+          ${isVertical ? 'left-full ml-4 origin-left' : '-top-12 origin-bottom'}
+        `}>
           {title}
         </span>
       </motion.button>

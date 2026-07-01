@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, Check } from 'lucide-react';
 import { auth as firebaseAuth } from '../services/firebase';
 import { GoogleAuthProvider, signInWithCredential, signInAnonymously } from 'firebase/auth';
+import type { Language } from '../utils/translations';
 
 interface LoginViewProps {
   onLogin: (email: string) => void;
-  language: 'en' | 'vi';
+  language: Language;
 }
 
 const GoogleIcon = () => (

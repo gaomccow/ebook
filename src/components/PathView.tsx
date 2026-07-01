@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Check, Star, Trophy, RefreshCw, Key, Upload, BookOpen, AlertCircle, X, ShieldAlert, Sparkles, ChevronLeft, ChevronRight, Bookmark, HelpCircle } from 'lucide-react';
 import { TRANSLATIONS } from '../utils/translations';
 import type { Language } from '../utils/translations';
+import { Tooltip } from './ui/Tooltip';
 
 export interface SectionNode {
   id: string;
@@ -342,14 +343,15 @@ export const PathView: React.FC<PathViewProps> = ({
       <header className="sticky top-0 z-40 bg-[var(--card-bg)] border-b-4 border-[var(--border-color)] px-4 py-3 flex items-center justify-between max-w-lg mx-auto w-full">
         <div className="flex items-center gap-1.5">
           {onBackToLibrary && (
-            <button 
-              id="back-to-library-btn"
-              onClick={onBackToLibrary}
-              className="p-1 hover:bg-slate-100 rounded-full transition-colors shrink-0 text-gray-500 mr-1"
-              title="Return to Library Bookshelf"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+            <Tooltip content={language === 'vi' ? 'Trở lại thư viện' : 'Return to Library Bookshelf'} position="bottom">
+              <button 
+                id="back-to-library-btn"
+                onClick={onBackToLibrary}
+                className="p-1 hover:bg-slate-100 rounded-full transition-colors shrink-0 text-gray-500 mr-1"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            </Tooltip>
           )}
           <Trophy className="w-5 h-5 text-duo-yellow fill-duo-yellow" />
           <span className="font-extrabold text-[var(--text-color)] text-xs tracking-wider uppercase">
@@ -361,30 +363,32 @@ export const PathView: React.FC<PathViewProps> = ({
         <div className="flex items-center gap-2">
 
           {/* API Key settings Button */}
-          <button 
-            id="ai-settings-btn"
-            onClick={() => setShowSettings(true)}
-            className={`p-1.5 rounded-full border-2 transition-all relative
-              ${apiKey 
-                ? 'bg-duo-blue/10 border-duo-blue/40 text-duo-blue-dark' 
-                : 'bg-gray-100 border-gray-300 text-gray-400 hover:text-gray-600'
-              }
-            `}
-            title="Configure Gemini API Key"
-          >
-            <Key className="w-3.5 h-3.5" />
-            {apiKey && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-duo-green rounded-full border border-white" />}
-          </button>
+          <Tooltip content={language === 'vi' ? 'Cấu hình khóa Gemini API' : 'Configure Gemini API Key'} position="bottom">
+            <button 
+              id="ai-settings-btn"
+              onClick={() => setShowSettings(true)}
+              className={`p-1.5 rounded-full border-2 transition-all relative
+                ${apiKey 
+                  ? 'bg-duo-blue/10 border-duo-blue/40 text-duo-blue-dark' 
+                  : 'bg-gray-100 border-gray-300 text-gray-400 hover:text-gray-600'
+                }
+              `}
+            >
+              <Key className="w-3.5 h-3.5" />
+              {apiKey && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#58cc02] rounded-full border border-white" />}
+            </button>
+          </Tooltip>
 
           {/* Reset button */}
-          <button 
-            id="reset-progress-btn"
-            onClick={onResetProgress}
-            title="Reset Progress"
-            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip content={language === 'vi' ? 'Thiết lập lại tiến trình' : 'Reset Progress'} position="bottom">
+            <button 
+              id="reset-progress-btn"
+              onClick={onResetProgress}
+              className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         </div>
       </header>
 

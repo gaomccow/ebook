@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu
 import type { SectionNode } from './PathView';
 import type { Language } from '../utils/translations';
 import { allFontItems } from '../utils/fonts';
+import { Tooltip } from './ui/Tooltip';
 
 const TEXT_SIZE_KEYS = ['sm', 'base', 'lg', 'xl', '2xl', '3xl'];
 
@@ -618,13 +619,15 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       >
         <div className="flex items-center justify-between mb-2 max-w-2xl mx-auto w-full">
           {/* Back Button */}
-          <button 
-            onClick={onBack}
-            className="p-2 hover:bg-slate-200/20 rounded-full transition-colors group text-[var(--text-color)]"
-            aria-label="Back"
-          >
-            <ArrowLeft className="w-5.5 h-5.5 group-hover:-translate-x-0.5 transition-transform" />
-          </button>
+          <Tooltip content={language === 'vi' ? 'Trở lại' : 'Go Back'} position="bottom">
+            <button 
+              onClick={onBack}
+              className="p-2 hover:bg-slate-200/20 rounded-full transition-colors group text-[var(--text-color)]"
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-5.5 h-5.5 group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+          </Tooltip>
 
           {/* Title */}
           <div className="text-center flex-1 mx-2">
@@ -637,52 +640,57 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           <div className="flex items-center gap-2.5">
             {/* Font Size Quick Adjuster */}
             <div className="flex items-center gap-1 bg-slate-200/10 dark:bg-slate-800/10 border border-[var(--border-color)] rounded-xl p-1 shrink-0">
-              <button
-                onClick={() => {
-                  const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
-                  if (idx > 0 && onSelectTextSize) {
-                    onSelectTextSize(TEXT_SIZE_KEYS[idx - 1]);
-                  }
-                }}
-                disabled={currentTextSize === 'sm'}
-                className="px-2 py-1 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200/20 dark:hover:bg-slate-800/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer select-none text-[var(--text-color)]"
-                title="Decrease Font Size"
-              >
-                A-
-              </button>
+              <Tooltip content={language === 'vi' ? 'Giảm cỡ chữ' : 'Decrease Font Size'} position="bottom">
+                <button
+                  onClick={() => {
+                    const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
+                    if (idx > 0 && onSelectTextSize) {
+                      onSelectTextSize(TEXT_SIZE_KEYS[idx - 1]);
+                    }
+                  }}
+                  disabled={currentTextSize === 'sm'}
+                  className="px-2 py-1 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200/20 dark:hover:bg-slate-800/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer select-none text-[var(--text-color)]"
+                >
+                  A-
+                </button>
+              </Tooltip>
               <span className="text-[9px] font-black uppercase tracking-wider px-1 text-slate-400 shrink-0">
                 {currentTextSize.toUpperCase()}
               </span>
-              <button
-                onClick={() => {
-                  const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
-                  if (idx < TEXT_SIZE_KEYS.length - 1 && onSelectTextSize) {
-                    onSelectTextSize(TEXT_SIZE_KEYS[idx + 1]);
-                  }
-                }}
-                disabled={currentTextSize === '3xl'}
-                className="px-2 py-1 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200/20 dark:hover:bg-slate-800/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer select-none text-[var(--text-color)]"
-                title="Increase Font Size"
-              >
-                A+
-              </button>
+              <Tooltip content={language === 'vi' ? 'Tăng cỡ chữ' : 'Increase Font Size'} position="bottom">
+                <button
+                  onClick={() => {
+                    const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
+                    if (idx < TEXT_SIZE_KEYS.length - 1 && onSelectTextSize) {
+                      onSelectTextSize(TEXT_SIZE_KEYS[idx + 1]);
+                    }
+                  }}
+                  disabled={currentTextSize === '3xl'}
+                  className="px-2 py-1 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200/20 dark:hover:bg-slate-800/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer select-none text-[var(--text-color)]"
+                >
+                  A+
+                </button>
+              </Tooltip>
             </div>
 
             {/* Distraction Shield active indicator */}
             {hasDistractionShield && (
-              <span className="flex items-center gap-1 text-[10px] font-black text-duo-green bg-duo-green/10 px-2 py-1 rounded-full uppercase border border-duo-green/30" title="Distraction Shield Active (Auto-hiding UI)">
-                <Shield className="w-3.5 h-3.5 fill-current" /> Shield
-              </span>
+              <Tooltip content={language === 'vi' ? 'Khiên chống phân tâm đang kích hoạt (Tự động ẩn giao diện)' : 'Distraction Shield Active (Auto-hiding UI)'} position="bottom">
+                <span className="flex items-center gap-1 text-[10px] font-black text-duo-green bg-duo-green/10 px-2 py-1 rounded-full uppercase border border-duo-green/30">
+                  <Shield className="w-3.5 h-3.5 fill-current" /> Shield
+                </span>
+              </Tooltip>
             )}
 
             {isDesktop && (
-              <button
-                onClick={onToggleFocusMode}
-                className="p-2 hover:bg-slate-200/20 rounded-full transition-colors text-[var(--text-color)] opacity-70 hover:opacity-100"
-                title="Toggle Focus Mode (Cmd+Shift+F)"
-              >
-                {isFocusMode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+              <Tooltip content={language === 'vi' ? 'Bật/Tắt chế độ tập trung (Cmd+Shift+F)' : 'Toggle Focus Mode (Cmd+Shift+F)'} position="bottom">
+                <button
+                  onClick={onToggleFocusMode}
+                  className="p-2 hover:bg-slate-200/20 rounded-full transition-colors text-[var(--text-color)] opacity-70 hover:opacity-100"
+                >
+                  {isFocusMode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -717,51 +725,54 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         <div className="w-0.5 h-20 border-r-2 border-dashed border-slate-300 dark:border-slate-700/50 absolute top-0 pointer-events-none opacity-40" />
 
         {/* Draggable Ribbon Tab */}
-        <motion.div
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 60 }}
-          dragElastic={0.1}
-          dragMomentum={false}
-          onDragEnd={(_event, info) => {
-            if (info.offset.y > 35) {
-              handleSetBookmark();
-            } else if (info.offset.y < -15 && bookmarks.length > 0) {
-              handleClearBookmarkAt(findCurrentParaIndex());
-            }
-          }}
-          onClick={() => {
-            if (bookmarks.length === 0) {
-              handleSetBookmark();
-            } else if (bookmarks.length === 1) {
-              const b = bookmarks[0];
-              if (b.sectionId === section.id) {
-                handleScrollToPara(b.paraIndex);
-              } else if (onJumpToSection) {
-                onJumpToSection(b.sectionId);
-              }
-            } else {
-              // Multiple bookmarks active -> show choice dialog popover
-              setShowBookmarkModal(true);
-            }
-          }}
-          className={`w-8 h-12 rounded-b-lg flex flex-col items-center justify-between py-1.5 cursor-grab active:cursor-grabbing shadow-md border-x-2 border-b transition-all relative
-            ${currentChapterBookmarks.length > 0
-              ? 'bg-duo-orange border-duo-orange-dark text-white'
-              : bookmarks.length > 0
-              ? 'bg-duo-purple border-duo-purple-dark text-white animate-pulse'
-              : 'bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:bg-slate-300'
-            }
-          `}
-          animate={{ y: currentChapterBookmarks.length > 0 ? 30 : 0 }}
-          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-          title={
+        <Tooltip
+          content={
             currentChapterBookmarks.length > 0 
-              ? 'Click to view/scroll bookmarks / Drag up to clear' 
+              ? (language === 'vi' ? 'Nhấp để xem thẻ đánh dấu / Kéo lên để xóa' : 'Click to view/scroll bookmarks / Drag up to clear') 
               : bookmarks.length > 0
-              ? `View bookmarks from other chapters`
-              : 'Drag down or click to bookmark this spot'
+              ? (language === 'vi' ? 'Xem các thẻ đánh dấu từ chương khác' : 'View bookmarks from other chapters')
+              : (language === 'vi' ? 'Kéo xuống hoặc nhấp để đánh dấu vị trí này' : 'Drag down or click to bookmark this spot')
           }
+          position="left"
         >
+          <motion.div
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 60 }}
+            dragElastic={0.1}
+            dragMomentum={false}
+            onDragEnd={(_event, info) => {
+              if (info.offset.y > 35) {
+                handleSetBookmark();
+              } else if (info.offset.y < -15 && bookmarks.length > 0) {
+                handleClearBookmarkAt(findCurrentParaIndex());
+              }
+            }}
+            onClick={() => {
+              if (bookmarks.length === 0) {
+                handleSetBookmark();
+              } else if (bookmarks.length === 1) {
+                const b = bookmarks[0];
+                if (b.sectionId === section.id) {
+                  handleScrollToPara(b.paraIndex);
+                } else if (onJumpToSection) {
+                  onJumpToSection(b.sectionId);
+                }
+              } else {
+                // Multiple bookmarks active -> show choice dialog popover
+                setShowBookmarkModal(true);
+              }
+            }}
+            className={`w-8 h-12 rounded-b-lg flex flex-col items-center justify-between py-1.5 cursor-grab active:cursor-grabbing shadow-md border-x-2 border-b transition-all relative
+              ${currentChapterBookmarks.length > 0
+                ? 'bg-duo-orange border-duo-orange-dark text-white'
+                : bookmarks.length > 0
+                ? 'bg-duo-purple border-duo-purple-dark text-white animate-pulse'
+                : 'bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:bg-slate-300'
+              }
+            `}
+            animate={{ y: currentChapterBookmarks.length > 0 ? 30 : 0 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+          >
           {/* Grab handles drag pattern indicator */}
           <div className="flex flex-col gap-0.5 opacity-60">
             <span className="w-3.5 h-0.5 bg-current rounded-full" />
@@ -789,7 +800,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             `} />
           </div>
         </motion.div>
-      </div>
+      </Tooltip>
+    </div>
 
       {/* Main Content Area (Continuous Scroller) */}
       <main 
