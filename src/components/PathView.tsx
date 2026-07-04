@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Check, Star, Trophy, RefreshCw, Key, Upload, BookOpen, AlertCircle, X, ShieldAlert, Sparkles, ChevronLeft, ChevronRight, Bookmark, HelpCircle } from 'lucide-react';
 import { TRANSLATIONS } from '../utils/translations';
@@ -84,22 +84,41 @@ export const PathView: React.FC<PathViewProps> = ({
     return pattern[index % pattern.length];
   };
 
-  const nodeCoords = sections.map((_, i) => ({
-    x: containerWidth / 2 + getXOffset(i),
-    y: yOffsetStart + i * yStep
-  }));
-
-  let pathD = '';
-  if (nodeCoords.length > 0) {
-    pathD = `M ${nodeCoords[0].x} ${nodeCoords[0].y}`;
-    for (let i = 0; i < nodeCoords.length - 1; i++) {
-      const p0 = nodeCoords[i];
-      const p1 = nodeCoords[i + 1];
-      const cy0 = p0.y + yStep * 0.45;
-      const cy1 = p1.y - yStep * 0.45;
-      pathD += ` C ${p0.x} ${cy0}, ${p1.x} ${cy1}, ${p1.x} ${p1.y}`;
+  const computedNodes = useMemo(() => {
+    const coords: Record<string, { x: number; y: number; isFork: boolean }> = {};
+    let currentY = yOffsetStart;
+    
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      coords[section.id] = {
+        x: containerWidth / 2 + getXOffset(i),
+        y: currentY,
+        isFork: false
+      };
+      currentY += yStep;
     }
-  }
+    return coords;
+  }, [sections, containerWidth, yOffsetStart, yStep, isSidebar]);
+
+  const pathD = useMemo(() => {
+    let path = '';
+    if (sections.length > 0) {
+      const startNode = computedNodes[sections[0].id];
+      if (startNode) {
+        path = `M ${startNode.x} ${startNode.y}`;
+        for (let i = 0; i < sections.length - 1; i++) {
+          const p0 = computedNodes[sections[i].id];
+          const p1 = computedNodes[sections[i + 1].id];
+          if (p0 && p1) {
+            const cy0 = p0.y + yStep * 0.45;
+            const cy1 = p1.y - yStep * 0.45;
+            path += ` C ${p0.x} ${cy0}, ${p1.x} ${cy1}, ${p1.x} ${p1.y}`;
+          }
+        }
+      }
+    }
+    return path;
+  }, [sections, computedNodes, yStep]);
 
   const getSectionStatus = (index: number) => {
     const section = sections[index];
@@ -498,7 +517,7 @@ export const PathView: React.FC<PathViewProps> = ({
           {/* Render Nodes */}
           {sections.map((section, index) => {
             const status = getSectionStatus(index);
-            const coord = nodeCoords[index];
+            const coord = computedNodes[section.id];
             const isCompleted = status === 'completed';
             const isAvailable = status === 'available';
             const isLocked = status === 'locked';

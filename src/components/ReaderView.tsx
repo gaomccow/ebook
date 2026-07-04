@@ -46,6 +46,9 @@ interface ReaderViewProps {
   // AI Explanation feature
   onExplainText?: (text: string) => Promise<string>;
   onJumpToSection?: (sectionId: string) => void;
+
+  // Word Bank extensions
+  onAddWord?: (word: string, definition: string, translation: string) => void;
 }
 
 export const ReaderView: React.FC<ReaderViewProps> = ({
@@ -68,7 +71,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   images = {},
   language = 'en',
   onExplainText,
-  onJumpToSection
+  onJumpToSection,
+  onAddWord
 }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isNearBottom, setIsNearBottom] = useState(false);
@@ -399,6 +403,27 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const [selectionText, setSelectionText] = useState('');
   const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(null);
 
+  // Word Bank States
+  const [showSaveWordModal, setShowSaveWordModal] = useState(false);
+  const [savingWord, setSavingWord] = useState('');
+  const [savingDef, setSavingDef] = useState('');
+  const [savingTrans, setSavingTrans] = useState('');
+
+  // Local fallback dictionary for demo
+  const DICTIONARY_DEMO: Record<string, { definition: string; translation: string }> = {
+    'focus': { definition: 'the state or quality of having or producing clear visual definition / concentration of attention', translation: 'sự tập trung' },
+    'mastery': { definition: 'comprehensive knowledge or skill in a subject or accomplishment', translation: 'sự thành thạo' },
+    'read': { definition: 'look at and comprehend the meaning of written or printed matter', translation: 'đọc' },
+    'book': { definition: 'a written or printed work consisting of pages glued or sewn together along one side', translation: 'sách' },
+    'stamina': { definition: 'the ability to sustain prolonged physical or mental effort', translation: 'khả năng chịu đựng' },
+    'habit': { definition: 'a settled or regular tendency or practice, especially one that is hard to give up', translation: 'thói quen' },
+    'learn': { definition: 'gain or acquire knowledge of or skill in something by study, experience, or being taught', translation: 'học' },
+    'study': { definition: 'the devotion of time and attention to acquiring knowledge on an academic subject', translation: 'học tập' },
+    'attention': { definition: 'notice taken of someone or something; the regarding of someone or something as interesting or important', translation: 'sự chú ý' },
+    'library': { definition: 'a building or room containing collections of books, periodicals, and sometimes films and recorded music', translation: 'thư viện' },
+    'progress': { definition: 'forward or onward movement toward a destination', translation: 'sự tiến bộ' }
+  };
+
   // Simulated Tactical Telemetries
   const [focusQuality, setFocusQuality] = useState(98);
 
@@ -506,6 +531,27 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     setSelectionText('');
   };
 
+  const triggerSaveWord = () => {
+    if (!selectionText) return;
+    const cleanWord = selectionText.trim();
+    const normalized = cleanWord.toLowerCase();
+    
+    // Look up in our demo dictionary
+    const fallback = DICTIONARY_DEMO[normalized] || {
+      definition: 'A term or concept from the text.',
+      translation: language === 'vi' ? 'một từ vựng từ văn bản' : 'a term from reading'
+    };
+
+    setSavingWord(cleanWord);
+    setSavingDef(fallback.definition);
+    setSavingTrans(fallback.translation);
+    setShowSaveWordModal(true);
+
+    window.getSelection()?.removeAllRanges();
+    setMenuCoords(null);
+    setSelectionText('');
+  };
+
   // Monitor scroll progress & Distraction Shield header hide
   useEffect(() => {
     const handleScroll = () => {
@@ -606,6 +652,14 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             >
               <Sparkles className="w-3.5 h-3.5 fill-current text-duo-purple" />
               <span className="text-duo-purple font-black">{language === 'vi' ? 'Giải thích' : 'Explain'}</span>
+            </button>
+            <div className="h-4 w-[1px] bg-gray-700 mx-1" />
+            <button
+              onClick={triggerSaveWord}
+              className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider hover:text-duo-orange transition-colors px-1 text-duo-orange flex-row cursor-pointer"
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              <span className="text-duo-orange font-black">{language === 'vi' ? 'Lưu từ' : 'Save Word'}</span>
             </button>
           </motion.div>
         )}
@@ -1331,6 +1385,81 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                   </div>
                 </div>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Save Word to Word Bank Confirmation Modal */}
+      <AnimatePresence>
+        {showSaveWordModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm pointer-events-auto">
+            <motion.div
+              initial={{ scale: 0.9, y: 15, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 15, opacity: 0 }}
+              className="bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-3xl p-6 shadow-2xl max-w-sm w-full flex flex-col gap-4 text-left"
+            >
+              <div className="flex items-center gap-2 border-b border-[var(--border-color)]/30 pb-2">
+                <Bookmark className="w-5 h-5 text-duo-orange" />
+                <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-color)]">
+                  {language === 'vi' ? 'Lưu từ vựng' : 'Save Vocabulary'}
+                </h3>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Word</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={savingWord}
+                    className="px-3 py-2 rounded-xl border border-[var(--border-color)] font-bold text-xs bg-slate-100 dark:bg-slate-800 text-[var(--text-color)] cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Definition</label>
+                  <textarea
+                    rows={2}
+                    value={savingDef}
+                    onChange={(e) => setSavingDef(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-[var(--border-color)] font-bold text-xs bg-[var(--card-bg)] text-[var(--text-color)] focus:outline-none focus:border-duo-orange"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Translation</label>
+                  <input
+                    type="text"
+                    value={savingTrans}
+                    onChange={(e) => setSavingTrans(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-[var(--border-color)] font-bold text-xs bg-[var(--card-bg)] text-[var(--text-color)] focus:outline-none focus:border-duo-orange"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2.5 mt-2 border-t border-[var(--border-color)]/20 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowSaveWordModal(false)}
+                  className="flex-1 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider border-2 border-[var(--border-color)] text-gray-500 hover:bg-slate-55 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onAddWord && savingWord.trim()) {
+                      onAddWord(savingWord.trim(), savingDef.trim(), savingTrans.trim());
+                    }
+                    setShowSaveWordModal(false);
+                  }}
+                  className="flex-1 py-2.5 bg-duo-orange border-b-4 border-duo-orange-dark text-white rounded-2xl text-xs font-black uppercase tracking-wider btn-3d"
+                >
+                  Save
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

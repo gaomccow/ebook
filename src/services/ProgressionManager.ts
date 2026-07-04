@@ -1,6 +1,35 @@
 import { db } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+const THEME_COSTS: Record<string, number> = {
+  default: 0,
+  dark: 0,
+  glass: 10000,
+  retro: 100,
+  gradient: 500,
+  tactical: 1000,
+  midnight: 1500
+};
+
+const FEATURE_COSTS: Record<string, number> = {
+  distraction_shield: 500
+};
+
+const FONT_COSTS: Record<string, number> = {
+  font_inter: 0,
+  font_plus_jakarta: 250,
+  font_source_sans: 450,
+  font_times_new_roman: 200,
+  font_eb_garamond: 500,
+  font_merriweather: 650,
+  font_jetbrains_mono: 150,
+  font_ibm_plex_mono: 300,
+  font_intel_one_mono: 600,
+  font_atkinson_hyperlegible: 800,
+  font_space_grotesk: 1000,
+  font_lexend: 1200
+};
+
 export interface LibrarySection {
   id: string;
   name: string;
@@ -20,6 +49,15 @@ export interface BookArchiveItem {
   sectionId?: string | null;
 }
 
+export interface SavedWord {
+  id: string;
+  originalWord: string;
+  definition: string;
+  translation: string;
+  masteryScore: number; // 0 to 4
+  nextReviewDate: number; // timestamp
+}
+
 export interface UserStats {
   xp: number;
   level: number;
@@ -33,6 +71,7 @@ export interface UserStats {
   currentTextSize: string;
   completedSections: string[];
   librarySections?: LibrarySection[];
+  savedWords?: SavedWord[];
 }
 
 export interface UnifiedState {
@@ -44,6 +83,18 @@ const STORAGE_KEY = 'gamified_reader_unified_state_v2';
 
 export class ProgressionManager {
   private state: UnifiedState;
+
+  private calculateSignature(stateStr: string): string {
+    const salt = 'gamified_reader_salt_sec_1337';
+    let hash = 0;
+    const combined = stateStr + salt;
+    for (let i = 0; i < combined.length; i++) {
+      const char = combined.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash |= 0; // Convert to 32bit integer
+    }
+    return hash.toString(36);
+  }
 
   constructor() {
     this.state = this.loadState();
@@ -70,21 +121,35 @@ export class ProgressionManager {
       librarySections: [
         { id: 'sec_fiction', name: 'Fiction' },
         { id: 'sec_non_fiction', name: 'Non-Fiction' }
-      ]
+      ],
+      savedWords: []
     };
 
     try {
       const data = localStorage.getItem(STORAGE_KEY);
+      const sig = localStorage.getItem(STORAGE_KEY + '_sig');
       if (data) {
-        const parsed = JSON.parse(data);
-        if (parsed.user && parsed.library) {
-          return {
-            user: {
-              ...defaultUser,
-              ...parsed.user
-            },
-            library: parsed.library
-          };
+        if (sig && this.calculateSignature(data) === sig) {
+          const parsed = JSON.parse(data);
+          if (parsed.user && parsed.library) {
+            return {
+              user: {
+                ...defaultUser,
+                ...parsed.user
+              },
+              library: parsed.library
+            };
+          }
+        } else {
+          console.warn('Progression data tampering or corruption detected. Local state integrity compromised.');
+          const email = localStorage.getItem('readable_auth_email');
+          if (email) {
+            setTimeout(() => {
+              this.syncFromFirebase(email, () => {
+                window.location.reload();
+              });
+            }, 100);
+          }
         }
       }
     } catch (e) {
@@ -109,7 +174,8 @@ export class ProgressionManager {
         librarySections: [
           { id: 'sec_fiction', name: 'Fiction' },
           { id: 'sec_non_fiction', name: 'Non-Fiction' }
-        ]
+        ],
+        savedWords: []
       },
       library: [
         {
@@ -134,7 +200,9 @@ export class ProgressionManager {
    */
   public saveState(): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      const serialized = JSON.stringify(this.state);
+      localStorage.setItem(STORAGE_KEY, serialized);
+      localStorage.setItem(STORAGE_KEY + '_sig', this.calculateSignature(serialized));
 
       // Sync asynchronously to Firestore if user email is logged in
       const email = localStorage.getItem('readable_auth_email');
@@ -429,11 +497,12 @@ export class ProgressionManager {
   /**
    * Purchase/unlock a new layout-transforming theme.
    */
-  public unlockTheme(theme: string, cost: number): boolean {
-    if (this.state.user.xp < cost) return false;
+  public unlockTheme(theme: string, cost?: number): boolean {
+    const verifiedCost = THEME_COSTS[theme] !== undefined ? THEME_COSTS[theme] : cost || 999999;
+    if (this.state.user.xp < verifiedCost) return false;
     if (this.state.user.unlockedThemes.includes(theme)) return true;
 
-    this.state.user.xp -= cost;
+    this.state.user.xp -= verifiedCost;
     this.state.user.unlockedThemes.push(theme);
     this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
     this.saveState();
@@ -443,11 +512,12 @@ export class ProgressionManager {
   /**
    * Purchase/unlock a custom features upgrade.
    */
-  public unlockFeature(feature: string, cost: number): boolean {
-    if (this.state.user.xp < cost) return false;
+  public unlockFeature(feature: string, cost?: number): boolean {
+    const verifiedCost = FEATURE_COSTS[feature] !== undefined ? FEATURE_COSTS[feature] : cost || 999999;
+    if (this.state.user.xp < verifiedCost) return false;
     if (this.state.user.unlockedFeatures.includes(feature)) return true;
 
-    this.state.user.xp -= cost;
+    this.state.user.xp -= verifiedCost;
     this.state.user.unlockedFeatures.push(feature);
     this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
     this.saveState();
@@ -457,14 +527,15 @@ export class ProgressionManager {
   /**
    * Purchase/unlock a custom font.
    */
-  public unlockFont(font: string, cost: number): boolean {
-    if (this.state.user.xp < cost) return false;
+  public unlockFont(font: string, cost?: number): boolean {
+    const verifiedCost = FONT_COSTS[font] !== undefined ? FONT_COSTS[font] : cost || 999999;
+    if (this.state.user.xp < verifiedCost) return false;
     if (!this.state.user.unlockedFonts) {
       this.state.user.unlockedFonts = ['font_inter'];
     }
     if (this.state.user.unlockedFonts.includes(font)) return true;
 
-    this.state.user.xp -= cost;
+    this.state.user.xp -= verifiedCost;
     this.state.user.unlockedFonts.push(font);
     this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
     this.saveState();
@@ -517,7 +588,8 @@ export class ProgressionManager {
         librarySections: [
           { id: 'sec_fiction', name: 'Fiction' },
           { id: 'sec_non_fiction', name: 'Non-Fiction' }
-        ]
+        ],
+        savedWords: []
       },
       library: [
         {
@@ -586,6 +658,61 @@ export class ProgressionManager {
       book.tags = tags;
       this.saveState();
     }
+  }
+
+  // --- WORD BANK VOCABULARY ---
+
+  public addSavedWord(originalWord: string, definition: string, translation: string): void {
+    if (!this.state.user.savedWords) {
+      this.state.user.savedWords = [];
+    }
+    // Prevent duplicates
+    const normalized = originalWord.trim().toLowerCase();
+    const exists = this.state.user.savedWords.some(w => w.originalWord.toLowerCase() === normalized);
+    if (exists) return;
+
+    const newWord: SavedWord = {
+      id: 'word_' + Date.now(),
+      originalWord: originalWord.trim(),
+      definition: definition.trim(),
+      translation: translation.trim(),
+      masteryScore: 0, // Starts at 0
+      nextReviewDate: Date.now() // review immediately
+    };
+    this.state.user.savedWords.push(newWord);
+    this.saveState();
+  }
+
+  public deleteSavedWord(id: string): void {
+    if (!this.state.user.savedWords) return;
+    this.state.user.savedWords = this.state.user.savedWords.filter(w => w.id !== id);
+    this.saveState();
+  }
+
+  public practiceWordResult(id: string, isCorrect: boolean): void {
+    if (!this.state.user.savedWords) return;
+    const word = this.state.user.savedWords.find(w => w.id === id);
+    if (word) {
+      if (isCorrect) {
+        word.masteryScore = Math.min(4, word.masteryScore + 1);
+        // Spaced repetition interval in milliseconds
+        const intervals = [86400000, 259200000, 604800000, 1209600000, 2592000000];
+        word.nextReviewDate = Date.now() + (intervals[word.masteryScore] || 86400000);
+        // Reward 15 XP for correct practice
+        this.addXP(15);
+      } else {
+        word.masteryScore = Math.max(0, word.masteryScore - 1);
+        word.nextReviewDate = Date.now() + 3600000; // review in 1 hour if incorrect
+        // Reward 5 XP for trying
+        this.addXP(5);
+      }
+      this.saveState();
+    }
+  }
+
+  private addXP(xpToAdd: number): void {
+    this.state.user.xp += xpToAdd;
+    this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
   }
 
   // --- Helper Methods ---

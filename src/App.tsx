@@ -770,6 +770,21 @@ function AppContent() {
     updateStateFromManager();
   };
 
+  const handleAddWord = (word: string, definition: string, translation: string) => {
+    progressionManager.addSavedWord(word, definition, translation);
+    updateStateFromManager();
+  };
+
+  const handleDeleteSavedWord = (id: string) => {
+    progressionManager.deleteSavedWord(id);
+    updateStateFromManager();
+  };
+
+  const handlePracticeWordResult = (id: string, isCorrect: boolean) => {
+    progressionManager.practiceWordResult(id, isCorrect);
+    updateStateFromManager();
+  };
+
   const triggerThemeReconfigAnimation = (theme: string) => {
     setReconfigTheme(theme);
     setTimeout(() => {
@@ -827,6 +842,11 @@ function AppContent() {
       onDeleteLibrarySection={handleDeleteLibrarySection}
       onSetBookSection={handleSetBookSection}
       onUpdateBookTags={handleUpdateBookTags}
+      savedWords={stats.savedWords}
+      onDeleteSavedWord={handleDeleteSavedWord}
+      onPracticeWordResult={handlePracticeWordResult}
+      onEpubUpload={handleEpubUpload}
+      isParsing={isParsing}
     />
   );
 
@@ -880,6 +900,7 @@ function AppContent() {
       language={language}
       onExplainText={handleExplainText}
       onJumpToSection={handleJumpToSection}
+      onAddWord={handleAddWord}
     />
   ) : null;
 
@@ -1035,28 +1056,29 @@ function AppContent() {
 
       {/* Small half-opaque arrow handle on the left side of the screen to show/hide dock */}
       {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
-        <Tooltip
-          content={showDock ? (language === 'vi' ? 'Ẩn thanh điều hướng' : 'Hide Navigation Dock') : (language === 'vi' ? 'Hiện thanh điều hướng' : 'Show Navigation Dock')}
-          position="right"
-          className="fixed left-0 top-1/2 transform -translate-y-1/2 z-50 inline-flex"
-        >
-          <button
-            onClick={() => setShowDock(prev => !prev)}
-            className="bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md border-r-2 border-y-2 border-slate-300/30 dark:border-slate-700/30 rounded-r-2xl py-3 px-2 flex flex-col items-center gap-1.5 shadow-lg hover:bg-slate-200/75 dark:hover:bg-slate-800/75 cursor-pointer select-none text-slate-500 dark:text-slate-400 hover:text-duo-blue dark:hover:text-cyan-400 transition-all"
+        <div className="fixed left-0 top-1/2 transform -translate-y-1/2 z-50 inline-flex">
+          <Tooltip
+            content={showDock ? (language === 'vi' ? 'Ẩn thanh điều hướng' : 'Hide Navigation Dock') : (language === 'vi' ? 'Hiện thanh điều hướng' : 'Show Navigation Dock')}
+            position="right"
           >
-            {showDock ? (
-              <ChevronLeft className="w-4 h-4 animate-pulse" />
-            ) : (
-              <ChevronRight className="w-4 h-4 animate-bounce" />
-            )}
-            <span 
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }} 
-              className="text-[8px] font-black tracking-widest uppercase mt-0.5"
+            <button
+              onClick={() => setShowDock(prev => !prev)}
+              className="bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md border-r-2 border-y-2 border-slate-300/30 dark:border-slate-700/30 rounded-r-2xl py-3 px-2 flex flex-col items-center gap-1.5 shadow-lg hover:bg-slate-200/75 dark:hover:bg-slate-800/75 cursor-pointer select-none text-slate-500 dark:text-slate-400 hover:text-duo-blue dark:hover:text-cyan-400 transition-all"
             >
-              {showDock ? (language === 'vi' ? 'ẨN' : 'HIDE') : (language === 'vi' ? 'HIỆN' : 'SHOW')}
-            </span>
-          </button>
-        </Tooltip>
+              {showDock ? (
+                <ChevronLeft className="w-4 h-4 animate-pulse" />
+              ) : (
+                <ChevronRight className="w-4 h-4 animate-bounce" />
+              )}
+              <span 
+                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }} 
+                className="text-[8px] font-black tracking-widest uppercase mt-0.5"
+              >
+                {showDock ? (language === 'vi' ? 'ẨN' : 'HIDE') : (language === 'vi' ? 'HIỆN' : 'SHOW')}
+              </span>
+            </button>
+          </Tooltip>
+        </div>
       )}
 
       {/* Stats & Progression Info Popover Modal */}
