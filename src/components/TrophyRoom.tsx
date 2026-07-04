@@ -256,7 +256,9 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                 )}
                 <div>
                   <h2 className="font-black text-sm">{authName}</h2>
-                  <p className="text-[9px] text-gray-400 font-extrabold uppercase">Level {level} Explorer</p>
+                  <p className="text-[9px] text-gray-400 font-extrabold uppercase">
+                    {t('explorerLevel').replace('{level}', String(level))}
+                  </p>
                 </div>
               </div>
 
@@ -284,7 +286,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
             </div>
 
             {/* SVG Velocity Chart */}
-            <VelocityChart data={velocityData} />
+            <VelocityChart data={velocityData} language={language} />
 
             {/* Achievements Card (Duolingo Style) */}
             <div className="bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-3xl p-4 shadow-[0_6px_0_0_var(--border-color)] flex flex-col gap-3.5">
@@ -337,7 +339,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
           </div>
 
           <div className="mt-8 text-center text-[10px] font-extrabold text-gray-400">
-            <p>READABLE.APP LIBRARY ARCHIVE</p>
+            <p>{t('libraryArchive')}</p>
           </div>
         </aside>
       )}
@@ -855,15 +857,17 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                   >
                     <div className="flex-1 pr-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm text-[var(--text-color)]">{item.name}</span>
+                        <span className="font-extrabold text-sm text-[var(--text-color)]">
+                          {t(`shop_${item.id}_name`) || item.name}
+                        </span>
                         <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase
                           ${item.type === 'theme' ? 'bg-duo-purple/10 text-duo-purple' : 'bg-duo-blue/10 text-duo-blue-dark'}
                         `}>
-                          {item.type}
+                          {t(item.type) || item.type}
                         </span>
                       </div>
                       <p className="text-[10px] text-gray-400 font-bold mt-1 leading-snug">
-                        {item.description}
+                        {t(`shop_${item.id}_desc`) || item.description}
                       </p>
                     </div>
 
@@ -903,7 +907,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                             }
                           `}
                         >
-                          Unlock • {item.cost} XP
+                          {t('unlock')} • {item.cost} XP
                         </button>
                       )}
                     </div>
@@ -917,7 +921,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
           <div className="flex flex-col gap-3 mt-8">
             <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
               <Type className="w-4 h-4 text-duo-blue" />
-              Typography Engine Tiers
+              {t('typographyTiers')}
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -935,7 +939,9 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                   >
                     <div className="flex-1 pr-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm text-[var(--text-color)]">{font.name}</span>
+                        <span className="font-extrabold text-sm text-[var(--text-color)]">
+                          {t(`font_${font.id}_name`) || font.name}
+                        </span>
                         <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase bg-duo-blue/10 text-duo-blue-dark">
                           {font.id.startsWith('font_inter') || font.id.startsWith('font_plus') || font.id.startsWith('font_source') ? 'Tier 1' :
                            font.id.startsWith('font_times') || font.id.startsWith('font_eb') || font.id.startsWith('font_merri') ? 'Tier 2' :
@@ -943,7 +949,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                         </span>
                       </div>
                       <p className="text-[10px] text-gray-400 font-bold mt-1 leading-snug">
-                        {font.description}
+                        {t(`font_${font.id}_desc`) || font.description}
                       </p>
                     </div>
 
@@ -971,7 +977,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                             }
                           `}
                         >
-                          Unlock • {font.cost} XP
+                          {t('unlock')} • {font.cost} XP
                         </button>
                       )}
                     </div>

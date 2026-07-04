@@ -26,7 +26,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (key: keyof typeof TRANSLATIONS['en']): string => {
-    const langDict = TRANSLATIONS[currentLang];
+    const langDict = TRANSLATIONS[currentLang] as Record<string, string>;
     return langDict[key] || TRANSLATIONS['en'][key] || key;
   };
 

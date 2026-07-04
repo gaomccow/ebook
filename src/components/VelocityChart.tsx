@@ -3,10 +3,21 @@ import React from 'react';
 interface VelocityChartProps {
   // Array of numbers representing XP gained per day for the last 7 days
   data: number[];
+  language?: string;
 }
 
-export const VelocityChart: React.FC<VelocityChartProps> = ({ data }) => {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+export const VelocityChart: React.FC<VelocityChartProps> = ({ data, language }) => {
+  const days = language === 'vi'
+    ? ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+    : language === 'fr'
+      ? ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di']
+      : language === 'zh'
+        ? ['一', '二', '三', '四', '五', '六', '日']
+        : language === 'es'
+          ? ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']
+          : language === 'de'
+            ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+            : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   
   // Align data to be exactly 7 items
   const chartData = [...data];
@@ -50,7 +61,7 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ data }) => {
   return (
     <div className="w-full flex flex-col items-center select-none mt-2">
       <span className="text-[10px] font-black opacity-60 uppercase tracking-widest self-start mb-1.5">
-        Reading Velocity (7D)
+        {language === 'vi' ? 'Tốc độ đọc (7 ngày)' : 'Reading Velocity (7D)'}
       </span>
       <div className="w-full bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl p-2 relative overflow-hidden">
         <svg 
@@ -105,7 +116,7 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ data }) => {
               key={idx} 
               className="text-[9px] font-black opacity-60 uppercase"
             >
-              {day[0]}
+              {day}
             </span>
           ))}
         </div>
