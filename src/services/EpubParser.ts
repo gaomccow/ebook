@@ -76,7 +76,12 @@ export class EpubParser {
       
       try {
         const fileContentText = await this.getFileText(zip, filePath);
-        const doc = parser.parseFromString(fileContentText, 'application/xhtml+xml');
+        let doc = parser.parseFromString(fileContentText, 'application/xhtml+xml');
+        
+        // Fallback: If xml parsing failed or had a parsererror (e.g. malformed entities), parse as text/html
+        if (doc.querySelector('parsererror') || !doc.body) {
+          doc = parser.parseFromString(fileContentText, 'text/html');
+        }
         
         // Extract Title: Look in <h1>, <h2>, or the <title> tag
         let chapterTitle = `Chapter ${i + 1}`;
@@ -228,8 +233,8 @@ export class EpubParser {
 
     const paragraphs: string[] = [];
     
-    // Process block-level tags, paragraphs, and images
-    const textBlocks = body.querySelectorAll('p, blockquote, li, h1, h2, h3, h4, img, div');
+    // Process block-level tags, paragraphs, and images (supporting h1-h6 and div)
+    const textBlocks = body.querySelectorAll('p, blockquote, li, h1, h2, h3, h4, h5, h6, img, div');
     
     if (textBlocks.length > 0) {
       textBlocks.forEach(block => {
@@ -240,9 +245,17 @@ export class EpubParser {
             const filename = src.split('/').pop() || src;
             paragraphs.push(`[IMG:${filename}]`);
           }
-        } else if (tagName === 'p' || tagName === 'blockquote' || tagName === 'li' || tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || tagName === 'h4') {
+        } else if (
+          tagName === 'p' || tagName === 'blockquote' || tagName === 'li' || 
+          tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || tagName === 'h4' || tagName === 'h5' || tagName === 'h6' ||
+          tagName === 'div'
+        ) {
+          // If it is a div, only process it if it does not contain other block tags to avoid duplicate text extraction
+          if (tagName === 'div' && block.querySelector('p, div, blockquote, li, h1, h2, h3, h4, h5, h6')) {
+            return;
+          }
           const text = block.textContent?.trim();
-          if (text && text.length > 5) {
+          if (text && text.length > 0) {
             const normalized = text
               .replace(/\s+/g, ' ')
               .replace(/\n+/g, ' ')
@@ -311,7 +324,7 @@ export class EpubParser {
   private static isKeywordHeading(line: string): boolean {
     return (
       /^(?:chapter|ch\.?|chương|phần|part|bài|mục|section|sec\.?|module|mod\.?)\s+[\dIVXivx]+/i.test(line) ||
-      /^\d+[.)\s]\s+[A-Z\u0041-\u005A\u00C0-\u024F]/u.test(line)
+      /^\d+[.)\s]\s+\p{L}/u.test(line)
     );
   }
 
@@ -323,7 +336,7 @@ export class EpubParser {
   private static isAllCapsHeading(line: string): boolean {
     if (line.length < 3 || line.length > 80) return false;
     if (/^[\d\s]+$/.test(line)) return false; // skip pure numbers
-    return line === line.toUpperCase() && /[A-Z]/.test(line);
+    return line === line.toUpperCase() && /\p{L}/u.test(line);
   }
 
   /**
