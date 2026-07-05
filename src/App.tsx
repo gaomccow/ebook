@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { LanguageList } from './components/LanguagePicker';
-import { db } from './services/firebase';
+import { db, auth } from './services/firebase';
 import { doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 
 interface BookPayload {
@@ -329,7 +329,7 @@ function AppContent() {
     localStorage.setItem('readable_auth_email', email);
     setIsAuthenticated(true);
     setView('library');
-    progressionManager.syncFromFirebase(email, syncState);
+    const uid = auth.currentUser?.uid; if (uid) progressionManager.syncFromFirebase(uid, syncState);
   };
 
   const handleLogout = () => {
@@ -343,8 +343,9 @@ function AppContent() {
   useEffect(() => {
     const email = localStorage.getItem('readable_auth_email');
     if (email) {
-      progressionManager.syncFromFirebase(email, syncState);
+      const uid = auth.currentUser?.uid; if (uid) progressionManager.syncFromFirebase(uid, syncState);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -443,6 +444,33 @@ function AppContent() {
     setLanguage(lang);
   };
 
+
+  // Sync content and images based on active book ID
+  useEffect(() => {
+    if (!activeBookId) return;
+    
+    if (activeBookId === 'book_default') {
+      setContentMap(DEFAULT_CONTENT);
+      setActiveImages({});
+      return;
+    }
+
+    let cancelled = false;
+
+    Promise.all([
+      IDBStorage.getItem<Record<string, string>>(`epub_content_${activeBookId}`),
+      IDBStorage.getItem<Record<string, string>>(`epub_images_${activeBookId}`)
+    ]).then(([content, images]) => {
+      if (cancelled) return;
+      if (content) setContentMap(content);
+      setActiveImages(images ?? {});
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeBookId]);
+
   // Select a book from the shelf
   const handleSelectBook = (id: string) => {
     setActiveBookId(id);
@@ -451,8 +479,6 @@ function AppContent() {
     if (id === 'book_default') {
       setActiveBookTitle('Mastering Deep Focus');
       setSections(DEFAULT_SECTIONS);
-      setContentMap(DEFAULT_CONTENT);
-      setActiveImages({});
       localStorage.setItem('gamified_reader_book_title', 'Mastering Deep Focus');
       localStorage.setItem('gamified_reader_sections', JSON.stringify(DEFAULT_SECTIONS));
     } else {
@@ -469,15 +495,7 @@ function AppContent() {
           localStorage.setItem('gamified_reader_sections', storedSections);
         }
 
-        // Load large content from IDB
-        IDBStorage.getItem<Record<string, string>>(`epub_content_${id}`).then(stored => {
-          if (stored) setContentMap(stored);
-        });
-
-        // Load images from IDB
-        IDBStorage.getItem<Record<string, string>>(`epub_images_${id}`).then(stored => {
-          setActiveImages(stored ?? {});
-        });
+        
       }
     }
 
@@ -969,7 +987,8 @@ function AppContent() {
       title: authPicture ? t('profile') : t('xpStats'),
       icon: authPicture ? (
         <img 
-          src={authPicture} 
+          src={authPicture}
+                    referrerPolicy="no-referrer" 
           alt="Profile" 
           className="w-7 h-7 rounded-full border border-duo-orange object-cover shadow-sm mx-auto shrink-0"
         />
@@ -993,7 +1012,7 @@ function AppContent() {
     }
   ];
 
-  const currentLevel = Math.floor(stats.xp / 100) + 1;
+  const currentLevel = ProgressionManager.calculateLevel(stats.lifetimeXP || stats.xp);
   const xpIntoCurrentLevel = stats.xp % 100;
 
   if (!isAuthenticated) {
@@ -1084,7 +1103,7 @@ function AppContent() {
       {/* Stats & Progression Info Popover Modal */}
       <AnimatePresence>
         {showStatsModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-55 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -1093,7 +1112,7 @@ function AppContent() {
             >
               <h3 className="text-xl font-black mb-1 flex items-center justify-center gap-2">
                 <Flame className="w-6 h-6 text-duo-orange fill-duo-orange" />
-                {language === 'vi' ? 'Học Lực Của Bạn' : 'Your Progression Stats'}
+                {language === 'vi' ? 'Học Lực Của Bạn' : t('xpStats')}
               </h3>
               <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-6">
                 {language === 'vi' ? 'Thống kê hoạt động học tập' : 'Personal Progression Matrix'}
@@ -1104,7 +1123,8 @@ function AppContent() {
                 <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 mb-6 text-left">
                   {authPicture ? (
                     <img 
-                      src={authPicture} 
+                      src={authPicture}
+                    referrerPolicy="no-referrer" 
                       alt={authName}
                       className="w-10 h-10 rounded-xl border border-duo-purple object-cover shrink-0"
                     />
@@ -1115,7 +1135,7 @@ function AppContent() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-black truncate">{authName}</p>
-                    <p className="text-[9px] text-gray-400 font-bold truncate leading-none mt-0.5">{authEmail}</p>
+                    <p className="text-[9px] text-gray-400 font-bold truncate leading-normal mt-0.5">{authEmail}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -1212,7 +1232,7 @@ function AppContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md select-none text-center"
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md select-none text-center"
           >
             <div className="flex flex-col items-center gap-4 p-6">
               {reconfigTheme === 'retro' && (

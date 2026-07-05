@@ -153,9 +153,6 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   const handleStartPractice = () => {
     const now = Date.now();
     let due = savedWords.filter(w => w.nextReviewDate <= now);
-    if (due.length === 0) {
-      due = [...savedWords];
-    }
     const selected = due.sort(() => Math.random() - 0.5).slice(0, 5);
     if (selected.length === 0) {
       alert(language === 'vi' ? 'Không có từ vựng nào để ôn tập! Hãy lưu từ khi đọc sách.' : 'No words in your Word Bank to practice! Highlight and save words while reading.');
@@ -245,7 +242,8 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                 {/* Bouncy Circle Icon / Profile picture */}
                 {authPicture ? (
                   <img 
-                    src={authPicture} 
+                    src={authPicture}
+                    referrerPolicy="no-referrer" 
                     alt={authName}
                     className="w-12 h-12 rounded-2xl border-2 border-duo-purple-dark shadow-sm object-cover shrink-0"
                   />
@@ -440,22 +438,22 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
 
               <div className="flex flex-col sm:flex-row items-center gap-5">
                 <motion.div 
-                  key={favorites[carouselIndex].id}
+                  key={favorites[carouselIndex % Math.max(1, favorites.length)].id}
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   className="w-24 h-24 bg-white/20 rounded-full border-4 border-white flex items-center justify-center cursor-pointer hover:rotate-3 transition-transform"
-                  onClick={() => onSelectBook(favorites[carouselIndex].id)}
+                  onClick={() => onSelectBook(favorites[carouselIndex % Math.max(1, favorites.length)].id)}
                 >
                   <Award className="w-12 h-12 text-duo-yellow" />
                 </motion.div>
 
                 <div className="flex-1 flex flex-col gap-1.5 text-center sm:text-left">
-                  <h4 className="text-lg font-black">{favorites[carouselIndex].title}</h4>
-                  <p className="text-xs text-white/80 font-bold">BY {favorites[carouselIndex].author.toUpperCase()}</p>
+                  <h4 className="text-lg font-black">{favorites[carouselIndex % Math.max(1, favorites.length)].title}</h4>
+                  <p className="text-xs text-white/80 font-bold">BY {favorites[carouselIndex % Math.max(1, favorites.length)].author.toUpperCase()}</p>
                   
                   <div className="flex justify-center sm:justify-start gap-4 mt-1.5">
                     <span className="text-[10px] font-black uppercase text-duo-yellow">
-                      Mastery Score: {Math.floor(favorites[carouselIndex].wordCount / 10) + 200}
+                      Mastery Score: {Math.floor(favorites[carouselIndex % Math.max(1, favorites.length)].wordCount / 10) + 200}
                     </span>
                   </div>
                 </div>

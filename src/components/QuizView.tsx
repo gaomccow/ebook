@@ -105,18 +105,25 @@ export const QuizView: React.FC<QuizViewProps> = ({
       }
     }
   };
-
   // Handle Next Question or Completion
   const handleNext = () => {
     if (!quizData) return;
 
     if (!isCorrect) {
-      // If incorrect, reset the current question so they can try again
+      // If incorrect, reshuffle options and reset
+      const question = quizData.questions[currentQuestionIndex];
+      const correctText = question.options[question.correctAnswerIndex];
+      const shuffledOptions = [...question.options].sort(() => Math.random() - 0.5);
+      const newCorrectIndex = shuffledOptions.indexOf(correctText);
+      question.options = shuffledOptions;
+      question.correctAnswerIndex = newCorrectIndex;
+
       setSelectedOptionIndex(null);
       setIsAnswered(false);
       setHint(null);
       return;
     }
+
 
     // If correct, proceed
     if (currentQuestionIndex + 1 < quizData.questions.length) {
@@ -172,10 +179,10 @@ export const QuizView: React.FC<QuizViewProps> = ({
             Go Back
           </button>
           <button
-            onClick={onSuccess}
+            onClick={onBack}
             className="w-full py-4 rounded-2xl btn-3d btn-3d-yellow text-gray-800 font-bold shadow-[0_4px_0_0_#e6b400]"
           >
-            Skip & Claim XP
+            Skip
           </button>
         </div>
       </div>
@@ -309,7 +316,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
                 if (isAnswered) {
                   const isCorrectAnswer = idx === currentQuestion.correctAnswerIndex;
-                  if (isCorrectAnswer) {
+                  if (isCorrectAnswer && isCorrect) {
                     cardStyle = 'border-2 border-duo-green bg-duo-green/5 text-duo-green-dark font-extrabold shadow-[0_4px_0_0_#46a302] translate-y-0.5';
                   } else if (isSelected && !isCorrectAnswer) {
                     cardStyle = 'border-2 border-red-500 bg-red-50 text-red-700 font-bold shadow-[0_4px_0_0_#ef4444] translate-y-0.5';

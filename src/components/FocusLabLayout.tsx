@@ -143,7 +143,7 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 310, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 24, stiffness: 220 }}
+            transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
             className="h-full border-r-4 border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-color)] overflow-hidden shrink-0 z-20 relative"
           >
             <div className="w-[310px] h-full overflow-y-auto no-scrollbar">
@@ -220,7 +220,7 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 310, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 24, stiffness: 220 }}
+            transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
             className="h-full shrink-0 z-20"
           >
             <div className="w-[310px] h-full">

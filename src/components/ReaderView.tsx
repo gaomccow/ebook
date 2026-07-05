@@ -221,6 +221,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   };
 
   const startCelebritySynthesis = async () => {
+    const myGen = ++pollGeneration.current;
     if (!celebText.trim()) return;
     
     setSynthesisState('requesting');
@@ -262,6 +263,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       const pollInterval = 2000;
 
       const checkJobStatus = async () => {
+        if (myGen !== pollGeneration.current) return;
         if (attempts >= maxAttempts) {
           setSynthesisState('error');
           setSynthesisMessage('Vocal rendering timed out. Please try again.');
@@ -443,12 +445,16 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   // Keyboard navigation & spacebar paragraphs jumping
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null;
+      const typing = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+      if (typing) return;
+
       if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
         jumpToNextParagraph();
       }
 
-      if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      if (true) {
         if (e.key === 'ArrowLeft' && onPrevSection) {
           onPrevSection();
         }
@@ -635,7 +641,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             initial={{ scale: 0.8, y: 5, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.8, y: 5, opacity: 0 }}
-            className="fixed z-55 transform -translate-x-1/2 bg-gray-900 text-white rounded-xl py-1.5 px-3 flex items-center gap-1.5 shadow-lg border border-gray-700 pointer-events-auto"
+            className="fixed z-50 transform -translate-x-1/2 bg-gray-900 text-white rounded-xl py-1.5 px-3 flex items-center gap-1.5 shadow-lg border border-gray-700 pointer-events-auto"
             style={{ left: menuCoords.x, top: menuCoords.y }}
           >
             <button
@@ -1077,7 +1083,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       {/* AI Explanation Dialog/Overlay */}
       <AnimatePresence>
         {explainingText && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-55 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, y: 20, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -1139,7 +1145,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       {/* Multiple Bookmarks Selection Popover Dialog */}
       <AnimatePresence>
         {showBookmarkModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-55 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -1216,7 +1222,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       {/* Celebrity Voice Synthesizer Dialog/Overlay */}
       <AnimatePresence>
         {showCelebModal && (
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-55 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, y: 25, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -1230,6 +1236,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                     celebAudioRef.current.pause();
                   }
                   setShowCelebModal(false);
+    pollGeneration.current++;
                   setSynthesisState('idle');
                 }}
                 className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-slate-500/10 hover:text-gray-600 transition-colors cursor-pointer"
@@ -1301,6 +1308,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                       onClick={() => {
                         handleSpeakPara(celebText);
                         setShowCelebModal(false);
+    pollGeneration.current++;
                       }}
                       className="text-[10px] font-black text-slate-400 hover:text-duo-blue uppercase tracking-wide cursor-pointer transition-colors"
                     >
@@ -1377,6 +1385,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                       onClick={() => {
                         handleSpeakPara(celebText);
                         setShowCelebModal(false);
+    pollGeneration.current++;
                       }}
                       className="flex-1 py-3 bg-slate-100 text-slate-600 text-xs font-black rounded-2xl cursor-pointer"
                     >

@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/fakeyou/:path*", "destination": "https://api.fakeyou.com/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

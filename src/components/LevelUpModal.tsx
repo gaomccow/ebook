@@ -40,11 +40,11 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
         const progress = currentStep / steps;
         // Ease out quad
         const easedProgress = progress * (2 - progress);
-        setProgressXP(Math.round(easedProgress * xpGained));
+        setProgressXP(xpGained > 0 ? Math.round(easedProgress * xpGained) : 0);
 
         if (currentStep >= steps) {
           clearInterval(timer);
-          setProgressXP(xpGained);
+          setProgressXP(xpGained > 0 ? xpGained : 0);
         }
       }, stepTime);
 

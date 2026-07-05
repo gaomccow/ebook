@@ -1,5 +1,6 @@
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { hashEmail, generateRandomId } from './hashUtils';
 
 const THEME_COSTS: Record<string, number> = {
   default: 0,
@@ -60,6 +61,8 @@ export interface SavedWord {
 
 export interface UserStats {
   xp: number;
+  lifetimeXP: number;
+  spentXP: number;
   level: number;
   streak: number;
   lastReadDate: string | null;
@@ -81,11 +84,35 @@ export interface UnifiedState {
 
 const STORAGE_KEY = 'gamified_reader_unified_state_v2';
 
+const getTodayString = () => new Date().toISOString().split('T')[0];
+const DEFAULT_USER: UserStats = {
+  xp: 0, lifetimeXP: 0, spentXP: 0, level: 1, streak: 0, lastReadDate: null,
+  unlockedThemes: ['default', 'dark', 'glass_light', 'glass_dark'],
+  unlockedFeatures: [], unlockedFonts: ['font_inter'],
+  currentTheme: 'default', currentFont: 'font_inter', currentTextSize: 'lg',
+  completedSections: [],
+  librarySections: [{ id: 'sec_fiction', name: 'Fiction' }, { id: 'sec_non_fiction', name: 'Non-Fiction' }],
+  savedWords: []
+};
+const DEFAULT_STATE = (): UnifiedState => ({
+  user: { ...DEFAULT_USER },
+  library: [{
+    id: 'book_default', title: 'Mastering Deep Focus', author: 'readable.app Explorer',
+    sectionsCount: 5, wordCount: 1274, progress: 0, startedAt: getTodayString(),
+    completedAt: null, masteryLevel: 'none', tags: ['Focus'], sectionId: 'sec_non_fiction'
+  }]
+});
+
+
 export class ProgressionManager {
+  public static calculateLevel(lifetimeXP: number): number {
+    return Math.floor(Math.sqrt(lifetimeXP / 50)) + 1;
+  }
+
   private state: UnifiedState;
 
   private calculateSignature(stateStr: string): string {
-    const salt = 'gamified_reader_salt_sec_1337';
+    const salt = 'gamified_reader_salt_sec_1337_v2';
     let hash = 0;
     const combined = stateStr + salt;
     for (let i = 0; i < combined.length; i++) {
@@ -99,218 +126,27 @@ export class ProgressionManager {
   constructor() {
     this.state = this.loadState();
     // Apply current theme on load
-    this.applyTheme(this.state.user.currentTheme);
+    document.documentElement.setAttribute('data-theme', this.state.user.currentTheme);
   }
 
   /**
    * Load state from localStorage.
-   */
-  private loadState(): UnifiedState {
-    const defaultUser: UserStats = {
-      xp: 0,
-      level: 1,
-      streak: 0,
-      lastReadDate: null,
-      unlockedThemes: ['default', 'dark', 'glass_light', 'glass_dark'],
-      unlockedFeatures: [],
-      unlockedFonts: ['font_inter'],
-      currentTheme: 'default',
-      currentFont: 'font_inter',
-      currentTextSize: 'lg',
-      completedSections: [],
-      librarySections: [
-        { id: 'sec_fiction', name: 'Fiction' },
-        { id: 'sec_non_fiction', name: 'Non-Fiction' }
-      ],
-      savedWords: []
-    };
-
+   */  private loadState(): UnifiedState {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
       const sig = localStorage.getItem(STORAGE_KEY + '_sig');
-      if (data) {
-        if (sig && this.calculateSignature(data) === sig) {
-          const parsed = JSON.parse(data);
-          if (parsed.user && parsed.library) {
-            return {
-              user: {
-                ...defaultUser,
-                ...parsed.user
-              },
-              library: parsed.library
-            };
-          }
-        } else {
-          console.warn('Progression data tampering or corruption detected. Local state integrity compromised.');
-          const email = localStorage.getItem('readable_auth_email');
-          if (email) {
-            setTimeout(() => {
-              this.syncFromFirebase(email, () => {
-                window.location.reload();
-              });
-            }, 100);
-          }
+      if (data && sig && this.calculateSignature(data) === sig) {
+        const parsed = JSON.parse(data);
+        if (parsed.user && parsed.library) {
+          return { user: { ...DEFAULT_USER, ...parsed.user }, library: parsed.library };
         }
+      } else if (data) {
+        console.warn('Progression data tampering or corruption detected.');
       }
     } catch (e) {
       console.error('Failed to load unified reader state', e);
     }
-
-    // Default State Setup
-    const todayStr = this.getTodayString();
-    return {
-      user: {
-        xp: 0,
-        level: 1,
-        streak: 0,
-        lastReadDate: null,
-        unlockedThemes: ['default', 'dark', 'glass_light', 'glass_dark'],
-        unlockedFeatures: [],
-        unlockedFonts: ['font_inter'],
-        currentTheme: 'default',
-        currentFont: 'font_inter',
-        currentTextSize: 'lg',
-        completedSections: [],
-        librarySections: [
-          { id: 'sec_fiction', name: 'Fiction' },
-          { id: 'sec_non_fiction', name: 'Non-Fiction' }
-        ],
-        savedWords: []
-      },
-      library: [
-        {
-          id: 'book_default',
-          title: 'Mastering Deep Focus',
-          author: 'readable.app Explorer',
-          sectionsCount: 5,
-          wordCount: 1274,
-          progress: 0,
-          startedAt: todayStr,
-          completedAt: null,
-          masteryLevel: 'none',
-          tags: ['Focus'],
-          sectionId: 'sec_non_fiction'
-        }
-      ]
-    };
-  }
-
-  /**
-   * Save current state.
-   */
-  public saveState(): void {
-    try {
-      const serialized = JSON.stringify(this.state);
-      localStorage.setItem(STORAGE_KEY, serialized);
-      localStorage.setItem(STORAGE_KEY + '_sig', this.calculateSignature(serialized));
-
-      // Sync asynchronously to Firestore if user email is logged in
-      const email = localStorage.getItem('readable_auth_email');
-      if (email) {
-        const userDocRef = doc(db, 'users', email);
-        setDoc(userDocRef, this.state).catch((err) => {
-          console.error('Failed to save state to Firestore:', err);
-        });
-      }
-    } catch (e) {
-      console.error('Failed to save unified reader state', e);
-    }
-  }
-
-  public async syncFromFirebase(email: string, onUpdate: () => void): Promise<void> {
-    try {
-      const userDocRef = doc(db, 'users', email);
-      const snap = await getDoc(userDocRef);
-      if (snap.exists()) {
-        const cloudState = snap.data() as any;
-        
-        // Auto-heal malformed/flat library fields in the cloud database
-        if (cloudState) {
-          if (!cloudState.library) {
-            // Check if library items were written as root-level numeric fields (e.g. "0", "1")
-            const numericKeys = Object.keys(cloudState).filter(k => !isNaN(Number(k)));
-            if (numericKeys.length > 0) {
-              cloudState.library = numericKeys
-                .sort((a, b) => Number(a) - Number(b))
-                .map(k => cloudState[k] as BookArchiveItem);
-            } else {
-              cloudState.library = [];
-            }
-          } else if (!Array.isArray(cloudState.library)) {
-            // Convert map index shape to array
-            cloudState.library = Object.entries(cloudState.library)
-              .sort((a, b) => Number(a[0]) - Number(b[0]))
-              .map(entry => entry[1] as BookArchiveItem);
-          }
-        }
-
-        if (cloudState && cloudState.user && cloudState.library) {
-          // Merge libraries: take union of all book catalog items
-          const mergedLibrary = [...this.state.library];
-          cloudState.library.forEach((cloudBook: BookArchiveItem) => {
-            const localIdx = mergedLibrary.findIndex(b => b.id === cloudBook.id);
-            if (localIdx === -1) {
-              mergedLibrary.push(cloudBook);
-            } else {
-              // Take the higher reading progress
-              if (cloudBook.progress > mergedLibrary[localIdx].progress) {
-                mergedLibrary[localIdx] = cloudBook;
-              }
-            }
-          });
-
-          // Merge completed sections: take unique union
-          const mergedCompleted = Array.from(new Set([
-            ...(this.state.user.completedSections || []),
-            ...(cloudState.user.completedSections || [])
-          ]));
-
-          // Resolve maximum stats
-          const mergedXP = Math.max(this.state.user.xp, cloudState.user.xp);
-          const mergedLevel = Math.max(this.state.user.level, cloudState.user.level);
-          const mergedStreak = Math.max(this.state.user.streak, cloudState.user.streak);
-
-          this.state = {
-            user: {
-              ...this.state.user,
-              xp: mergedXP,
-              level: mergedLevel,
-              streak: mergedStreak,
-              completedSections: mergedCompleted,
-              unlockedThemes: Array.from(new Set([
-                ...(this.state.user.unlockedThemes || []),
-                ...(cloudState.user.unlockedThemes || [])
-              ])),
-              unlockedFeatures: Array.from(new Set([
-                ...(this.state.user.unlockedFeatures || []),
-                ...(cloudState.user.unlockedFeatures || [])
-              ])),
-              unlockedFonts: Array.from(new Set([
-                ...(this.state.user.unlockedFonts || []),
-                ...(cloudState.user.unlockedFonts || [])
-              ])),
-              currentTheme: this.state.user.currentTheme || cloudState.user.currentTheme,
-              currentFont: this.state.user.currentFont || cloudState.user.currentFont,
-              currentTextSize: this.state.user.currentTextSize || cloudState.user.currentTextSize || 'lg',
-              lastReadDate: this.state.user.lastReadDate || cloudState.user.lastReadDate
-            },
-            library: mergedLibrary
-          };
-
-          // Save merged state locally
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
-
-          // Save merged state back to Firestore
-          await setDoc(userDocRef, this.state);
-        }
-      } else {
-        // Create initial cloud backup
-        await setDoc(userDocRef, this.state);
-      }
-      onUpdate();
-    } catch (err) {
-      console.error('Failed to sync from Firebase:', err);
-    }
+    return DEFAULT_STATE();
   }
 
   /**
@@ -346,6 +182,11 @@ export class ProgressionManager {
       // Re-initialize existing book
       this.state.library[existingIndex] = {
         ...this.state.library[existingIndex],
+      };
+      // Purge old completedSections to prevent stale-section inflation
+      if (this.state.user.completedSections) {
+        this.state.user.completedSections = this.state.user.completedSections.filter(sid => !sid.startsWith(id + '_'));
+      }
         id,
         sectionsCount,
         wordCount,
@@ -449,13 +290,16 @@ export class ProgressionManager {
     // Calculate XP
     const xpBreakdown = this.calculateXPGained(wordCount);
     const xpToAdd = isFirstTime ? xpBreakdown.totalXP : 0;
+    if (!isFirstTime) {
+      xpBreakdown.baseXP = 0;
+      xpBreakdown.streakBonus = 0;
+    }
 
     if (isFirstTime) {
       this.state.user.completedSections.push(sectionId);
-      this.state.user.xp += xpToAdd;
-      
-      // Update Level based on square-root scaling: level = Math.floor(Math.sqrt(xp / 50)) + 1
-      this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
+      this.state.user.lifetimeXP += xpToAdd;
+      this.state.user.xp = this.state.user.lifetimeXP - this.state.user.spentXP;
+      this.state.user.level = ProgressionManager.calculateLevel(this.state.user.lifetimeXP);
 
       // Update book progress inside library
       const book = this.state.library.find(b => b.id === bookId);
@@ -465,9 +309,7 @@ export class ProgressionManager {
         // For custom uploads, section IDs are prefixed with the book id, e.g. ch_{index}_{idref} where idref has book id,
         // or we can count how many sections are completed for the active session.
         // Let's count completion by tracking completed chapters for this specific book.
-        const completedBookSectionsCount = this.state.user.completedSections.filter(sid => 
-          sid.startsWith(bookId === 'book_default' ? 'sec_' : bookId)
-        ).length;
+        const completedBookSectionsCount = this.state.user.completedSections.filter(sid => sid.startsWith(bookId === 'book_default' ? 'sec_' : bookId) || sid.includes(bookId)).length;
 
         // Progress clamp
         const computedProgress = Math.min(100, Math.round((completedBookSectionsCount / bookSectionsCount) * 100));
@@ -502,9 +344,9 @@ export class ProgressionManager {
     if (this.state.user.xp < verifiedCost) return false;
     if (this.state.user.unlockedThemes.includes(theme)) return true;
 
-    this.state.user.xp -= verifiedCost;
+    this.state.user.spentXP += verifiedCost;
+    this.state.user.xp = this.state.user.lifetimeXP - this.state.user.spentXP;
     this.state.user.unlockedThemes.push(theme);
-    this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
     this.saveState();
     return true;
   }
@@ -517,9 +359,9 @@ export class ProgressionManager {
     if (this.state.user.xp < verifiedCost) return false;
     if (this.state.user.unlockedFeatures.includes(feature)) return true;
 
-    this.state.user.xp -= verifiedCost;
+    this.state.user.spentXP += verifiedCost;
+    this.state.user.xp = this.state.user.lifetimeXP - this.state.user.spentXP;
     this.state.user.unlockedFeatures.push(feature);
-    this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
     this.saveState();
     return true;
   }
@@ -535,9 +377,9 @@ export class ProgressionManager {
     }
     if (this.state.user.unlockedFonts.includes(font)) return true;
 
-    this.state.user.xp -= verifiedCost;
+    this.state.user.spentXP += verifiedCost;
+    this.state.user.xp = this.state.user.lifetimeXP - this.state.user.spentXP;
     this.state.user.unlockedFonts.push(font);
-    this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
     this.saveState();
     return true;
   }
@@ -571,44 +413,8 @@ export class ProgressionManager {
    * Reset all progress.
    */
   public resetProgress(): UnifiedState {
-    const todayStr = this.getTodayString();
-    this.state = {
-      user: {
-        xp: 0,
-        level: 1,
-        streak: 0,
-        lastReadDate: null,
-        unlockedThemes: ['default', 'dark', 'glass_light', 'glass_dark'],
-        unlockedFeatures: [],
-        unlockedFonts: ['font_inter'],
-        currentTheme: 'default',
-        currentFont: 'font_inter',
-        currentTextSize: 'lg',
-        completedSections: [],
-        librarySections: [
-          { id: 'sec_fiction', name: 'Fiction' },
-          { id: 'sec_non_fiction', name: 'Non-Fiction' }
-        ],
-        savedWords: []
-      },
-      library: [
-        {
-          id: 'book_default',
-          title: 'Mastering Deep Focus',
-          author: 'readable.app Explorer',
-          sectionsCount: 5,
-          wordCount: 1274,
-          progress: 0,
-          startedAt: todayStr,
-          completedAt: null,
-          masteryLevel: 'none',
-          tags: ['Focus'],
-          sectionId: 'sec_non_fiction'
-        }
-      ]
-    };
+    this.state = DEFAULT_STATE();
     this.applyTheme('default');
-    this.saveState();
     return this.state;
   }
 
@@ -618,7 +424,7 @@ export class ProgressionManager {
     if (!this.state.user.librarySections) {
       this.state.user.librarySections = [];
     }
-    const id = 'sec_' + Date.now();
+    const id = generateRandomId('sec');
     this.state.user.librarySections.push({ id, name });
     this.saveState();
   }
@@ -672,7 +478,7 @@ export class ProgressionManager {
     if (exists) return;
 
     const newWord: SavedWord = {
-      id: 'word_' + Date.now(),
+      id: generateRandomId('word'),
       originalWord: originalWord.trim(),
       definition: definition.trim(),
       translation: translation.trim(),
@@ -697,7 +503,7 @@ export class ProgressionManager {
         word.masteryScore = Math.min(4, word.masteryScore + 1);
         // Spaced repetition interval in milliseconds
         const intervals = [86400000, 259200000, 604800000, 1209600000, 2592000000];
-        word.nextReviewDate = Date.now() + (intervals[word.masteryScore] || 86400000);
+        word.nextReviewDate = Date.now() + (intervals[Math.max(0, Math.min(intervals.length - 1, word.masteryScore - 1))] || 86400000);
         // Reward 15 XP for correct practice
         this.addXP(15);
       } else {
@@ -711,8 +517,9 @@ export class ProgressionManager {
   }
 
   private addXP(xpToAdd: number): void {
-    this.state.user.xp += xpToAdd;
-    this.state.user.level = Math.floor(Math.sqrt(this.state.user.xp / 50)) + 1;
+    this.state.user.lifetimeXP += xpToAdd;
+    this.state.user.xp = this.state.user.lifetimeXP - this.state.user.spentXP;
+    this.state.user.level = ProgressionManager.calculateLevel(this.state.user.lifetimeXP);
   }
 
   // --- Helper Methods ---

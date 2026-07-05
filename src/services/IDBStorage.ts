@@ -1,51 +1,21 @@
-/**
- * IDBStorage — simple key/value IndexedDB wrapper.
- * Used to persist large book content maps that exceed localStorage's ~5 MB limit.
- */
-
-const DB_NAME = 'lumina_reader_db';
-const STORE_NAME = 'content_store';
-const DB_VERSION = 1;
-
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore(STORE_NAME);
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+const STORE = 'content_store';
+const getDB = () => new Promise<IDBDatabase>((r, e) => {
+  const req = indexedDB.open('lumina_reader_db', 1);
+  req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+  req.onsuccess = () => r(req.result);
+  req.onerror = () => e(req.error);
+});
+const doTx = async (mode: IDBTransactionMode, cb: (s: IDBObjectStore) => IDBRequest) => {
+  const db = await getDB();
+  return new Promise<any>((r, e) => {
+    const tx = db.transaction(STORE, mode);
+    const req = cb(tx.objectStore(STORE));
+    tx.oncomplete = () => r(req.result ?? null);
+    tx.onerror = () => e(tx.error);
   });
-}
-
+};
 export const IDBStorage = {
-  async setItem(key: string, value: any): Promise<void> {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).put(value, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  },
-
-  async getItem<T = any>(key: string): Promise<T | null> {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readonly');
-      const req = tx.objectStore(STORE_NAME).get(key);
-      req.onsuccess = () => resolve(req.result ?? null);
-      req.onerror = () => reject(req.error);
-    });
-  },
-
-  async removeItem(key: string): Promise<void> {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).delete(key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  },
+  setItem: (k: string, v: any) => doTx('readwrite', s => s.put(v, k)),
+  getItem: <T>(k: string): Promise<T | null> => doTx('readonly', s => s.get(k)),
+  removeItem: (k: string) => doTx('readwrite', s => s.delete(k))
 };

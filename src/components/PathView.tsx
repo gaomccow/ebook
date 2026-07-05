@@ -784,7 +784,7 @@ export const PathView: React.FC<PathViewProps> = ({
       {/* Interactive App Features Tutorial Popup Modal */}
       <AnimatePresence>
         {showTutorial && (
-          <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
             <motion.div
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
