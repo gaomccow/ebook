@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Flame, Trophy, Palette, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Award, Sparkles, Type, FolderPlus, Folder, Tag, Trash2, Edit2, Plus, Check, X, Bookmark, Upload, RefreshCw } from 'lucide-react';
+import { Star, Flame, Trophy, Palette, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Award, Sparkles, Type, FolderPlus, Folder, Tag, Trash2, Edit2, Plus, Check, X, Upload, RefreshCw } from 'lucide-react';
 import { VelocityChart } from './VelocityChart';
 import { Leaderboard } from './Leaderboard';
+import AquariumSandbox from './AquariumSandbox';
 import { TRANSLATIONS } from '../utils/translations';
 import type { Language } from '../utils/translations';
 import { ALL_FONTS_LIST } from '../utils/fonts';
@@ -78,8 +79,6 @@ interface TrophyRoomProps {
 
   // Word Bank props
   savedWords?: SavedWord[];
-  onDeleteSavedWord?: (id: string) => void;
-  onPracticeWordResult?: (id: string, isCorrect: boolean) => void;
 
   // EPUB Upload
   onEpubUpload?: (file: File) => void;
@@ -89,11 +88,8 @@ interface TrophyRoomProps {
 const SHOP_ITEMS: ShopItem[] = [
   { id: 't_default', name: 'Default Classic', type: 'theme', cost: 0, description: 'Bright, clean, bouncy Duolingo vector layout.', value: 'default' },
   { id: 't_dark', name: 'Dark Mode', type: 'theme', cost: 0, description: 'Sleek, highly readable deep dark theme for late night reading.', value: 'dark' },
-  { id: 't_glass', name: 'Frosted Glassmorphism', type: 'theme', cost: 10000, description: 'Modern translucent panels, subtle blurs, and a glowing backdrop.', value: 'glass' },
-  { id: 't_retro', name: 'Retro Terminal', type: 'theme', cost: 100, description: 'Scanlines, amber text, and generated ASCII bounding boxes.', value: 'retro' },
-  { id: 't_gradient', name: 'Atmospheric Gradient', type: 'theme', cost: 500, description: 'Shifting mesh gradient with full-screen distraction-free reader.', value: 'gradient' },
-  { id: 't_tactical', name: 'Tactical Dashboard', type: 'theme', cost: 1000, description: 'Aerospace layout with telemetry stats (Comp, Time, Quality).', value: 'tactical' },
-  { id: 't_midnight', name: 'Midnight Obsidian', type: 'theme', cost: 1500, description: 'Deep dark obsidian theme with glowing cyan/magenta borders.', value: 'midnight' },
+  { id: 't_glass', name: 'Frosted Glassmorphism', type: 'theme', cost: 10000, description: 'Modern translucent panels, subtle blurs, and a glowing backdrop.', value: 'glass_light' },
+  { id: 't_illustrated', name: 'Illustrated Retro', type: 'theme', cost: 100, description: 'Warm beige backgrounds with flat, chunky mid-century vector illustrations.', value: 'illustrated' },
   { id: 'f_shield', name: 'Distraction Shield', type: 'feature', cost: 500, description: 'Auto-hides header bar when scrolling through chapters.', value: 'distraction_shield' }
 ];
 
@@ -126,21 +122,11 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   onSetBookSection,
   onUpdateBookTags,
   savedWords = [],
-  onDeleteSavedWord,
-  onPracticeWordResult,
   onEpubUpload,
   isParsing
 }) => {
   const [carouselIndex, setCarouselIndex] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<'library' | 'leaderboard' | 'wordbank'>('library');
-
-  // Flashcard Spaced Repetition Practice States
-  const [showPracticeModal, setShowPracticeModal] = React.useState(false);
-  const [practiceWords, setPracticeWords] = React.useState<SavedWord[]>([]);
-  const [currentPracticeIdx, setCurrentPracticeIdx] = React.useState(0);
-  const [showAnswer, setShowAnswer] = React.useState(false);
-  const [practiceFinished, setPracticeFinished] = React.useState(false);
-  const [practiceCorrectCount, setPracticeCorrectCount] = React.useState(0);
 
   // Folders/Sections and Tags Management states
   const [showAddSection, setShowAddSection] = React.useState(false);
@@ -149,22 +135,6 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   const [editingSectionName, setEditingSectionName] = React.useState('');
   const [tagInput, setTagInput] = React.useState<Record<string, string>>({}); // bookId -> active input string
   const [selectedBookDetail, setSelectedBookDetail] = React.useState<BookItem | null>(null);
-
-  const handleStartPractice = () => {
-    const now = Date.now();
-    let due = savedWords.filter(w => w.nextReviewDate <= now);
-    const selected = due.sort(() => Math.random() - 0.5).slice(0, 5);
-    if (selected.length === 0) {
-      alert(language === 'vi' ? 'Không có từ vựng nào để ôn tập! Hãy lưu từ khi đọc sách.' : 'No words in your Word Bank to practice! Highlight and save words while reading.');
-      return;
-    }
-    setPracticeWords(selected);
-    setCurrentPracticeIdx(0);
-    setShowAnswer(false);
-    setPracticeFinished(false);
-    setPracticeCorrectCount(0);
-    setShowPracticeModal(true);
-  };
 
   // Group books by section
   const booksBySection = React.useMemo(() => {
@@ -398,7 +368,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                 }
               `}
             >
-              🔖 {language === 'vi' ? 'Từ vựng' : 'Word Bank'}
+              🐟 {language === 'vi' ? 'Hệ sinh thái' : 'Ecosystem'}
             </button>
           </div>
 
@@ -411,12 +381,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
               language={language}
             />
           ) : activeTab === 'wordbank' ? (
-            <WordBankTab
-              savedWords={savedWords}
-              onDelete={onDeleteSavedWord}
-              onPractice={handleStartPractice}
-              language={language}
-            />
+            <AquariumSandbox />
           ) : (
             <>
               {/* Level 50+ Duolingo Banner Overlay */}
@@ -989,128 +954,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
         </div>
       </main>
 
-      {/* Word Bank Practice Session Modal */}
-      <AnimatePresence>
-        {showPracticeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm pointer-events-auto">
-            <motion.div
-              initial={{ scale: 0.9, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 15, opacity: 0 }}
-              className="bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-3xl p-6 shadow-2xl max-w-sm w-full flex flex-col gap-5 text-center relative overflow-hidden"
-            >
-              <div className="flex justify-between items-center border-b border-[var(--border-color)]/30 pb-2">
-                <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">
-                  Practice Session ({currentPracticeIdx + 1} / {practiceWords.length})
-                </span>
-                <button
-                  onClick={() => setShowPracticeModal(false)}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
 
-              {!practiceFinished ? (
-                <div className="flex flex-col gap-4 py-3">
-                  {/* Word Card */}
-                  <div className="bg-slate-50 dark:bg-slate-800/40 border-2 border-dashed border-[var(--border-color)] rounded-2xl p-8 min-h-[160px] flex flex-col items-center justify-center gap-3">
-                    <span className="text-[10px] font-black uppercase text-duo-orange tracking-widest">
-                      Recall Definition
-                    </span>
-                    <h3 className="text-xl font-black uppercase tracking-wide text-[var(--text-color)]">
-                      {practiceWords[currentPracticeIdx]?.originalWord}
-                    </h3>
-                  </div>
-
-                  <AnimatePresence mode="wait">
-                    {showAnswer ? (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="flex flex-col gap-3 text-left bg-duo-orange/5 border-2 border-duo-orange/20 rounded-2xl p-4"
-                      >
-                        <div>
-                          <span className="text-[9px] font-black uppercase text-duo-orange tracking-wider">Definition</span>
-                          <p className="text-xs font-bold leading-normal text-[var(--text-color)] mt-0.5">
-                            {practiceWords[currentPracticeIdx]?.definition}
-                          </p>
-                        </div>
-                        <div className="border-t border-duo-orange/20 pt-2">
-                          <span className="text-[9px] font-black uppercase text-duo-blue-dark tracking-wider">Translation</span>
-                          <p className="text-xs font-black text-duo-blue-dark mt-0.5">
-                            {practiceWords[currentPracticeIdx]?.translation}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => {
-                              onPracticeWordResult?.(practiceWords[currentPracticeIdx].id, false);
-                              setShowAnswer(false);
-                              if (currentPracticeIdx + 1 < practiceWords.length) {
-                                setCurrentPracticeIdx(prev => prev + 1);
-                              } else {
-                                setPracticeFinished(true);
-                              }
-                            }}
-                            className="flex-1 py-2 bg-red-100 hover:bg-red-200/20 text-red-500 border-2 border-red-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
-                          >
-                            Forgot
-                          </button>
-                          <button
-                            onClick={() => {
-                              onPracticeWordResult?.(practiceWords[currentPracticeIdx].id, true);
-                              setPracticeCorrectCount(prev => prev + 1);
-                              setShowAnswer(false);
-                              if (currentPracticeIdx + 1 < practiceWords.length) {
-                                setCurrentPracticeIdx(prev => prev + 1);
-                              } else {
-                                setPracticeFinished(true);
-                              }
-                            }}
-                            className="flex-1 py-2 bg-duo-green border-b-4 border-duo-green-dark text-white rounded-xl text-[10px] font-black uppercase tracking-wider btn-3d"
-                          >
-                            Remembered
-                          </button>
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <button
-                        onClick={() => setShowAnswer(true)}
-                        className="w-full py-3 bg-duo-blue border-b-4 border-duo-blue-dark text-white rounded-2xl text-xs font-black uppercase tracking-wider btn-3d"
-                      >
-                        Show Answer
-                      </button>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-4 gap-4">
-                  <span className="text-5xl">🏆</span>
-                  <div className="text-center">
-                    <h4 className="text-sm font-black uppercase tracking-wider">Session Complete!</h4>
-                    <p className="text-xs text-slate-500 font-bold mt-1">
-                      You remembered {practiceCorrectCount} out of {practiceWords.length} words correctly.
-                    </p>
-                    <p className="text-[10px] text-duo-purple font-black uppercase mt-2.5">
-                      Earned: {practiceCorrectCount * 15 + (practiceWords.length - practiceCorrectCount) * 5} XP
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setShowPracticeModal(false)}
-                    className="w-full mt-2 py-3 bg-duo-green border-b-4 border-duo-green-dark text-white rounded-2xl text-xs font-black uppercase tracking-wider btn-3d"
-                  >
-                    Finish
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Detailed Book Modal Overlay */}
       <AnimatePresence>
@@ -1360,124 +1204,4 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   );
 };
 
-interface WordBankTabProps {
-  savedWords: SavedWord[];
-  onDelete?: (id: string) => void;
-  onPractice: () => void;
-  language: Language;
-}
 
-const WordBankTab: React.FC<WordBankTabProps> = ({
-  savedWords,
-  onDelete,
-  onPractice,
-  language
-}) => {
-  const isVi = language === 'vi';
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between border-b-2 border-[var(--border-color)]/30 pb-3 mt-4">
-        <div className="flex flex-col">
-          <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-            <Bookmark className="w-4 h-4 text-duo-orange" />
-            {isVi ? 'Kho Từ Vựng Cá Nhân' : 'Vocabulary Word Bank'}
-          </h2>
-          <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase">
-            {isVi ? `Đã lưu ${savedWords.length} từ` : `${savedWords.length} words saved`}
-          </span>
-        </div>
-
-        {savedWords.length > 0 && (
-          <button
-            onClick={onPractice}
-            className="px-5 py-2.5 bg-duo-orange border-b-4 border-duo-orange-dark text-white font-black text-xs uppercase tracking-wider rounded-2xl btn-3d"
-          >
-            {isVi ? 'Bắt đầu ôn tập' : 'Practice Session'}
-          </button>
-        )}
-      </div>
-
-      {savedWords.length === 0 ? (
-        <div className="text-center py-12 bg-[var(--card-bg)] border-4 border-dashed border-[var(--border-color)] rounded-3xl p-6 shadow-md flex flex-col items-center justify-center gap-3">
-          <span className="text-4xl">🔖</span>
-          <h4 className="font-extrabold text-sm uppercase tracking-wide">
-            {isVi ? 'Kho từ vựng trống' : 'Your Word Bank is Empty'}
-          </h4>
-          <p className="text-[11px] text-gray-400 font-bold max-w-sm leading-relaxed">
-            {isVi 
-              ? 'Hãy bôi đen và lưu các từ vựng mới khi đọc sách để ôn tập tại đây.'
-              : 'Highlight any word or phrase while reading and click "Save Word" to add it to your word bank for practice sessions.'
-            }
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {savedWords.map((word) => {
-            const isDue = word.nextReviewDate <= Date.now();
-            return (
-              <div
-                key={word.id}
-                className="bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-3xl p-4 flex flex-col justify-between shadow-[0_6px_0_0_var(--border-color)] relative"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="font-extrabold text-sm text-[var(--text-color)] truncate">
-                      {word.originalWord}
-                    </span>
-                    {isDue ? (
-                      <span className="text-[8px] font-black px-2 py-0.5 bg-duo-orange/15 text-duo-orange-dark rounded-full uppercase border border-duo-orange/20 shrink-0">
-                        {isVi ? 'Cần ôn tập' : 'Review Due'}
-                      </span>
-                    ) : (
-                      <span className="text-[8px] font-black px-2 py-0.5 bg-duo-green/15 text-duo-green-dark rounded-full uppercase border border-duo-green/20 shrink-0">
-                        {isVi ? 'Đã học' : 'Learnt'}
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">
-                    {isVi ? 'Định nghĩa' : 'Definition'}
-                  </p>
-                  <p className="text-[11px] font-medium leading-relaxed opacity-90 mt-0.5 min-h-[36px] line-clamp-2">
-                    {word.definition}
-                  </p>
-
-                  <p className="text-[10px] font-bold text-gray-400 uppercase mt-2">
-                    {isVi ? 'Bản dịch' : 'Translation'}
-                  </p>
-                  <p className="text-[11px] font-bold text-duo-blue-dark mt-0.5">
-                    {word.translation}
-                  </p>
-
-                  {/* Mastery strength dots */}
-                  <div className="flex items-center gap-1 mt-3">
-                    <span className="text-[9px] font-black text-gray-400 uppercase mr-1">
-                      {isVi ? 'Độ thuộc:' : 'Strength:'}
-                    </span>
-                    {Array.from({ length: 4 }).map((_, idx) => (
-                      <div
-                        key={idx}
-                        className={`w-2.5 h-2.5 rounded-full border border-gray-300 ${
-                          idx < word.masteryScore ? 'bg-duo-orange' : 'bg-gray-100'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t border-[var(--border-color)]/25 pt-3 mt-3 flex justify-end">
-                  <button
-                    onClick={() => onDelete?.(word.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-};

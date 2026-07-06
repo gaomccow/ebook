@@ -1,15 +1,13 @@
 import { db, auth } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { hashEmail, generateRandomId } from './hashUtils';
+import { generateRandomId } from './hashUtils';
 
 const THEME_COSTS: Record<string, number> = {
   default: 0,
   dark: 0,
-  glass: 10000,
-  retro: 100,
-  gradient: 500,
-  tactical: 1000,
-  midnight: 1500
+  glass_light: 10000,
+  glass_dark: 10000,
+  illustrated: 100
 };
 
 const FEATURE_COSTS: Record<string, number> = {
@@ -149,6 +147,49 @@ export class ProgressionManager {
     return DEFAULT_STATE();
   }
 
+  public saveState(): void {
+    try {
+      const data = JSON.stringify(this.state);
+      const sig = this.calculateSignature(data);
+      localStorage.setItem(STORAGE_KEY, data);
+      localStorage.setItem(STORAGE_KEY + '_sig', sig);
+    } catch (e) {
+      console.error('Failed to save unified reader state', e);
+    }
+  }
+
+  public async syncFromFirebase(uid?: string, syncStateCallback?: () => void): Promise<void> {
+    const targetUid = uid || auth.currentUser?.uid;
+    if (!targetUid) return;
+    try {
+      const docRef = doc(db, 'users', targetUid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data().progression) {
+        const remoteState = docSnap.data().progression as UnifiedState;
+        if (remoteState.user && remoteState.library) {
+          this.state = remoteState;
+          this.saveState();
+          if (syncStateCallback) syncStateCallback();
+        }
+      }
+    } catch (e) {
+      console.error('Failed to sync progression state from Firebase', e);
+    }
+  }
+
+  public async syncToFirebase(): Promise<void> {
+    if (!auth.currentUser) return;
+    try {
+      const docRef = doc(db, 'users', auth.currentUser.uid);
+      await setDoc(docRef, { progression: this.state }, { merge: true });
+    } catch (e) {
+      console.error('Failed to sync progression state to Firebase', e);
+    }
+  }
+
+
+
+
   /**
    * Returns current stats.
    */
@@ -182,11 +223,6 @@ export class ProgressionManager {
       // Re-initialize existing book
       this.state.library[existingIndex] = {
         ...this.state.library[existingIndex],
-      };
-      // Purge old completedSections to prevent stale-section inflation
-      if (this.state.user.completedSections) {
-        this.state.user.completedSections = this.state.user.completedSections.filter(sid => !sid.startsWith(id + '_'));
-      }
         id,
         sectionsCount,
         wordCount,
@@ -194,6 +230,10 @@ export class ProgressionManager {
         completedAt: null,
         masteryLevel: 'none'
       };
+      // Purge old completedSections to prevent stale-section inflation
+      if (this.state.user.completedSections) {
+        this.state.user.completedSections = this.state.user.completedSections.filter(sid => !sid.startsWith(id + '_'));
+      }
     } else {
       // Add new book
       this.state.library.push({

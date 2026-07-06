@@ -114,6 +114,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const [synthesisMessage, setSynthesisMessage] = useState('');
   const [celebAudioUrl, setCelebAudioUrl] = useState<string | null>(null);
   const celebAudioRef = useRef<HTMLAudioElement | null>(null);
+  const pollGeneration = useRef(0);
 
   // Sync bookmarks list when book changes
   useEffect(() => {

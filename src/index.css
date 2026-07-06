@@ -167,44 +167,6 @@ body {
   font-family: var(--font-main);
 }
 
-/* RETRO TERMINAL (Pixel Art / ASCII) */
-[data-theme='retro'] {
-  --bg-color: #0b0f0b;
-  --text-color: #e2e8f0; /* Soft warm silver for high-readability body text */
-  --accent-color: #4ade80; /* Brighter phosphor green for indicators/accents */
-  --card-bg: #121812;
-  --border-color: #166534;
-  --font-main: 'Outfit', 'Inter', system-ui, sans-serif;
-  --scanline-display: block;
-}
-[data-theme='retro'] h1,
-[data-theme='retro'] h2,
-[data-theme='retro'] h3 {
-  color: #4ade80 !important;
-}
-[data-theme='retro'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
-  background-color: #0b0f0b !important;
-  color: #4ade80 !important;
-  border: 2px solid #166534 !important;
-  box-shadow: 0 4px 0 0 #121812 !important;
-}
-[data-theme='retro'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
-  background-color: #121812 !important;
-}
-[data-theme='retro'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
-  transform: translateY(4px) !important;
-}
-
-/* Retro Scanline CRT Overlay - subtle and low-opacity to maintain readability */
-.retro-scanlines {
-  display: var(--scanline-display);
-  position: fixed;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.015) 50%);
-  background-size: 100% 6px;
-  z-index: 9999;
-  pointer-events: none;
-}
 
 /* FROSTED GLASSMORPHISM (DARK) */
 [data-theme='glass_dark'] {
@@ -471,90 +433,6 @@ body {
   background: rgba(170, 59, 255, 0.45) !important;
 }
 
-/* ATMOSPHERIC GRADIENT (Abstract Mesh) */
-[data-theme='gradient'] {
-  --bg-color: transparent;
-  --text-color: #f8fafc; /* Warm bright slate for readability */
-  --accent-color: #ff9600;
-  --card-bg: rgba(15, 23, 42, 0.9); /* Opaque dark slate background to easily read white text over active gradients */
-  --border-color: rgba(255, 255, 255, 0.1);
-  --font-main: 'Outfit', sans-serif;
-}
-[data-theme='gradient'] body {
-  background: linear-gradient(45deg, #090a12, #0d0c1e, #130722, #060108);
-  background-size: 400% 400%;
-  animation: shift-gradient 80s ease infinite;
-  background-attachment: fixed;
-}
-[data-theme='gradient'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  backdrop-filter: blur(8px) !important;
-  box-shadow: none !important;
-  transition: all 0.2s ease !important;
-}
-[data-theme='gradient'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
-  display: none !important;
-}
-[data-theme='gradient'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-}
-[data-theme='gradient'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
-  transform: scale(0.97) !important;
-}
-
-@keyframes shift-gradient {
-  0% { background-position: 0% 50% }
-  50% { background-position: 100% 50% }
-  100% { background-position: 0% 50% }
-}
-
-/* TACTICAL DASHBOARD (Telemetry Grid) */
-[data-theme='tactical'] {
-  --bg-color: #080d1a;
-  --text-color: #e2e8f0; /* Silver gray body text for high readability and low eye strain */
-  --accent-color: #4fd1c5;
-  --card-bg: #111a30;
-  --border-color: #2b3a5c;
-  --font-main: 'Inter', system-ui, sans-serif;
-  --tactical-grid: block;
-}
-[data-theme='tactical'] h1,
-[data-theme='tactical'] h2,
-[data-theme='tactical'] h3,
-[data-theme='tactical'] .accent-text {
-  color: #4fd1c5 !important;
-}
-[data-theme='tactical'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
-  background-color: #111a30 !important;
-  color: #4fd1c5 !important;
-  border: 1.5px solid #2b3a5c !important;
-  box-shadow: 0px 3px 0px #2b3a5c !important;
-  border-radius: 8px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 1px !important;
-}
-[data-theme='tactical'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
-  display: none !important;
-}
-[data-theme='tactical'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
-  box-shadow: none !important;
-  transform: translateY(2px) !important;
-}
-
-/* Faint blueprint military grid */
-.tactical-grid-overlay {
-  display: var(--tactical-grid);
-  position: fixed;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(91, 192, 190, 0.008) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(91, 192, 190, 0.008) 1px, transparent 1px);
-  z-index: 1;
-  pointer-events: none;
-}
 
 /* FREE DARK MODE (Highly Readable Slate Dark Theme) */
 [data-theme='dark'] {
@@ -581,30 +459,72 @@ body {
   transform: translateY(4px) !important;
 }
 
-/* MIDNIGHT OBSIDIAN (Neon Glows) */
-[data-theme='midnight'] {
-  --bg-color: #06080c;
-  --text-color: #f8fafc;
-  --accent-color: #38bdf8;
-  --card-bg: #0d1117;
-  --border-color: #1f2937;
-  --font-main: 'Outfit', sans-serif;
+/* ILLUSTRATED RETRO (Mid-Century Vector) */
+[data-theme='illustrated'] {
+  --bg-color: transparent;
+  --text-color: #1e201b; /* Dark olive/black */
+  --accent-color: #e44d2e; /* Tomato red */
+  --card-bg: #fdfaf6;
+  --border-color: #1e201b;
+  --font-main: 'Space Grotesk', 'Outfit', sans-serif;
 }
-[data-theme='midnight'] body {
-  background-image: radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.03) 0px, transparent 50%),
-                    radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.03) 0px, transparent 50%);
+[data-theme='illustrated'] body {
+  background-color: #eadecd; /* Warm beige */
+  background-image: 
+    radial-gradient(#e44d2e 1px, transparent 1px),
+    radial-gradient(#d3783a 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-position: 0 0, 30px 30px;
+  background-attachment: fixed;
 }
-[data-theme='midnight'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
-  background-color: #0d1117 !important;
-  color: #38bdf8 !important;
-  border: 2px solid #1f2937 !important;
-  box-shadow: 0 4px 0 0 #06080c !important;
+[data-theme='illustrated'] .path-header-card,
+[data-theme='illustrated'] [class*="bg-[var(--card-bg)]"] {
+  border: 3px solid #1e201b !important;
+  box-shadow: 6px 6px 0px #1e201b !important;
+  border-radius: 12px !important;
 }
-[data-theme='midnight'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
-  background-color: #06080c !important;
+[data-theme='illustrated'] .path-node {
+  border-radius: 8px !important;
 }
-[data-theme='midnight'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
-  transform: translateY(4px) !important;
+[data-theme='illustrated'] h1,
+[data-theme='illustrated'] h2,
+[data-theme='illustrated'] h3 {
+  color: #1e201b !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+}
+[data-theme='illustrated'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):not([class*="bg-duo-"]) {
+  background-color: #fdfaf6 !important;
+  color: #e44d2e !important;
+  border: 3px solid #1e201b !important;
+  box-shadow: 4px 4px 0 0 #1e201b !important;
+  border-radius: 8px !important;
+  font-weight: 800 !important;
+}
+[data-theme='illustrated'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):not([class*="bg-duo-"])::after {
+  display: none !important;
+}
+[data-theme='illustrated'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):not([class*="bg-duo-"]):hover {
+  background-color: #eadecd !important;
+}
+[data-theme='illustrated'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):not([class*="bg-duo-"]):active {
+  transform: translate(4px, 4px) !important;
+  box-shadow: 0 0 0 0 #1e201b !important;
+}
+
+[data-theme='illustrated'] .btn-3d[class*="bg-duo-"],
+[data-theme='illustrated'] .btn-3d-green,
+[data-theme='illustrated'] .btn-3d-blue,
+[data-theme='illustrated'] .btn-3d-yellow {
+  border: 3px solid #1e201b !important;
+  box-shadow: 4px 4px 0 0 #1e201b !important;
+}
+[data-theme='illustrated'] .btn-3d[class*="bg-duo-"]:active,
+[data-theme='illustrated'] .btn-3d-green:active,
+[data-theme='illustrated'] .btn-3d-blue:active,
+[data-theme='illustrated'] .btn-3d-yellow:active {
+  transform: translate(4px, 4px) !important;
+  box-shadow: 0 0 0 0 #1e201b !important;
 }
 
 /* Custom Reading Font Utilities using Attribute Selectors to prevent compilation warnings */

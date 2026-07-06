@@ -414,7 +414,7 @@ export const PathView: React.FC<PathViewProps> = ({
       {/* Main Path Area */}
       <main className="flex-1 flex flex-col items-center max-w-lg mx-auto w-full px-3 mt-4">
         {/* Playful Unit Card */}
-        <div className="w-full bg-duo-blue rounded-2xl border-4 border-duo-blue-dark p-4 text-white mb-4 shadow-[0_5px_0_0_#1899d6]">
+        <div className="path-header-card w-full bg-duo-blue rounded-2xl border-4 border-duo-blue-dark p-4 text-white mb-4 shadow-[0_5px_0_0_#1899d6]">
           <span className="text-[10px] font-bold tracking-widest text-duo-blue-dark bg-white/20 px-2 py-0.5 rounded-full uppercase">Unit 1</span>
           <h2 className={`font-black mt-1.5 leading-tight flex items-center gap-1.5 ${isSidebar ? 'text-lg' : 'text-2xl'}`}>
             <BookOpen className="w-5 h-5 shrink-0 text-white fill-white/10" />
@@ -546,7 +546,7 @@ export const PathView: React.FC<PathViewProps> = ({
                   whileTap={!isLocked ? { scale: 0.95 } : {}}
                   onClick={() => !isLocked && onSelectSection(section)}
                   disabled={isLocked}
-                  className={`
+                  className={`path-node
                     relative z-10 rounded-full flex items-center justify-center border-4 btn-3d transition-all
                     ${isSidebar ? 'w-15 h-15' : 'w-20 h-20'}
                     ${isCompleted ? 'bg-duo-green border-duo-green-dark text-white hover:bg-duo-green-hover' : ''}
@@ -569,7 +569,7 @@ export const PathView: React.FC<PathViewProps> = ({
                       animate={{ y: [-3, 3, -3] }}
                       transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                     >
-                      <Star className={isSidebar ? 'w-6 h-6 text-white fill-white stroke-[3]' : 'w-9 h-9 text-white fill-white stroke-[2.5]'} />
+                      <Star className={isSidebar ? 'w-6 h-6 text-current fill-current stroke-[3]' : 'w-9 h-9 text-current fill-current stroke-[2.5]'} />
                     </motion.div>
                   )}
                   {isLocked && (

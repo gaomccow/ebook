@@ -793,16 +793,6 @@ function AppContent() {
     updateStateFromManager();
   };
 
-  const handleDeleteSavedWord = (id: string) => {
-    progressionManager.deleteSavedWord(id);
-    updateStateFromManager();
-  };
-
-  const handlePracticeWordResult = (id: string, isCorrect: boolean) => {
-    progressionManager.practiceWordResult(id, isCorrect);
-    updateStateFromManager();
-  };
-
   const triggerThemeReconfigAnimation = (theme: string) => {
     setReconfigTheme(theme);
     setTimeout(() => {
@@ -861,8 +851,6 @@ function AppContent() {
       onSetBookSection={handleSetBookSection}
       onUpdateBookTags={handleUpdateBookTags}
       savedWords={stats.savedWords}
-      onDeleteSavedWord={handleDeleteSavedWord}
-      onPracticeWordResult={handlePracticeWordResult}
       onEpubUpload={handleEpubUpload}
       isParsing={isParsing}
     />
