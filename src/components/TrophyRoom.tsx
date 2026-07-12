@@ -53,6 +53,7 @@ interface TrophyRoomProps {
   currentTheme: string;
   currentFont?: string;
   onSelectBook: (id: string) => void;
+  onDeleteBook?: (id: string) => void;
   onUnlockTheme: (theme: string, cost: number) => void;
   onUnlockFeature: (feature: string, cost: number) => void;
   onUnlockFont?: (font: string, cost: number) => void;
@@ -81,7 +82,7 @@ interface TrophyRoomProps {
   savedWords?: SavedWord[];
 
   // EPUB Upload
-  onEpubUpload?: (file: File) => void;
+  onFileUpload?: (file: File) => void;
   isParsing?: boolean;
 }
 
@@ -90,6 +91,8 @@ const SHOP_ITEMS: ShopItem[] = [
   { id: 't_dark', name: 'Dark Mode', type: 'theme', cost: 0, description: 'Sleek, highly readable deep dark theme for late night reading.', value: 'dark' },
   { id: 't_glass', name: 'Frosted Glassmorphism', type: 'theme', cost: 10000, description: 'Modern translucent panels, subtle blurs, and a glowing backdrop.', value: 'glass_light' },
   { id: 't_illustrated', name: 'Illustrated Retro', type: 'theme', cost: 100, description: 'Warm beige backgrounds with flat, chunky mid-century vector illustrations.', value: 'illustrated' },
+  { id: 't_clay', name: 'Claymorphism', type: 'theme', cost: 15000, description: 'Playful 3D clay-like cards with soft inner shadows and colorful gradients.', value: 'claymorphism' },
+  { id: 't_parchment', name: 'Parchment', type: 'theme', cost: 0, description: 'Warm, textured sepia tones reminiscent of an old library book.', value: 'parchment' },
   { id: 'f_shield', name: 'Distraction Shield', type: 'feature', cost: 500, description: 'Auto-hides header bar when scrolling through chapters.', value: 'distraction_shield' }
 ];
 
@@ -104,6 +107,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   currentTheme,
   currentFont = 'font_inter',
   onSelectBook,
+  onDeleteBook,
   onUnlockTheme,
   onUnlockFeature,
   onUnlockFont,
@@ -122,7 +126,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   onSetBookSection,
   onUpdateBookTags,
   savedWords = [],
-  onEpubUpload,
+  onFileUpload,
   isParsing
 }) => {
   const [carouselIndex, setCarouselIndex] = React.useState(0);
@@ -482,7 +486,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
             </AnimatePresence>
 
             {/* Large EPUB Upload Panel on Main Page */}
-            {onEpubUpload && (
+            {onFileUpload && (
               <div className="w-full bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-3xl p-5 shadow-[0_6px_0_0_var(--border-color)] flex flex-col gap-3 relative overflow-hidden">
                 <div className="flex items-center gap-2">
                   <Upload className="w-5 h-5 text-duo-green" />
@@ -505,7 +509,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file && file.name.endsWith('.epub')) {
-                        onEpubUpload(file);
+                        onFileUpload(file);
                       } else if (file) {
                         alert(language === 'vi' ? 'Định dạng tệp không hợp lệ. Vui lòng tải lên tệp .epub.' : 'Invalid file type. Please upload a valid .epub book.');
                       }
@@ -1179,17 +1183,31 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                       </div>
 
                       {/* Main Launch Button */}
-                      <button
-                        onClick={() => {
-                          setSelectedBookDetail(null);
-                          onSelectBook(book.id);
-                        }}
-                        className={`px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-wider btn-3d shrink-0
-                          ${isCompleted ? 'btn-3d-yellow text-gray-800' : 'btn-3d-green text-white'}
-                        `}
-                      >
-                        {isCompleted ? t('review') : t('continue')}
-                      </button>
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to permanently delete this book and all its progress?')) {
+                              onDeleteBook?.(book.id);
+                              setSelectedBookDetail(null);
+                            }
+                          }}
+                          className="px-4 py-3 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-2xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center justify-center"
+                          title="Delete Book"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedBookDetail(null);
+                            onSelectBook(book.id);
+                          }}
+                          className={`px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-wider btn-3d shrink-0
+                            ${isCompleted ? 'btn-3d-yellow text-gray-800' : 'btn-3d-green text-white'}
+                          `}
+                        >
+                          {isCompleted ? t('review') : t('continue')}
+                        </button>
+                      </div>
                     </div>
 
                   </div>

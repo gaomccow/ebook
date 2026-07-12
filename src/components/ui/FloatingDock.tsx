@@ -19,11 +19,27 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({ items, className = '
   const mouseVal = useMotionValue(Infinity);
   const isVertical = orientation === 'vertical';
 
+  const currentTheme = typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') || 'default' : 'default';
+  const isGlass = currentTheme.includes('glass');
+  const isIllustrated = currentTheme === 'illustrated';
+  const isClay = currentTheme === 'claymorphism';
+
+  let themeClasses = '';
+  if (isGlass) {
+    themeClasses = 'bg-[var(--card-bg)]/60 border border-[var(--border-color)] shadow-xl backdrop-blur-md opacity-70 hover:opacity-100';
+  } else if (isClay) {
+    themeClasses = 'bg-[var(--card-bg)] border-2 border-[var(--border-color)] shadow-[0_4px_0_0_var(--border-color)] opacity-100';
+  } else if (isIllustrated) {
+    themeClasses = 'bg-[#fcf8f2] border-3 border-[#2d2013] shadow-[4px_4px_0_0_#2d2013] opacity-100';
+  } else {
+    themeClasses = 'bg-[var(--card-bg)] border-2 border-[var(--border-color)] shadow-md opacity-100';
+  }
+
   return (
     <motion.div
       onMouseMove={(e) => mouseVal.set(isVertical ? e.pageY : e.pageX)}
       onMouseLeave={() => mouseVal.set(Infinity)}
-      className={`mx-auto flex ${isVertical ? 'flex-col w-[68px] items-center gap-4 py-4 px-3' : 'h-[68px] items-end gap-4 px-4 pb-3'} rounded-2xl bg-[var(--card-bg)]/80 border-4 border-[var(--border-color)] shadow-[0_8px_0_0_var(--border-color)] backdrop-blur-md z-50 ${className}`}
+      className={`mx-auto flex ${isVertical ? 'flex-col w-[68px] items-center gap-4 py-4 px-3' : 'h-[68px] items-end gap-4 px-4 pb-3'} rounded-2xl transition-all duration-300 z-50 ${themeClasses} ${className}`}
     >
       {items.map((item, idx) => (
         <DockIcon 
@@ -81,12 +97,12 @@ const DockIcon: React.FC<DockIconProps> = ({ title, icon, onClick, active, disab
       <motion.button
         onClick={disabled ? undefined : onClick}
         style={{ width: size, height: size }}
-        className={`flex items-center justify-center rounded-2xl border-2 transition-all shadow-sm group relative
+        className={`flex items-center justify-center rounded-2xl border transition-all shadow-sm group relative
           ${disabled 
-            ? 'opacity-40 cursor-not-allowed bg-[var(--card-bg)] border-[var(--border-color)] text-slate-400' 
+            ? 'opacity-30 cursor-not-allowed bg-transparent border-transparent text-slate-400' 
             : active 
-            ? 'bg-duo-blue border-duo-blue-dark text-white shadow-[0_3px_0_0_#1899d6]' 
-            : 'bg-[var(--card-bg)] hover:bg-[var(--card-bg)]/80 border-[var(--border-color)] text-[var(--text-color)] opacity-85 hover:opacity-100'
+            ? 'bg-[var(--text-color)]/10 border-[var(--text-color)]/20 text-[var(--text-color)] shadow-inner' 
+            : 'bg-transparent hover:bg-[var(--text-color)]/5 border-transparent text-[var(--text-color)] opacity-60 hover:opacity-100'
           }
         `}
       >

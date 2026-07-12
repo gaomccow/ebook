@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { GeminiClient } from '../services/GeminiClient';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, X, Sparkles, Bookmark, BookmarkCheck, Volume2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, X, Sparkles, Bookmark, BookmarkCheck, Volume2, Map, Pin, ZoomIn } from 'lucide-react';
 import type { SectionNode } from './PathView';
 import type { Language } from '../utils/translations';
 import { allFontItems } from '../utils/fonts';
 import { Tooltip } from './ui/Tooltip';
+import type { UsefulInfoItem, BookHighlight } from './HighlightsSidebar';
 
 const TEXT_SIZE_KEYS = ['sm', 'base', 'lg', 'xl', '2xl', '3xl'];
 
@@ -25,7 +28,9 @@ interface ReaderViewProps {
   hasVerificationActive: boolean;
 
   // Highlights and keyboard nav extensions
-  onAddHighlight: (text: string) => void;
+  highlights?: BookHighlight[];
+  onAddHighlight: (text: string) => string;
+  onUpdateHighlight?: (id: string, note: string) => void;
   onPrevSection?: () => void;
   onNextSection?: () => void;
   isFocusMode: boolean;
@@ -49,6 +54,13 @@ interface ReaderViewProps {
 
   // Word Bank extensions
   onAddWord?: (word: string, definition: string, translation: string) => void;
+
+  // Useful Info integration
+  usefulInfoItems?: UsefulInfoItem[];
+  onSaveUsefulInfo?: (item: Omit<UsefulInfoItem, 'id' | 'createdAt'>) => void;
+  onDeleteUsefulInfo?: (id: string) => void;
+  onOpenLightbox?: (filename: string) => void;
+  searchTarget?: number | null;
 }
 
 export const ReaderView: React.FC<ReaderViewProps> = ({
@@ -57,7 +69,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   onBack,
   onComplete,
   hasVerificationActive,
+  highlights = [],
   onAddHighlight,
+  onUpdateHighlight,
   onPrevSection,
   onNextSection,
   isFocusMode,
@@ -72,16 +86,18 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   language = 'en',
   onExplainText,
   onJumpToSection,
-  onAddWord
+  onAddWord,
+  usefulInfoItems = [],
+  onSaveUsefulInfo,
+  onDeleteUsefulInfo,
+  onOpenLightbox
 }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isNearBottom, setIsNearBottom] = useState(false);
+  const [showGalleryModal, setShowGalleryModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Distraction Shield header hide state
-  const [hideHeader, setHideHeader] = useState(false);
-  const lastScrollTop = useRef(0);
 
   // Bookmark State & Scroll Restoration
   interface BookmarkItem {
@@ -103,7 +119,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   });
 
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
-  const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
 
   // Celebrity voice synthesis states
   const [celebText, setCelebText] = useState('');
@@ -193,12 +208,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     setShowBookmarkModal(false);
     triggerToast(language === 'vi' ? 'Đã xóa toàn bộ dấu trang!' : 'All bookmarks cleared!');
   };
-
   const triggerToast = (msg: string) => {
-    setBookmarkToast(msg);
-    setTimeout(() => {
-      setBookmarkToast(null);
-    }, 2000);
+    console.log(msg); // No-op since we removed the toast UI
   };
 
   // Scroll to a specific paragraph index
@@ -352,6 +363,26 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     window.speechSynthesis.speak(utterance);
   };
 
+  // Search target auto-scroll
+  useEffect(() => {
+    if (searchTarget !== null && searchTarget !== undefined) {
+      const timer = setTimeout(() => {
+        if (containerRef.current) {
+          const el = containerRef.current.querySelector(`[data-para-index="${searchTarget}"]`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Add a temporary highlight class
+            el.classList.add('bg-duo-yellow/30', 'transition-colors', 'duration-500', 'rounded-xl');
+            setTimeout(() => {
+              el.classList.remove('bg-duo-yellow/30');
+            }, 2000);
+          }
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [searchTarget, section.id, content]);
+
   // Auto-scroll on mount/chapter change if a bookmark is present
   useEffect(() => {
     // Restores first available bookmark in this chapter on mount
@@ -408,6 +439,10 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
 
   // Word Bank States
   const [showSaveWordModal, setShowSaveWordModal] = useState(false);
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [activeHighlightId, setActiveHighlightId] = useState('');
+  const [activeHighlightText, setActiveHighlightText] = useState('');
+  const [activeHighlightNote, setActiveHighlightNote] = useState('');
   const [savingWord, setSavingWord] = useState('');
   const [savingDef, setSavingDef] = useState('');
   const [savingTrans, setSavingTrans] = useState('');
@@ -530,33 +565,85 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     return () => document.removeEventListener('selectionchange', handleTextSelection);
   }, []);
 
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName.toLowerCase() === 'mark' && target.classList.contains('epub-highlight')) {
+        const id = target.getAttribute('data-highlight-id');
+        if (id) {
+          const hl = highlights.find(h => h.id === id);
+          if (hl) {
+            setActiveHighlightId(hl.id);
+            setActiveHighlightText(hl.text);
+            setActiveHighlightNote(hl.note || '');
+            setShowAnnotationModal(true);
+          }
+        }
+      }
+    };
+    const ref = contentRef.current;
+    ref.addEventListener('click', handleClick);
+    return () => ref.removeEventListener('click', handleClick);
+  }, [highlights]);
+
   const triggerHighlight = () => {
     if (!selectionText) return;
-    onAddHighlight(selectionText);
+    const newId = onAddHighlight(selectionText);
+    
+    // Open annotation modal for immediate note-taking
+    setActiveHighlightId(newId);
+    setActiveHighlightText(selectionText);
+    setActiveHighlightNote('');
+    setShowAnnotationModal(true);
+    
     window.getSelection()?.removeAllRanges();
     setMenuCoords(null);
     setSelectionText('');
   };
 
-  const triggerSaveWord = () => {
+  const triggerSaveWord = async () => {
     if (!selectionText) return;
     const cleanWord = selectionText.trim();
-    const normalized = cleanWord.toLowerCase();
     
-    // Look up in our demo dictionary
-    const fallback = DICTIONARY_DEMO[normalized] || {
-      definition: 'A term or concept from the text.',
-      translation: language === 'vi' ? 'một từ vựng từ văn bản' : 'a term from reading'
-    };
+    // Find context sentence
+    const selection = window.getSelection();
+    let contextSentence = cleanWord;
+    if (selection && selection.anchorNode) {
+      const textContent = selection.anchorNode.textContent || '';
+      // Grab a rough window around the word
+      const start = Math.max(0, textContent.indexOf(cleanWord) - 50);
+      const end = Math.min(textContent.length, textContent.indexOf(cleanWord) + cleanWord.length + 50);
+      contextSentence = textContent.substring(start, end).trim() + "...";
+    }
 
     setSavingWord(cleanWord);
-    setSavingDef(fallback.definition);
-    setSavingTrans(fallback.translation);
+    setSavingDef('');
+    setSavingTrans('');
+    setSavingPronunciation('');
     setShowSaveWordModal(true);
-
     window.getSelection()?.removeAllRanges();
     setMenuCoords(null);
     setSelectionText('');
+
+    if (apiKey) {
+      setIsFetchingDictionary(true);
+      try {
+        const targetLanguage = language === 'vi' ? 'Vietnamese' : 'English';
+        const entry = await GeminiClient.generateDictionaryEntry(aiProvider, apiKey, cleanWord, contextSentence, targetLanguage);
+        setSavingDef(entry.definition || 'Definition not found.');
+        setSavingTrans(entry.translation || '');
+        setSavingPronunciation(entry.pronunciation || '');
+      } catch (e) {
+        console.error(e);
+        setSavingDef('Failed to generate definition. Please check your API key.');
+      } finally {
+        setIsFetchingDictionary(false);
+      }
+    } else {
+      setSavingDef('Live dictionary requires an API key to be set on the login page.');
+      setSavingTrans(language === 'vi' ? 'cần có API key' : 'requires API key');
+    }
   };
 
   // Monitor scroll progress & Distraction Shield header hide
@@ -575,18 +662,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       const progress = (scrollTop / totalHeight) * 100;
       setScrollProgress(Math.min(100, Math.max(0, progress)));
 
-      // Distraction Shield: hide header if scrolling down, show if scrolling up
-      if (hasDistractionShield && scrollTop > 60) {
-        if (scrollTop > lastScrollTop.current) {
-          setHideHeader(true); // scrolling down
-        } else {
-          setHideHeader(false); // scrolling up
-        }
-      } else {
-        setHideHeader(false);
-      }
-      
-      lastScrollTop.current = scrollTop;
+
     };
 
     const container = containerRef.current;
@@ -626,7 +702,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   }, [content]);
 
   const fontItem = allFontItems[currentFont];
-  const fontClassName = fontItem ? fontItem.className : 'font-sans font-normal';
+  const fontClassName = currentTheme === 'parchment' && currentFont === 'font_inter'
+    ? "font-['EB_Garamond'] serif tracking-normal text-lg md:text-xl leading-relaxed"
+    : fontItem ? fontItem.className : 'font-sans font-normal';
 
   const paragraphs = content.split('\n\n').filter(p => p.trim() !== '');
 
@@ -672,197 +750,61 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Sticky Progress Header */}
-      <header 
-        className={`sticky top-0 z-40 bg-[var(--card-bg)] border-b-4 border-[var(--border-color)] w-full flex flex-col px-4 py-3 shrink-0 transition-transform duration-300
-          ${hideHeader ? '-translate-y-full shadow-none' : 'translate-y-0'}
-        `}
-      >
-        <div className="flex items-center justify-between mb-2 max-w-2xl mx-auto w-full">
-          {/* Back Button */}
-          <Tooltip content={language === 'vi' ? 'Trở lại' : 'Go Back'} position="bottom">
-            <button 
-              onClick={onBack}
-              className="p-2 hover:bg-slate-200/20 rounded-full transition-colors group text-[var(--text-color)]"
-              aria-label="Back"
-            >
-              <ArrowLeft className="w-5.5 h-5.5 group-hover:-translate-x-0.5 transition-transform" />
+      {/* Sticky Top Header Toolbar */}
+      {!isFocusMode && (
+        <div className="w-full bg-[var(--bg-color)]/95 backdrop-blur-md border-b border-[var(--border-color)]/80 py-3 px-6 md:px-12 flex items-center justify-between shrink-0 z-30 shadow-sm transition-all animate-slide-in">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-[var(--border-color)]/20 transition-colors">
+              <ArrowLeft className="w-5 h-5 text-[var(--text-color)] opacity-70" />
             </button>
-          </Tooltip>
-
-          {/* Title */}
-          <div className="text-center flex-1 mx-2">
-            <h1 className="text-sm font-extrabold line-clamp-1 uppercase tracking-wider">
-              {currentTheme === 'retro' ? `SYS:LOAD_CHAPTER_${section.title.toUpperCase().replace(/\s+/g, '_')}` : section.title}
-            </h1>
+            <span className="font-sans text-sm font-black tracking-widest text-[var(--text-color)] opacity-95 uppercase">
+              {section.title}
+            </span>
           </div>
+          
+          <div className="flex items-center gap-4">
+            {/* Maps & Pictures Button */}
+            {images && Object.keys(images).length > 0 && (
+              <button
+                onClick={() => setShowGalleryModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-200/25 dark:bg-slate-800/25 hover:bg-[var(--border-color)]/25 text-[var(--text-color)] opacity-70 hover:opacity-100 transition-all font-sans text-xs font-bold uppercase tracking-wider border border-[var(--border-color)]/20"
+                title="View all maps and pictures in the book"
+              >
+                <Map className="w-3.5 h-3.5 text-duo-green" />
+                <span className="hidden md:inline">{language === 'vi' ? 'Bản đồ & Ảnh' : 'Maps & Pics'}</span>
+                <span className="text-[10px] bg-duo-green/20 text-duo-green-dark px-1.5 py-0.2 rounded-full font-black">
+                  {Object.keys(images).length}
+                </span>
+              </button>
+            )}
 
-          {/* Stats & Actions Header */}
-          <div className="flex items-center gap-2.5">
-            {/* Font Size Quick Adjuster */}
-            <div className="flex items-center gap-1 bg-slate-200/10 dark:bg-slate-800/10 border border-[var(--border-color)] rounded-xl p-1 shrink-0">
-              <Tooltip content={language === 'vi' ? 'Giảm cỡ chữ' : 'Decrease Font Size'} position="bottom">
-                <button
-                  onClick={() => {
-                    const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
-                    if (idx > 0 && onSelectTextSize) {
-                      onSelectTextSize(TEXT_SIZE_KEYS[idx - 1]);
-                    }
-                  }}
-                  disabled={currentTextSize === 'sm'}
-                  className="px-2 py-1 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200/20 dark:hover:bg-slate-800/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer select-none text-[var(--text-color)]"
-                >
-                  A-
-                </button>
-              </Tooltip>
-              <span className="text-[9px] font-black uppercase tracking-wider px-1 text-slate-400 shrink-0">
-                {currentTextSize.toUpperCase()}
-              </span>
-              <Tooltip content={language === 'vi' ? 'Tăng cỡ chữ' : 'Increase Font Size'} position="bottom">
-                <button
-                  onClick={() => {
-                    const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
-                    if (idx < TEXT_SIZE_KEYS.length - 1 && onSelectTextSize) {
-                      onSelectTextSize(TEXT_SIZE_KEYS[idx + 1]);
-                    }
-                  }}
-                  disabled={currentTextSize === '3xl'}
-                  className="px-2 py-1 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200/20 dark:hover:bg-slate-800/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer select-none text-[var(--text-color)]"
-                >
-                  A+
-                </button>
-              </Tooltip>
+            {/* Typography controls */}
+            <div className="flex items-center gap-1 bg-slate-200/25 dark:bg-slate-800/25 rounded-full px-2 py-1">
+              <button onClick={() => {
+                const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
+                if (idx > 0 && onSelectTextSize) onSelectTextSize(TEXT_SIZE_KEYS[idx - 1]);
+              }} className="px-2 text-xs font-bold text-[var(--text-color)] opacity-60 hover:opacity-100 transition-opacity">A-</button>
+              <span className="text-[10px] font-bold text-[var(--text-color)] opacity-40 px-1">{currentTextSize.toUpperCase()}</span>
+              <button onClick={() => {
+                const idx = TEXT_SIZE_KEYS.indexOf(currentTextSize);
+                if (idx < TEXT_SIZE_KEYS.length - 1 && onSelectTextSize) onSelectTextSize(TEXT_SIZE_KEYS[idx + 1]);
+              }} className="px-2 text-xs font-bold text-[var(--text-color)] opacity-60 hover:opacity-100 transition-opacity">A+</button>
             </div>
 
-            {/* Distraction Shield active indicator */}
             {hasDistractionShield && (
-              <Tooltip content={language === 'vi' ? 'Khiên chống phân tâm đang kích hoạt (Tự động ẩn giao diện)' : 'Distraction Shield Active (Auto-hiding UI)'} position="bottom">
-                <span className="flex items-center gap-1 text-[10px] font-black text-duo-green bg-duo-green/10 px-2 py-1 rounded-full uppercase border border-duo-green/30">
-                  <Shield className="w-3.5 h-3.5 fill-current" /> Shield
-                </span>
-              </Tooltip>
+              <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-100/10 px-3 py-1.5 rounded-full uppercase border border-green-500/20">
+                <Shield className="w-3.5 h-3.5 fill-current" /> Shield
+              </span>
             )}
 
             {isDesktop && (
-              <Tooltip content={language === 'vi' ? 'Bật/Tắt chế độ tập trung (Cmd+Shift+F)' : 'Toggle Focus Mode (Cmd+Shift+F)'} position="bottom">
-                <button
-                  onClick={onToggleFocusMode}
-                  className="p-2 hover:bg-slate-200/20 rounded-full transition-colors text-[var(--text-color)] opacity-70 hover:opacity-100"
-                >
-                  {isFocusMode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </Tooltip>
+              <button onClick={onToggleFocusMode} className="p-1.5 rounded-full hover:bg-[var(--border-color)]/20 text-[var(--text-color)] opacity-50 hover:opacity-100 transition-all">
+                {isFocusMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             )}
           </div>
         </div>
-
-        {/* Progress bar */}
-        <div className="w-full max-w-2xl mx-auto h-3 bg-slate-200/20 rounded-full overflow-hidden relative border border-[var(--border-color)]">
-          <motion.div 
-            className="h-full bg-[var(--accent-color)]"
-            style={{ width: `${scrollProgress}%` }}
-            transition={{ ease: 'easeOut', duration: 0.1 }}
-          />
-        </div>
-      </header>
-
-      {/* Draggable Bookmark Ribbon hanging below the sticky progress header */}
-      <div id="tour-bookmark-ribbon" className="absolute top-[72px] right-6 z-50 flex flex-col items-center">
-        {/* Toast Notification */}
-        <AnimatePresence>
-          {bookmarkToast && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.9 }}
-              className="absolute right-12 top-2 bg-gray-900 text-white text-[10px] font-black uppercase tracking-wider py-1.5 px-3 rounded-xl shadow-lg border border-gray-700 whitespace-nowrap"
-            >
-              {bookmarkToast}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Drag track backdrop visual indicator */}
-        <div className="w-0.5 h-20 border-r-2 border-dashed border-slate-300 dark:border-slate-700/50 absolute top-0 pointer-events-none opacity-40" />
-
-        {/* Draggable Ribbon Tab */}
-        <Tooltip
-          content={
-            currentChapterBookmarks.length > 0 
-              ? (language === 'vi' ? 'Nhấp để xem thẻ đánh dấu / Kéo lên để xóa' : 'Click to view/scroll bookmarks / Drag up to clear') 
-              : bookmarks.length > 0
-              ? (language === 'vi' ? 'Xem các thẻ đánh dấu từ chương khác' : 'View bookmarks from other chapters')
-              : (language === 'vi' ? 'Kéo xuống hoặc nhấp để đánh dấu vị trí này' : 'Drag down or click to bookmark this spot')
-          }
-          position="left"
-        >
-          <motion.div
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 60 }}
-            dragElastic={0.1}
-            dragMomentum={false}
-            onDragEnd={(_event, info) => {
-              if (info.offset.y > 35) {
-                handleSetBookmark();
-              } else if (info.offset.y < -15 && bookmarks.length > 0) {
-                handleClearBookmarkAt(findCurrentParaIndex());
-              }
-            }}
-            onClick={() => {
-              if (bookmarks.length === 0) {
-                handleSetBookmark();
-              } else if (bookmarks.length === 1) {
-                const b = bookmarks[0];
-                if (b.sectionId === section.id) {
-                  handleScrollToPara(b.paraIndex);
-                } else if (onJumpToSection) {
-                  onJumpToSection(b.sectionId);
-                }
-              } else {
-                // Multiple bookmarks active -> show choice dialog popover
-                setShowBookmarkModal(true);
-              }
-            }}
-            className={`w-8 h-12 rounded-b-lg flex flex-col items-center justify-between py-1.5 cursor-grab active:cursor-grabbing shadow-md border-x-2 border-b transition-all relative
-              ${currentChapterBookmarks.length > 0
-                ? 'bg-duo-orange border-duo-orange-dark text-white'
-                : bookmarks.length > 0
-                ? 'bg-duo-purple border-duo-purple-dark text-white animate-pulse'
-                : 'bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:bg-slate-300'
-              }
-            `}
-            animate={{ y: currentChapterBookmarks.length > 0 ? 30 : 0 }}
-            transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-          >
-          {/* Grab handles drag pattern indicator */}
-          <div className="flex flex-col gap-0.5 opacity-60">
-            <span className="w-3.5 h-0.5 bg-current rounded-full" />
-            <span className="w-3.5 h-0.5 bg-current rounded-full" />
-          </div>
-
-          {/* Bookmark icon */}
-          {currentChapterBookmarks.length > 0 ? (
-            <BookmarkCheck className="w-3.5 h-3.5 fill-white" />
-          ) : bookmarks.length > 0 ? (
-            <Bookmark className="w-3.5 h-3.5 fill-white animate-bounce" />
-          ) : (
-            <Bookmark className="w-3.5 h-3.5" />
-          )}
-
-          {/* Ribbon Cutout Tail Visual */}
-          <div className="absolute -bottom-1.5 left-0 right-0 flex justify-center">
-            <div className={`w-0 h-0 border-l-[14px] border-r-[14px] border-t-[6px] border-l-transparent border-r-transparent
-              ${currentChapterBookmarks.length > 0 
-                ? 'border-t-duo-orange-dark' 
-                : bookmarks.length > 0
-                ? 'border-t-duo-purple-dark'
-                : 'border-t-slate-300 dark:border-t-slate-700'
-              }
-            `} />
-          </div>
-        </motion.div>
-      </Tooltip>
-    </div>
+      )}
 
       {/* Main Content Area (Continuous Scroller) */}
       <main 
@@ -903,33 +845,88 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
 
         {/* Keyboard Helper */}
         {isDesktop && !isFocusMode && currentTheme !== 'retro' && (
-          <div className="max-w-2xl mx-auto mb-5 flex items-center justify-between bg-slate-200/10 border border-[var(--border-color)] text-[var(--text-color)] opacity-75 rounded-2xl py-2 px-4 text-xs font-semibold">
-            <span className="flex items-center gap-1.5"><Keyboard className="w-4 h-4" /> Focus Lab Shortcuts:</span>
-            <div className="flex gap-3">
-              <span><kbd className="bg-white/20 border border-[var(--border-color)] rounded px-1 text-[10px]">Space</kbd> Next Para</span>
-              <span><kbd className="bg-white/20 border border-[var(--border-color)] rounded px-1 text-[10px]">← / →</kbd> Prev/Next Chapter</span>
-              <span><kbd className="bg-white/20 border border-[var(--border-color)] rounded px-1 text-[10px]">⌘⇧F</kbd> Focus Mode</span>
+          <div className="max-w-4xl mx-auto mb-5 flex items-center justify-between bg-black/5 dark:bg-white/5 border border-white/50 text-black/60 shadow-sm opacity-75 rounded-2xl py-2 px-6 text-xs font-semibold">
+            <span className="flex items-center gap-1.5 font-bold"><Keyboard className="w-4 h-4" /> Focus Lab Shortcuts:</span>
+            <div className="flex gap-3 text-black/80">
+              <span><kbd className="bg-white border border-black/10 rounded px-1 text-[10px]">Space</kbd> Next Para</span>
+              <span><kbd className="bg-white border border-black/10 rounded px-1 text-[10px]">← / →</kbd> Prev/Next Chapter</span>
+              <span><kbd className="bg-white border border-black/10 rounded px-1 text-[10px]">⌘⇧F</kbd> Focus Mode</span>
             </div>
           </div>
         )}
 
         <div className={`
-          max-w-2xl mx-auto w-full p-6 md:p-10 shadow-sm border-4 border-[var(--border-color)]
-          ${currentTheme === 'gradient' || currentTheme === 'glass_dark'
-            ? 'bg-black/5 backdrop-blur-3xl text-white border-white/5'
-            : currentTheme === 'glass_light'
-            ? 'bg-white/5 backdrop-blur-3xl text-slate-800 border-white/10 shadow-lg'
-            : 'bg-[var(--card-bg)]'
+          ${isFocusMode
+            ? 'w-full max-w-[1200px] mx-auto min-h-screen pt-12 pb-32 px-12 md:px-24 bg-transparent shadow-none border-none'
+            : 'max-w-4xl mx-auto w-full pt-10 pb-16 px-10 md:px-16 mb-20 bg-[var(--card-bg)] text-[var(--text-color)] rounded-[40px] shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-[var(--border-color)]'
           }
-          ${currentTheme === 'retro' ? 'border-2 border-dashed' : 'rounded-3xl'}
+          relative
           ${fontClassName}
         `}>
+          {/* Draggable Bookmark Ribbon hanging off the card */}
+          {!isFocusMode && (
+            <div id="tour-bookmark-ribbon" className="absolute top-6 -right-2 z-20 flex flex-col items-center">
+              <Tooltip
+                content={
+                  currentChapterBookmarks.length > 0 
+                    ? (language === 'vi' ? 'Nhấp để xem thẻ đánh dấu / Kéo lên để xóa' : 'Click to view/scroll bookmarks / Drag up to clear') 
+                    : bookmarks.length > 0
+                    ? (language === 'vi' ? 'Xem các thẻ đánh dấu từ chương khác' : 'View bookmarks from other chapters')
+                    : (language === 'vi' ? 'Kéo xuống hoặc nhấp để đánh dấu vị trí này' : 'Drag down or click to bookmark this spot')
+                }
+                position="left"
+              >
+                <motion.div
+                  drag="y"
+                  dragConstraints={{ top: 0, bottom: 40 }}
+                  dragElastic={0.1}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onDragEnd={(_, info) => {
+                    if (info.offset.y > 20) handleSetBookmark();
+                    else if (info.offset.y < -10 && currentChapterBookmarks.length > 0) {
+                      handleClearBookmarkAt(currentChapterBookmarks[0].paraIndex);
+                    }
+                  }}
+                  onClick={() => setShowBookmarkModal(true)}
+                  className={`
+                    relative z-10 w-8 flex flex-col items-center pt-2 pb-4 shadow-xl cursor-grab active:cursor-grabbing border border-black/10 dark:border-white/10
+                    ${currentChapterBookmarks.length > 0 
+                      ? 'bg-duo-orange text-white h-20 mt-4' 
+                      : bookmarks.length > 0
+                      ? 'bg-[#bbd8f8] text-[#366896] h-16 mt-2' /* Light blue for matching the screenshot */
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 h-12 mt-0'
+                    }
+                  `}
+                  style={{ 
+                    borderBottomLeftRadius: '16px',
+                    borderBottomRightRadius: '16px',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <Bookmark className="w-4 h-4 drop-shadow-sm" />
+                </motion.div>
+              </Tooltip>
+            </div>
+          )}
           
-          {currentTheme !== 'retro' && (
+          {currentTheme !== 'retro' && currentTheme !== 'parchment' && (
             <div className="border-b-2 border-slate-200/10 pb-4 mb-6">
               <span className="text-xs font-black text-[var(--accent-color)] uppercase tracking-widest">
                 Focus Session ({section.wordCount} Words)
               </span>
+            </div>
+          )}
+
+          {currentTheme === 'parchment' && (
+            <div className="text-center mb-8 font-serif select-none">
+              <div className="text-xs uppercase tracking-widest text-[#8c5e3c] mb-1 font-semibold">
+                {section.title.includes(':') ? section.title.split(':')[0] : 'Chapter'}
+              </div>
+              <div className="text-3xl italic font-normal text-[#2d2013]">
+                {section.title.includes(':') ? section.title.split(':')[1].trim() : section.title}
+              </div>
+              <div className="w-12 h-0.5 bg-[#8c5e3c]/20 mx-auto mt-4"></div>
             </div>
           )}
 
@@ -942,13 +939,64 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 const filename = p.substring(5, p.length - 1);
                 const dataUrl = images[filename];
                 if (dataUrl) {
+                  const isSaved = usefulInfoItems.some(item => item.imageFilename === filename);
+                  const savedItem = usefulInfoItems.find(item => item.imageFilename === filename);
+
+                  const handlePinToggle = (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    if (isSaved && savedItem) {
+                      if (onDeleteUsefulInfo) onDeleteUsefulInfo(savedItem.id);
+                    } else {
+                      if (onSaveUsefulInfo) {
+                        const cleanTitle = filename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+                        const firstUnderscore = section.id.indexOf('_');
+                        const bookId = firstUnderscore !== -1 ? section.id.substring(0, firstUnderscore) : 'book_default';
+                        onSaveUsefulInfo({
+                          bookId,
+                          imageFilename: filename,
+                          title: cleanTitle,
+                          note: '',
+                          sectionId: section.id,
+                          sectionTitle: section.title
+                        });
+                      }
+                    }
+                  };
+
                   return (
                     <div key={index} className="w-full flex justify-center my-6">
-                      <img 
-                        src={dataUrl} 
-                        alt="Illustration" 
-                        className="max-w-full max-h-[420px] rounded-2xl border-4 border-[var(--border-color)] shadow-md object-contain bg-black/5 p-1"
-                      />
+                      <div className="relative group/img-wrapper max-w-full overflow-hidden rounded-2xl border-4 border-[var(--border-color)] shadow-md bg-black/5 p-1 transition-all hover:shadow-lg">
+                        <img 
+                          src={dataUrl} 
+                          alt="Illustration" 
+                          className="max-w-full max-h-[420px] object-contain transition-transform duration-300 group-hover/img-wrapper:scale-[1.02] cursor-pointer"
+                          onClick={() => onOpenLightbox && onOpenLightbox(filename)}
+                        />
+                        
+                        {/* Hover Overlay controls */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img-wrapper:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                          <button
+                            onClick={() => onOpenLightbox && onOpenLightbox(filename)}
+                            className="p-2.5 bg-white text-gray-900 rounded-full hover:bg-slate-100 transition-all transform scale-90 group-hover/img-wrapper:scale-100 duration-200 shadow-lg flex items-center justify-center"
+                            title="Expand and zoom"
+                          >
+                            <ZoomIn className="w-5 h-5" />
+                          </button>
+                          
+                          <button
+                            onClick={handlePinToggle}
+                            className={`p-2.5 rounded-full transition-all transform scale-90 group-hover/img-wrapper:scale-100 duration-200 shadow-lg flex items-center justify-center
+                              ${isSaved
+                                ? 'bg-duo-green text-white hover:bg-duo-green-hover'
+                                : 'bg-white text-gray-900 hover:bg-slate-100'
+                              }
+                            `}
+                            title={isSaved ? "Unpin from Useful Info" : "Pin to Useful Info"}
+                          >
+                            <Pin className={`w-5 h-5 ${isSaved ? 'fill-current text-white' : 'text-gray-900'}`} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   );
                 }
@@ -1023,7 +1071,12 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                     data-para-index={index}
                     onClick={(e) => handleParagraphClick(e, index, p)}
                     className={`${TEXT_SIZE_CLASSES[currentTextSize] || 'text-lg leading-relaxed'} mb-0 font-normal tracking-wide text-justify text-inherit transition-colors cursor-pointer
-                      ${isBookmarked ? 'border-l-4 border-duo-orange pl-3 -ml-4 font-bold text-[var(--accent-color)]' : ''}
+                      ${isBookmarked 
+                        ? currentTheme === 'parchment'
+                          ? 'border-l-4 border-[#2d2013] pl-4 -ml-5 font-semibold text-[#2d2013]'
+                          : 'border-l-4 border-duo-orange pl-3 -ml-4 font-bold text-[var(--accent-color)]' 
+                        : ''
+                      }
                     `}
                     style={{ textWrap: 'pretty' }}
                   >
@@ -1082,7 +1135,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       </main>
 
       {/* AI Explanation Dialog/Overlay */}
-      <AnimatePresence>
+      {typeof document !== 'undefined' && createPortal(
+<AnimatePresence>
         {explainingText && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div
@@ -1142,9 +1196,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           </div>
         )}
       </AnimatePresence>
+      , document.body)}
 
       {/* Multiple Bookmarks Selection Popover Dialog */}
-      <AnimatePresence>
+      {typeof document !== 'undefined' && createPortal(
+<AnimatePresence>
         {showBookmarkModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div
@@ -1219,9 +1275,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           </div>
         )}
       </AnimatePresence>
+      , document.body)}
 
       {/* Celebrity Voice Synthesizer Dialog/Overlay */}
-      <AnimatePresence>
+      {typeof document !== 'undefined' && createPortal(
+<AnimatePresence>
         {showCelebModal && (
           <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <motion.div
@@ -1399,9 +1457,68 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           </div>
         )}
       </AnimatePresence>
+      , document.body)}
+
+      {/* Annotation Modal */}
+      <AnimatePresence>
+        {showAnnotationModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border-4 border-slate-200 dark:border-slate-700"
+            >
+              <div className="bg-duo-yellow border-b-4 border-duo-yellow-dark p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-white">
+                  <Highlighter className="w-5 h-5 fill-white/20" />
+                  <h3 className="font-black tracking-wide uppercase text-sm">Annotation</h3>
+                </div>
+                <button
+                  onClick={() => setShowAnnotationModal(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-5 flex flex-col gap-4">
+                <div className="bg-duo-yellow/10 dark:bg-duo-yellow-dark/20 p-3 rounded-2xl border-2 border-duo-yellow/30 border-dashed">
+                  <p className="text-sm font-medium italic text-slate-700 dark:text-slate-300 line-clamp-4">
+                    "{activeHighlightText}"
+                  </p>
+                </div>
+                
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Your Note</label>
+                  <textarea
+                    value={activeHighlightNote}
+                    onChange={(e) => setActiveHighlightNote(e.target.value)}
+                    placeholder="Type your thoughts here..."
+                    className="w-full h-24 resize-none bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-sm focus:outline-none focus:border-duo-yellow transition-colors"
+                  />
+                </div>
+                
+                <button
+                  onClick={() => {
+                    if (onUpdateHighlight) {
+                      onUpdateHighlight(activeHighlightId, activeHighlightNote);
+                    }
+                    setShowAnnotationModal(false);
+                  }}
+                  className="w-full bg-duo-yellow border-b-4 border-duo-yellow-dark text-white font-black uppercase tracking-widest py-3 rounded-2xl hover:brightness-105 active:border-b-0 active:translate-y-1 transition-all"
+                >
+                  Save Note
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Save Word to Word Bank Confirmation Modal */}
-      <AnimatePresence>
+      {typeof document !== 'undefined' && createPortal(
+<AnimatePresence>
         {showSaveWordModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm pointer-events-auto">
             <motion.div
@@ -1474,6 +1591,122 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           </div>
         )}
       </AnimatePresence>
+      , document.body)}
+
+      {/* Maps & Illustrations Gallery Modal */}
+      {typeof document !== 'undefined' && createPortal(
+<AnimatePresence>
+        {showGalleryModal && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md pointer-events-auto">
+            <motion.div
+              initial={{ scale: 0.9, y: 15, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 15, opacity: 0 }}
+              className="bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-[32px] p-6 shadow-2xl max-w-4xl w-full h-[85vh] flex flex-col gap-4 text-left"
+            >
+              <div className="flex items-center justify-between border-b border-[var(--border-color)]/30 pb-3">
+                <div className="flex items-center gap-2">
+                  <Map className="w-5 h-5 text-duo-green" />
+                  <h3 className="text-base font-black uppercase tracking-wider text-[var(--text-color)]">
+                    {language === 'vi' ? 'Bộ sưu tập Bản đồ & Ảnh' : 'Book Maps & Pictures'}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowGalleryModal(false)}
+                  className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Gallery Grid Scroller */}
+              <div className="flex-1 overflow-y-auto pr-1 no-scrollbar pb-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {Object.keys(images).map((filename) => {
+                    const dataUrl = images[filename];
+                    const isSaved = usefulInfoItems.some(item => item.imageFilename === filename);
+                    const savedItem = usefulInfoItems.find(item => item.imageFilename === filename);
+                    const cleanName = filename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+
+                    const handlePinToggle = (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      if (isSaved && savedItem) {
+                        if (onDeleteUsefulInfo) onDeleteUsefulInfo(savedItem.id);
+                      } else {
+                        if (onSaveUsefulInfo) {
+                          const firstUnderscore = section.id.indexOf('_');
+                          const bookId = firstUnderscore !== -1 ? section.id.substring(0, firstUnderscore) : 'book_default';
+                          onSaveUsefulInfo({
+                            bookId,
+                            imageFilename: filename,
+                            title: cleanName,
+                            note: '',
+                            sectionId: section.id,
+                            sectionTitle: section.title
+                          });
+                        }
+                      }
+                    };
+
+                    return (
+                      <div 
+                        key={filename}
+                        className="bg-slate-200/25 dark:bg-slate-800/25 border-2 border-[var(--border-color)] rounded-2xl p-2.5 flex flex-col gap-2 relative group/gal-item shadow-sm transition-all hover:bg-slate-200/40 hover:scale-[1.02]"
+                      >
+                        <div className="aspect-[4/3] w-full rounded-xl overflow-hidden relative bg-black/5 flex items-center justify-center border border-[var(--border-color)]/50">
+                          <img src={dataUrl} alt={cleanName} className="w-full/ h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/gal-item:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => {
+                                setShowGalleryModal(false);
+                                if (onOpenLightbox) onOpenLightbox(filename);
+                              }}
+                              className="p-2 bg-white text-gray-900 rounded-full hover:bg-slate-100 shadow-md"
+                              title="Zoom/Pan View"
+                            >
+                              <ZoomIn className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={handlePinToggle}
+                              className={`p-2 rounded-full shadow-md transition-colors
+                                ${isSaved 
+                                  ? 'bg-duo-green text-white hover:bg-duo-green-hover' 
+                                  : 'bg-white text-gray-900 hover:bg-slate-100'
+                                }
+                              `}
+                              title={isSaved ? "Unpin reference" : "Pin reference"}
+                            >
+                              <Pin className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+                            </button>
+                          </div>
+                          {isSaved && (
+                            <div className="absolute top-2 right-2 bg-duo-green text-white p-1 rounded-lg shadow-md">
+                              <Pin className="w-3 h-3 fill-current" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span 
+                            onClick={() => {
+                              setShowGalleryModal(false);
+                              if (onOpenLightbox) onOpenLightbox(filename);
+                            }}
+                            className="text-xs font-black truncate capitalize hover:text-duo-green cursor-pointer text-[var(--text-color)]"
+                          >
+                            {cleanName}
+                          </span>
+                          <span className="text-[9px] text-gray-400 font-mono truncate">{filename}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      , document.body)}
     </div>
   );
 };

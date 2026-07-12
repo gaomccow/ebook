@@ -1,5 +1,11 @@
 import JSZip from 'jszip';
 
+export interface TocItem {
+  label: string;
+  href: string;
+  subitems?: TocItem[];
+}
+
 export interface EpubChapter {
   id: string;
   title: string;
@@ -12,6 +18,7 @@ export interface EpubBook {
   author: string;
   chapters: EpubChapter[];
   images?: Record<string, string>;
+  toc?: TocItem[];
 }
 
 export class EpubParser {
@@ -33,6 +40,18 @@ export class EpubParser {
     // 2. Parse the OPF file (manifest, metadata, spine)
     const opfText = await this.getFileText(zip, opfPath);
     const { title, author, manifest, spine } = this.parseOpf(opfText);
+
+    // Extract TOC if available (EPUB 2 NCX)
+    let toc: TocItem[] | undefined;
+    if (tocId && manifest[tocId]) {
+      const ncxPath = this.resolveRelativePath(opfBaseDir, manifest[tocId].href);
+      try {
+        const ncxText = await this.getFileText(zip, ncxPath);
+        toc = this.parseNcx(ncxText);
+      } catch (e) {
+        console.warn("Failed to parse NCX TOC", e);
+      }
+    }
 
     // Extract images as base64 URLs
     const images: Record<string, string> = {};
@@ -103,9 +122,10 @@ export class EpubParser {
         // Extract and clean content text
         const contentText = this.cleanHtmlContent(doc);
         const wordCount = this.calculateWordCount(contentText);
+        const hasImages = contentText.includes('[IMG:');
 
-        // Skip sections that have almost no readable text (like pure title pages or covers)
-        if (wordCount > 30) {
+        // Skip sections that have almost no readable text AND no images (like pure title pages or empty covers)
+        if (wordCount > 30 || hasImages) {
           chapters.push({
             id: `ch_${i}_${idref}`,
             title: chapterTitle,
@@ -126,7 +146,8 @@ export class EpubParser {
       title: title || file.name.replace(/\.epub$/i, ''),
       author: author || 'Unknown Author',
       chapters,
-      images
+      images,
+      toc
     };
   }
 
@@ -169,6 +190,7 @@ export class EpubParser {
   }
 
   private static parseOpf(opfText: string): {
+    tocId?: string;
     title: string;
     author: string;
     manifest: Record<string, { href: string; mediaType: string }>;
@@ -201,6 +223,8 @@ export class EpubParser {
       }
     });
 
+    const tocId = doc.querySelector('spine')?.getAttribute('toc') || undefined;
+    
     // Get Spine Items (defines sequence)
     const spine: string[] = [];
     const itemrefNodes = doc.querySelectorAll('spine > itemref');
@@ -217,7 +241,8 @@ export class EpubParser {
       title,
       author,
       manifest,
-      spine
+      spine,
+      tocId
     };
   }
 
@@ -234,13 +259,13 @@ export class EpubParser {
     const paragraphs: string[] = [];
     
     // Process block-level tags, paragraphs, and images (supporting h1-h6 and div)
-    const textBlocks = body.querySelectorAll('p, blockquote, li, h1, h2, h3, h4, h5, h6, img, div');
+    const textBlocks = body.querySelectorAll('p, blockquote, li, h1, h2, h3, h4, h5, h6, img, image, div');
     
     if (textBlocks.length > 0) {
       textBlocks.forEach(block => {
         const tagName = block.tagName.toLowerCase();
-        if (tagName === 'img') {
-          const src = block.getAttribute('src') || '';
+        if (tagName === 'img' || tagName === 'image') {
+          const src = block.getAttribute('src') || block.getAttribute('xlink:href') || block.getAttribute('href') || '';
           if (src) {
             const filename = src.split('/').pop() || src;
             paragraphs.push(`[IMG:${filename}]`);
@@ -251,7 +276,7 @@ export class EpubParser {
           tagName === 'div'
         ) {
           // If it is a div, only process it if it does not contain other block tags to avoid duplicate text extraction
-          if (tagName === 'div' && block.querySelector('p, div, blockquote, li, h1, h2, h3, h4, h5, h6')) {
+          if (tagName === 'div' && block.querySelector('p, div, blockquote, li, h1, h2, h3, h4, h5, h6, img, image')) {
             return;
           }
           const text = block.textContent?.trim();
@@ -263,9 +288,9 @@ export class EpubParser {
             paragraphs.push(normalized);
             
             // Also check for nested images
-            const nestedImgs = block.querySelectorAll('img');
+            const nestedImgs = block.querySelectorAll('img, image');
             nestedImgs.forEach(img => {
-              const src = img.getAttribute('src') || '';
+              const src = img.getAttribute('src') || img.getAttribute('xlink:href') || img.getAttribute('href') || '';
               if (src) {
                 const filename = src.split('/').pop() || src;
                 paragraphs.push(`[IMG:${filename}]`);

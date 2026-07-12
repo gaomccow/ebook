@@ -125,6 +125,15 @@ export const SPECIALTY_FONTS: FontItem[] = [
     cost: 1200,
     status: "locked",
     className: "font-['Lexend'] tracking-normal text-[10.5pt]"
+  },
+  {
+    id: "font_opendyslexic",
+    name: "OpenDyslexic",
+    type: "FONT",
+    description: "Specialized typeface with heavy bottom weighting to prevent letters from jumping or swapping. Perfect for neurodivergent reading.",
+    cost: 0,
+    status: "unlocked",
+    className: "font-['OpenDyslexic',_'Comic_Sans_MS',_'Lexend'] tracking-wide leading-loose"
   }
 ];
 

@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Source+Sans+3:wght@300;400;600;700;900&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Merriweather:wght@300;400;700;900&family=JetBrains+Mono:wght@100;300;400;500;700;800&family=IBM+Plex+Mono:wght@100;200;300;400;500;600;700&family=Intel+One+Mono:wght@300;400&family=Atkinson+Hyperlegible:wght@400;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Lexend:wght@100;300;400;500;700;900&family=Inter:wght@100..900&display=swap&subset=latin-ext,devanagari,vietnamese');
 @import "tailwindcss";
 
-
 @theme {
   --color-duo-green: #58cc02;
   --color-duo-green-hover: #61e002;
@@ -35,7 +34,26 @@
   font-family: var(--font-sans);
   color-scheme: light;
   background-color: #ffffff;
+  --teacher-accent: #4f46e5;
 }
+
+/* ─── Classroom Banner ──────────────────────────────────────────────────────── */
+.classroom-banner {
+  z-index: 40;
+  font-size: 0.75rem;
+}
+
+/* ─── Aquarium Sway Animation ────────────────────────────────────────────────── */
+@keyframes aquarium-sway {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-6px) rotate(-3deg); }
+  75% { transform: translateX(6px) rotate(3deg); }
+}
+
+.aquarium-creature {
+  animation: aquarium-sway 4s ease-in-out infinite;
+}
+
 
 body {
   margin: 0;
@@ -648,6 +666,155 @@ body {
   }
 }
 
+/* CLAYMORPHISM THEME */
+[data-theme='claymorphism'] {
+  --bg-color: #eef2f6; /* Soft pale blue/gray */
+  --text-color: #1e293b;
+  --accent-color: #f97316;
+  --card-bg: #eef2f6;
+  --border-color: rgba(255, 255, 255, 0.4);
+  --font-main: 'Outfit', sans-serif;
+}
+[data-theme='claymorphism'] body {
+  background-color: var(--bg-color);
+}
+[data-theme='claymorphism'] [class*="bg-[var(--card-bg)]"] {
+  border-radius: 32px !important;
+  border: 1px solid var(--border-color) !important;
+  background-color: var(--card-bg) !important;
+  box-shadow: 
+    20px 20px 30px rgba(0,0,0,0.08),
+    inset 10px 8px 12px 0px rgba(255,255,255,1),
+    inset -10px -8px 12px 0px rgba(0,0,0,0.1) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
 
+/* Base button styles for claymorphism */
+[data-theme='claymorphism'] .btn-3d {
+  border-radius: 20px !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 
+    10px 10px 20px rgba(0,0,0,0.06),
+    inset 5px 4px 8px 0px rgba(255,255,255,0.9),
+    inset -5px -4px 8px 0px rgba(0,0,0,0.1) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
 
+[data-theme='claymorphism'] .btn-3d::after {
+  display: none !important; /* Hide original 3D duolingo shadow */
+}
+
+[data-theme='claymorphism'] .btn-3d:hover {
+  box-shadow: 
+    14px 14px 24px rgba(0,0,0,0.08),
+    inset 6px 5px 10px 0px rgba(255,255,255,1),
+    inset -6px -5px 10px 0px rgba(0,0,0,0.12) !important;
+  transform: translateY(-2px) !important;
+}
+
+[data-theme='claymorphism'] .btn-3d:active {
+  box-shadow: 
+    4px 4px 10px rgba(0,0,0,0.04),
+    inset 2px 2px 4px 0px rgba(255,255,255,0.5),
+    inset -2px -2px 4px 0px rgba(0,0,0,0.05) !important;
+  transform: translateY(2px) scale(0.98) !important;
+}
+
+/* Neutral buttons override */
+[data-theme='claymorphism'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
+  background-color: var(--card-bg) !important;
+  color: var(--text-color) !important;
+}
+
+/* PARCHMENT THEME (Vintage Book / Sepia Style) */
+[data-theme='parchment'] {
+  --bg-color: #ebdcb9; /* Warm vintage backdrop */
+  --text-color: #2d2013; /* Espresso dark brown text */
+  --accent-color: #8c5e3c; /* Antique leather brown */
+  --card-bg: #f4ebd0; /* Clean parchment paper card */
+  --border-color: #d1c29d; /* Soft sepia border */
+  --font-main: 'EB Garamond', 'EB_Garamond', Georgia, serif;
+}
+
+[data-theme='parchment'] body {
+  background-color: var(--bg-color);
+  background-image: radial-gradient(circle at center, rgba(255,255,255,0.4) 0%, rgba(140, 94, 60, 0.08) 100%) !important;
+}
+
+/* Make cards look like authentic clean book pages resting on the background */
+[data-theme='parchment'] [class*="bg-[var(--card-bg)]"],
+[data-theme='parchment'] .path-header-card {
+  background-color: var(--card-bg) !important;
+  border: 1px solid rgba(140, 94, 60, 0.1) !important;
+  box-shadow: 12px 16px 32px rgba(45, 32, 19, 0.06), inset 4px 4px 12px 0px rgba(255, 255, 255, 0.6), inset -6px -6px 16px 0px rgba(140, 94, 60, 0.05) !important;
+  border-radius: 24px !important;
+}
+
+/* Apply beautiful serif to headings under parchment */
+[data-theme='parchment'] h1,
+[data-theme='parchment'] h2,
+[data-theme='parchment'] h3,
+[data-theme='parchment'] .font-black {
+  font-family: 'EB Garamond', Georgia, serif !important;
+  font-weight: 700 !important;
+  color: var(--text-color) !important;
+}
+
+/* Outline 3D Button style for Parchment (antique typography look) */
+[data-theme='parchment'] .btn-3d {
+  background-color: #fcf9f2 !important;
+  color: #2d2013 !important;
+  border: 2px solid #2d2013 !important;
+  box-shadow: 3px 3px 0px #2d2013 !important;
+  border-radius: 6px !important;
+  font-family: 'EB Garamond', Georgia, serif !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+[data-theme='parchment'] .btn-3d::after {
+  display: none !important; /* Disable standard Duolingo 3D shadow */
+}
+
+[data-theme='parchment'] .btn-3d:hover {
+  background-color: #ebdcb9 !important;
+  box-shadow: 4px 4px 0px #2d2013 !important;
+  transform: translate(-1px, -1px) !important;
+}
+
+[data-theme='parchment'] .btn-3d:active {
+  box-shadow: 0px 0px 0px #2d2013 !important;
+  transform: translate(3px, 3px) !important;
+}
+
+/* Green (Success) Button Override */
+[data-theme='parchment'] .btn-3d-green,
+[data-theme='parchment'] .bg-duo-green {
+  background-color: #556b2f !important; /* Olive green */
+  color: #f4ebd0 !important;
+}
+[data-theme='parchment'] .btn-3d-green:hover {
+  background-color: #6b8e23 !important;
+}
+
+/* Blue (Action) Button Override */
+[data-theme='parchment'] .btn-3d-blue,
+[data-theme='parchment'] .bg-duo-blue {
+  background-color: #5d4037 !important; /* Warm dark brown */
+  color: #f4ebd0 !important;
+}
+[data-theme='parchment'] .btn-3d-blue:hover {
+  background-color: #6d4c41 !important;
+}
+
+/* Yellow (Warning/Alt) Button Override */
+[data-theme='parchment'] .btn-3d-yellow,
+[data-theme='parchment'] .bg-duo-yellow {
+  background-color: #d4a373 !important;
+  color: #2d2013 !important;
+}
+[data-theme='parchment'] .btn-3d-yellow:hover {
+  background-color: #e6b88a !important;
+}
 

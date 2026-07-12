@@ -7,7 +7,9 @@ const THEME_COSTS: Record<string, number> = {
   dark: 0,
   glass_light: 10000,
   glass_dark: 10000,
-  illustrated: 100
+  illustrated: 100,
+  claymorphism: 15000,
+  parchment: 0
 };
 
 const FEATURE_COSTS: Record<string, number> = {
@@ -24,9 +26,9 @@ const FONT_COSTS: Record<string, number> = {
   font_jetbrains_mono: 150,
   font_ibm_plex_mono: 300,
   font_intel_one_mono: 600,
-  font_atkinson_hyperlegible: 800,
   font_space_grotesk: 1000,
-  font_lexend: 1200
+  font_lexend: 1200,
+  font_opendyslexic: 0
 };
 
 export interface LibrarySection {
@@ -45,6 +47,7 @@ export interface BookArchiveItem {
   completedAt: string | null;
   masteryLevel: 'none' | 'silver' | 'gold';
   tags?: string[];
+  toc?: any[];
   sectionId?: string | null;
 }
 
@@ -53,6 +56,7 @@ export interface SavedWord {
   originalWord: string;
   definition: string;
   translation: string;
+  pronunciation?: string;
   masteryScore: number; // 0 to 4
   nextReviewDate: number; // timestamp
 }
@@ -85,8 +89,8 @@ const STORAGE_KEY = 'gamified_reader_unified_state_v2';
 const getTodayString = () => new Date().toISOString().split('T')[0];
 const DEFAULT_USER: UserStats = {
   xp: 0, lifetimeXP: 0, spentXP: 0, level: 1, streak: 0, lastReadDate: null,
-  unlockedThemes: ['default', 'dark', 'glass_light', 'glass_dark'],
-  unlockedFeatures: [], unlockedFonts: ['font_inter'],
+  unlockedThemes: ['default', 'dark', 'glass_light', 'glass_dark', 'parchment'],
+  unlockedFeatures: [], unlockedFonts: ['font_inter', 'font_opendyslexic'],
   currentTheme: 'default', currentFont: 'font_inter', currentTextSize: 'lg',
   completedSections: [],
   librarySections: [{ id: 'sec_fiction', name: 'Fiction' }, { id: 'sec_non_fiction', name: 'Non-Fiction' }],
@@ -207,6 +211,11 @@ export class ProgressionManager {
   /**
    * Add a new book to the library, resetting progress for that specific book.
    */
+  public deleteBook(bookId: string): void {
+    this.state.library = this.state.library.filter((b: any) => b.id !== bookId);
+    this.saveState();
+  }
+
   public registerUploadedBook(
     id: string,
     title: string,
@@ -508,7 +517,7 @@ export class ProgressionManager {
 
   // --- WORD BANK VOCABULARY ---
 
-  public addSavedWord(originalWord: string, definition: string, translation: string): void {
+  public addSavedWord(originalWord: string, definition: string, translation: string, pronunciation?: string): void {
     if (!this.state.user.savedWords) {
       this.state.user.savedWords = [];
     }

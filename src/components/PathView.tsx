@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Check, Star, Trophy, RefreshCw, Key, Upload, BookOpen, AlertCircle, X, ShieldAlert, Sparkles, ChevronLeft, ChevronRight, Bookmark, HelpCircle } from 'lucide-react';
-import { TRANSLATIONS } from '../utils/translations';
+import { Lock, Check, Star, Trophy, RefreshCw, Upload, BookOpen, AlertCircle, X, Sparkles, ChevronLeft, ChevronRight, Bookmark, HelpCircle, LogOut } from 'lucide-react';
 import type { Language } from '../utils/translations';
 import { Tooltip } from './ui/Tooltip';
 
@@ -19,12 +18,9 @@ interface PathViewProps {
   onResetProgress: () => void;
   
   // New props for EPUB upload and settings
-  apiKey: string;
-  onApiKeyChange: (key: string) => void;
-  aiProvider: 'gemini' | 'groq';
-  onAiProviderChange: (provider: 'gemini' | 'groq') => void;
-  activeBookTitle: string;
-  onEpubUpload: (file: File) => void;
+  activeBookTitle: string | null;
+  toc?: any[];
+  onFileUpload: (file: File) => void;
   onRestoreDefault: () => void;
   isParsing: boolean;
 
@@ -35,7 +31,6 @@ interface PathViewProps {
   
   // Localization
   language: Language;
-  onLanguageChange: (lang: Language) => void;
   onStartTour?: () => void;
   onLogout?: () => void;
 }
@@ -45,30 +40,20 @@ export const PathView: React.FC<PathViewProps> = ({
   completedSections,
   onSelectSection,
   onResetProgress,
-  apiKey,
-  onApiKeyChange,
-  aiProvider,
-  onAiProviderChange,
   activeBookTitle,
-  onEpubUpload,
+  toc,
+  onFileUpload,
   onRestoreDefault,
   isParsing,
   isSidebar = false,
   currentTheme = 'default',
   onBackToLibrary,
   language,
-  onLanguageChange,
   onStartTour,
   onLogout
 }) => {
-  const t = (key: string) => {
-    const dict = TRANSLATIONS[language] || TRANSLATIONS['en'];
-    return (dict as any)[key] || (TRANSLATIONS['en'] as any)[key] || key;
-  };
-  // Settings popover visibility
-  const [showSettings, setShowSettings] = useState(false);
-  const [tempKey, setTempKey] = useState(apiKey);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [activeSidebarTab, setActiveSidebarTab] = useState<'path' | 'toc'>('path');
 
   // Tutorial popup guides states
   const [showTutorial, setShowTutorial] = useState(false);
@@ -139,13 +124,6 @@ export const PathView: React.FC<PathViewProps> = ({
     return 'locked';
   };
 
-  // Handle local save of API key
-  const handleSaveKey = (e: React.FormEvent) => {
-    e.preventDefault();
-    onApiKeyChange(tempKey);
-    setShowSettings(false);
-  };
-
   // Handle file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -157,17 +135,17 @@ export const PathView: React.FC<PathViewProps> = ({
       return;
     }
 
-    onEpubUpload(file);
+    onFileUpload(file);
   };
 
   const isDefaultBook = activeBookTitle === 'Mastering Deep Focus';
 
   // --- RETRO TERMINAL VIEW LAYOUT (TRANSFORMS LAYOUT BEHAVIOR) ---
   if (currentTheme === 'retro') {
-    const pathCommand = activeBookTitle.toUpperCase().replace(/\s+/g, '_').substring(0, 12);
+    const pathCommand = activeBookTitle?.toUpperCase().replace(/\s+/g, '_').substring(0, 12) || 'UNKNOWN_BOOK';
     
     return (
-      <div className="flex flex-col h-full bg-[var(--bg-color)] text-[var(--text-color)] p-4 font-mono select-none overflow-y-auto no-scrollbar border-r-2 border-[var(--border-color)]">
+      <div className="flex flex-col h-full bg-transparent text-[var(--text-color)] p-4 font-mono select-none overflow-y-auto no-scrollbar">
         {/* Terminal Header */}
         <div className="shrink-0 mb-4 border-b border-[var(--border-color)]/30 pb-2 text-[11px] opacity-80">
           <p>readable.app TERMINAL v1.0.84</p>
@@ -241,7 +219,7 @@ export const PathView: React.FC<PathViewProps> = ({
           </div>
         </div>
 
-        {/* EPUB Uploader inside Retro command panel */}
+        {/* Book Uploader inside Retro command panel */}
         <div className="mt-8 border border-[var(--border-color)] p-3 text-[11px] flex flex-col gap-2">
           <p className="font-bold">UPGRADE_FIRMWARE.SYS</p>
           <label className="border border-dashed border-[var(--border-color)] hover:bg-[var(--text-color)]/10 p-2 text-center cursor-pointer block">
@@ -381,22 +359,17 @@ export const PathView: React.FC<PathViewProps> = ({
         {/* Stats and controls (Responsive Layout options) */}
         <div className="flex items-center gap-2">
 
-          {/* API Key settings Button */}
-          <Tooltip content={language === 'vi' ? 'Cấu hình khóa Gemini API' : 'Configure Gemini API Key'} position="bottom">
-            <button 
-              id="ai-settings-btn"
-              onClick={() => setShowSettings(true)}
-              className={`p-1.5 rounded-full border-2 transition-all relative
-                ${apiKey 
-                  ? 'bg-duo-blue/10 border-duo-blue/40 text-duo-blue-dark' 
-                  : 'bg-gray-100 border-gray-300 text-gray-400 hover:text-gray-600'
-                }
-              `}
-            >
-              <Key className="w-3.5 h-3.5" />
-              {apiKey && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#58cc02] rounded-full border border-white" />}
-            </button>
-          </Tooltip>
+          {/* App Tour */}
+          {onStartTour && (
+            <Tooltip content={language === 'vi' ? 'Hướng dẫn' : 'App Tour'} position="bottom">
+              <button 
+                onClick={onStartTour}
+                className="p-1.5 text-gray-400 hover:text-duo-purple transition-colors"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+            </Tooltip>
+          )}
 
           {/* Reset button */}
           <Tooltip content={language === 'vi' ? 'Thiết lập lại tiến trình' : 'Reset Progress'} position="bottom">
@@ -405,9 +378,21 @@ export const PathView: React.FC<PathViewProps> = ({
               onClick={onResetProgress}
               className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-4 h-4" />
             </button>
           </Tooltip>
+
+          {/* Logout button */}
+          {onLogout && (
+            <Tooltip content={language === 'vi' ? 'Đăng xuất' : 'Logout'} position="bottom">
+              <button 
+                onClick={onLogout}
+                className="p-1.5 text-gray-400 hover:text-red-600 transition-colors ml-1"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </Tooltip>
+          )}
         </div>
       </header>
 
@@ -480,6 +465,59 @@ export const PathView: React.FC<PathViewProps> = ({
           )}
         </div>
 
+      {toc && toc.length > 0 && isSidebar && (
+        <div className="sticky top-0 z-50 w-full px-4 pt-4 pb-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md mb-4 flex gap-2">
+          <button 
+            onClick={() => setActiveSidebarTab('path')}
+            className={`flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors ${activeSidebarTab === 'path' ? 'bg-duo-blue text-white shadow-sm' : 'text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          >
+            Path
+          </button>
+          <button 
+            onClick={() => setActiveSidebarTab('toc')}
+            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors ${activeSidebarTab === 'toc' ? 'bg-duo-purple text-white shadow-sm' : 'text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          >
+            <BookOpen className="w-3 h-3" />
+            Contents
+          </button>
+        </div>
+      )}
+
+      {activeSidebarTab === 'toc' ? (
+        <div className="w-full px-4 flex flex-col gap-2 mt-2">
+          {toc?.map((item: any, i: number) => {
+            const filename = item.href.split('#')[0].split('/').pop();
+            const sectionIndex = sections.findIndex(s => s.id.includes(filename));
+            const isValid = sectionIndex !== -1;
+            
+            return (
+              <button
+                key={i}
+                disabled={!isValid}
+                onClick={() => isValid && onSelectSection(sections[sectionIndex])}
+                className={`text-left p-3 rounded-2xl border-2 transition-all group ${
+                  isValid 
+                    ? 'border-[var(--border-color)]/50 bg-white/50 dark:bg-slate-800/50 hover:border-duo-blue cursor-pointer' 
+                    : 'border-transparent opacity-50 cursor-not-allowed'
+                }`}
+              >
+                <div className="text-xs font-bold text-[var(--text-color)] group-hover:text-duo-blue transition-colors">
+                  {item.label}
+                </div>
+                {isValid && (
+                  <div className="text-[9px] font-black text-gray-400 mt-1 uppercase tracking-wider flex justify-between">
+                    <span>Part {sectionIndex + 1}</span>
+                    <span className={completedSections.includes(sections[sectionIndex].id) ? 'text-duo-green' : ''}>
+                      {completedSections.includes(sections[sectionIndex].id) ? 'Completed' : 'Unread'}
+                    </span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <>
         {/* Winding path container */}
         <div 
           className="relative select-none"
@@ -600,186 +638,9 @@ export const PathView: React.FC<PathViewProps> = ({
             );
           })}
         </div>
+        </>
+      )}
       </main>
-
-      {/* Settings/API Key Overlay Dialog */}
-      <AnimatePresence>
-        {showSettings && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="w-full max-w-sm bg-[var(--card-bg)] rounded-3xl border-4 border-[var(--border-color)] p-6 shadow-xl relative text-[var(--text-color)]"
-            >
-              <button 
-                onClick={() => setShowSettings(false)}
-                className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:bg-slate-500/10 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <h2 className="text-xl font-black text-[var(--text-color)] flex items-center gap-2 mb-2">
-                <Key className="w-5 h-5 text-duo-blue" />
-                AI API Settings
-              </h2>
-              
-              <p className="text-xs text-gray-400 font-bold mb-4">
-                Configure your AI key to enable comprehension quizzes and personalized recommendations.
-              </p>
-
-              {/* AI Provider selector segment tabs */}
-              <div className="flex flex-col gap-1.5 mb-4">
-                <label className="text-xs font-black text-gray-500 uppercase">AI Provider</label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onAiProviderChange('gemini');
-                      // Clear temp key when changing provider to prevent mixing key types
-                      setTempKey('');
-                    }}
-                    className={`flex-1 py-2 text-xs font-extrabold rounded-xl border-2 transition-all btn-3d
-                      ${aiProvider === 'gemini'
-                        ? 'bg-duo-blue border-duo-blue-dark text-white shadow-[0_3px_0_0_#1899d6]'
-                        : 'bg-[var(--card-bg)] border-[var(--border-color)] text-[var(--text-color)]/80 shadow-[0_3px_0_0_var(--border-color)]'
-                      }
-                    `}
-                  >
-                    Gemini
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onAiProviderChange('groq');
-                      setTempKey('');
-                    }}
-                    className={`flex-1 py-2 text-xs font-extrabold rounded-xl border-2 transition-all btn-3d
-                      ${aiProvider === 'groq'
-                        ? 'bg-duo-purple border-duo-purple-dark text-white shadow-[0_3px_0_0_#8c25e0]'
-                        : 'bg-[var(--card-bg)] border-[var(--border-color)] text-[var(--text-color)]/80 shadow-[0_3px_0_0_var(--border-color)]'
-                      }
-                    `}
-                  >
-                    Groq
-                  </button>
-                </div>
-              </div>
-
-              {/* Language Selection segment tabs */}
-              <div className="flex flex-col gap-1.5 mb-4">
-                <label className="text-xs font-black text-gray-500 uppercase">{t('language')}</label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onLanguageChange('en');
-                    }}
-                    className={`flex-1 py-2 text-xs font-extrabold rounded-xl border-2 transition-all btn-3d
-                      ${language === 'en'
-                        ? 'bg-duo-blue border-duo-blue-dark text-white shadow-[0_3px_0_0_#1899d6]'
-                        : 'bg-[var(--card-bg)] border-[var(--border-color)] text-[var(--text-color)]/80 shadow-[0_3px_0_0_var(--border-color)]'
-                      }
-                    `}
-                  >
-                    English
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onLanguageChange('vi');
-                    }}
-                    className={`flex-1 py-2 text-xs font-extrabold rounded-xl border-2 transition-all btn-3d
-                      ${language === 'vi'
-                        ? 'bg-duo-purple border-duo-purple-dark text-white shadow-[0_3px_0_0_#8c25e0]'
-                        : 'bg-[var(--card-bg)] border-[var(--border-color)] text-[var(--text-color)]/80 shadow-[0_3px_0_0_var(--border-color)]'
-                      }
-                    `}
-                  >
-                    Tiếng Việt
-                  </button>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveKey} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-black text-gray-500 uppercase">
-                    {aiProvider === 'gemini' ? 'Gemini API Key' : 'Groq API Key'}
-                  </label>
-                  <input
-                    type="password"
-                    placeholder={aiProvider === 'gemini' ? 'AIzaSy...' : 'gsk_...'}
-                    value={tempKey}
-                    onChange={(e) => setTempKey(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-[var(--border-color)] focus:border-duo-blue focus:outline-none font-medium text-sm text-[var(--text-color)] bg-[var(--card-bg)]"
-                  />
-                </div>
-
-                {tempKey ? (
-                  <div className="flex items-start gap-2 text-[11px] font-bold text-duo-green bg-duo-green/5 p-3 rounded-2xl border border-duo-green-dark/20">
-                    <Sparkles className="w-4 h-4 shrink-0 fill-current" />
-                    <span>AI Comprehension Quizzes will be generated dynamically via {aiProvider === 'gemini' ? 'Gemini' : 'Groq (Llama-3.3)'}!</span>
-                  </div>
-                ) : (
-                  <div className="flex items-start gap-2 text-[11px] font-bold text-duo-orange bg-duo-orange/5 p-3 rounded-2xl border border-duo-orange-dark/20">
-                    <ShieldAlert className="w-4 h-4 shrink-0" />
-                    <span>Without an API key, reading nodes will auto-claim XP directly without verification quizzes.</span>
-                  </div>
-                )}
-
-                <div className="flex gap-3 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTempKey('');
-                      onApiKeyChange('');
-                      setShowSettings(false);
-                    }}
-                    className="flex-1 py-3 rounded-xl btn-3d bg-[var(--card-bg)] border-red-200 text-red-500 text-xs font-black"
-                  >
-                    Clear Key
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 rounded-xl btn-3d btn-3d-blue text-xs font-black"
-                  >
-                    Save Key
-                  </button>
-                </div>
-              </form>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSettings(false);
-                  if (onStartTour) {
-                    onStartTour();
-                  }
-                }}
-                className="w-full mt-4 py-3 bg-gradient-to-r from-duo-blue to-duo-purple text-white text-xs font-black uppercase tracking-wider rounded-2xl btn-3d flex items-center justify-center gap-2 border border-blue-600/20 shadow-[0_3px_0_0_#1b72a6] dark:shadow-[0_3px_0_0_#6c1cb0]"
-              >
-                <HelpCircle className="w-4 h-4 text-white" />
-                {language === 'vi' ? 'Xem Hướng Dẫn Sử Dụng' : 'Show App Tutorial Guide'}
-              </button>
-
-              {onLogout && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowSettings(false);
-                    onLogout();
-                  }}
-                  className="w-full mt-3 py-3 bg-red-500 text-white text-xs font-black uppercase tracking-wider rounded-2xl btn-3d flex items-center justify-center gap-2 border border-red-600/20 shadow-[0_3px_0_0_#c92a2a] active:translate-y-[4px] active:border-b-0 transition-all"
-                >
-                  {language === 'vi' ? 'Đăng Xuất' : 'Sign Out / Exit'}
-                </button>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Interactive App Features Tutorial Popup Modal */}
       <AnimatePresence>

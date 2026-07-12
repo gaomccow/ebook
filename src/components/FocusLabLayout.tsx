@@ -1,6 +1,7 @@
 import React from 'react';
 import { BookOpen, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ClayPanel } from './ui/ClayPanel';
 
 interface FocusLabLayoutProps {
   isDesktop: boolean;
@@ -129,7 +130,7 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
   const showRightSidebar = showHighlightsSidebar && !isFocusMode && view !== 'quiz' && view !== 'library' && !hideSidebarsForTheme;
 
   return (
-    <div className="flex h-screen w-full bg-[var(--bg-color)] text-[var(--text-color)] overflow-hidden relative">
+    <div className="flex h-full w-full bg-[var(--bg-color)] text-[var(--text-color)] overflow-hidden relative">
       {/* Scanline CRT overlay */}
       <div className="retro-scanlines" />
       {/* Tactical blueprint grid overlay */}
@@ -141,20 +142,22 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
           <motion.aside
             id="tour-learning-path"
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 310, opacity: 1 }}
+            animate={{ width: 330, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
-            className="h-full border-r-4 border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-color)] overflow-hidden shrink-0 z-20 relative"
+            className="h-full shrink-0 z-20 relative p-4 pl-6"
           >
-            <div className="w-[310px] h-full overflow-y-auto no-scrollbar">
-              {pathView}
-            </div>
+            <ClayPanel className="w-[300px] h-full overflow-hidden flex flex-col">
+              <div className="w-full h-full overflow-y-auto no-scrollbar">
+                {pathView}
+              </div>
+            </ClayPanel>
           </motion.aside>
         )}
       </AnimatePresence>
 
       {/* Center Main Column */}
-      <main id="tour-focus-reader" className="flex-1 h-full overflow-hidden flex flex-col relative bg-[var(--bg-color)] text-[var(--text-color)] z-10">
+      <main id="tour-focus-reader" className="flex-1 h-full overflow-hidden flex flex-col relative bg-[var(--bg-color)] text-[var(--text-color)]">
         <AnimatePresence mode="wait">
           {view === 'library' && (
             <motion.div
@@ -218,14 +221,16 @@ export const FocusLabLayout: React.FC<FocusLabLayoutProps> = ({
           <motion.aside
             id="tour-highlights-sidebar"
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 310, opacity: 1 }}
+            animate={{ width: 330, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
-            className="h-full shrink-0 z-20"
+            className="h-full shrink-0 z-20 p-4 pr-6"
           >
-            <div className="w-[310px] h-full">
-              {highlightsSidebar}
-            </div>
+            <ClayPanel className="w-[300px] h-full overflow-hidden flex flex-col">
+              <div className="w-full h-full">
+                {highlightsSidebar}
+              </div>
+            </ClayPanel>
           </motion.aside>
         )}
       </AnimatePresence>

@@ -272,22 +272,24 @@ const AquariumSandboxDev: React.FC = () => {
   );
 };
 
+import { ClayPanel } from './ui/ClayPanel';
+
 const AquariumSandbox: React.FC = () => {
   return (
     <div className="w-full flex flex-col p-4">
-      <div className="w-full min-h-[500px] flex flex-col items-center justify-center bg-white border-[3px] border-gray-100 rounded-[2rem] shadow-sm p-8 text-center mt-4">
+      <ClayPanel className="w-full min-h-[500px] flex flex-col items-center justify-center p-8 text-center mt-4">
         <img 
           src="/shush.png" 
           alt="Shush Emoji" 
           className="w-32 h-32 mb-8 drop-shadow-xl"
         />
-        <h2 className="text-5xl md:text-[64px] font-black uppercase tracking-[0.1em] mb-6 text-[#1f2937]">
+        <h2 className="text-5xl md:text-[64px] font-black uppercase tracking-[0.1em] mb-6 text-[#1f2937] dark:text-white">
           SHHHHHHHH
         </h2>
-        <p className="text-xl md:text-2xl text-gray-400 font-bold uppercase tracking-[0.1em] leading-loose max-w-2xl">
+        <p className="text-xl md:text-2xl text-gray-500 dark:text-gray-400 font-bold uppercase tracking-[0.1em] leading-loose max-w-2xl">
           This section is in development<br />and is coming soon
         </p>
-      </div>
+      </ClayPanel>
     </div>
   );
 };

@@ -5,7 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    entries: ['index.html']
+  },
   server: {
+    watch: {
+      ignored: ['**/venv/**']
+    },
     proxy: {
       '/api/fakeyou': {
         target: 'https://api.fakeyou.com',

@@ -13,6 +13,8 @@ interface BookPayload {
   contents: Record<string, string>;
   images: Record<string, string>;
 }
+import { FlashcardStudyModal } from './components/FlashcardStudyModal';
+import { SearchModal } from './components/SearchModal';
 import { PathView } from './components/PathView';
 import type { SectionNode } from './components/PathView';
 import { ReaderView } from './components/ReaderView';
@@ -20,7 +22,8 @@ import { QuizView } from './components/QuizView';
 import { LevelUpModal } from './components/LevelUpModal';
 import { FocusLabLayout } from './components/FocusLabLayout';
 import { HighlightsSidebar } from './components/HighlightsSidebar';
-import type { BookHighlight } from './components/HighlightsSidebar';
+import type { BookHighlight, UsefulInfoItem, Flashcard } from './components/HighlightsSidebar';
+import { ImageLightbox } from './components/ImageLightbox';
 import { TrophyRoom } from './components/TrophyRoom';
 import type { BookItem } from './components/TrophyRoom';
 import { ProgressionManager } from './services/ProgressionManager';
@@ -28,12 +31,17 @@ import type { UserStats } from './services/ProgressionManager';
 import { EpubParser } from './services/EpubParser';
 import { GeminiClient } from './services/GeminiClient';
 import { IDBStorage } from './services/IDBStorage';
-import { Home, Compass, BookOpen, Highlighter, Flame, ChevronLeft, ChevronRight, HelpCircle, Globe } from 'lucide-react';
+import { Home, Compass, BookOpen, Highlighter, Flame, ChevronLeft, ChevronRight, HelpCircle, Globe, School, Search } from 'lucide-react';
 import { FloatingDock } from './components/ui/FloatingDock';
 import { Tooltip } from './components/ui/Tooltip';
 import { TourProvider, useTour } from './services/TourContext';
 import { SpotlightOverlay } from './components/SpotlightOverlay';
+import { RoleSelectView } from './components/RoleSelectView';
 import { LoginView } from './components/LoginView';
+import { StudentJoinView } from './components/StudentJoinView';
+import { ClassBanner } from './components/ClassBanner';
+import { TeacherDashboard } from './components/TeacherDashboard';
+import { ClassroomService } from './services/ClassroomService';
 
 // Default static reading material (Deep Focus guide)
 const DEFAULT_SECTIONS: SectionNode[] = [
@@ -108,6 +116,7 @@ function AppContent() {
 
   // Main navigation view routing: library, path, reader, quiz
   const [view, setView] = useState<'library' | 'path' | 'reader' | 'quiz'>('library');
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   // Unified progression statistics
   const [stats, setStats] = useState<UserStats>(() => progressionManager.getStats());
@@ -144,7 +153,8 @@ function AppContent() {
 
   // Gemini / Groq API key state
   const [apiKey, setApiKey] = useState<string>(() => {
-    return localStorage.getItem('gamified_reader_gemini_key') || '';
+    localStorage.removeItem('gamified_reader_gemini_key'); // Force remove for now
+    return '';
   });
   const [aiProvider, setAiProvider] = useState<'gemini' | 'groq'>(() => {
     return (localStorage.getItem('gamified_reader_ai_provider') as 'gemini' | 'groq') || 'gemini';
@@ -158,6 +168,78 @@ function AppContent() {
     const cached = localStorage.getItem('gamified_reader_highlights');
     return cached ? JSON.parse(cached) : [];
   });
+
+  // Useful Info State
+  const [usefulInfoItems, setUsefulInfoItems] = useState<UsefulInfoItem[]>(() => {
+    const cached = localStorage.getItem('gamified_reader_useful_info');
+    return cached ? JSON.parse(cached) : [];
+  });
+
+  const [flashcards, setFlashcards] = useState<Flashcard[]>(() => {
+    const cached = localStorage.getItem('gamified_reader_flashcards');
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [activeLightboxImage, setActiveLightboxImage] = useState<string | null>(null);
+
+  const filteredUsefulInfoItems = useMemo(() => {
+    return usefulInfoItems.filter(item => item.bookId === activeBookId);
+  }, [usefulInfoItems, activeBookId]);
+
+  const saveUsefulInfo = (updated: UsefulInfoItem[]) => {
+    setUsefulInfoItems(updated);
+    localStorage.setItem('gamified_reader_useful_info', JSON.stringify(updated));
+  };
+
+  const handleSaveUsefulInfoItem = (item: Omit<UsefulInfoItem, 'id' | 'createdAt'>) => {
+    const exists = usefulInfoItems.some(i => i.bookId === item.bookId && i.imageFilename === item.imageFilename);
+    if (exists) return;
+    
+    const newItem: UsefulInfoItem = {
+      ...item,
+      id: `info_${Date.now()}`,
+      createdAt: Date.now()
+    };
+    saveUsefulInfo([newItem, ...usefulInfoItems]);
+  };
+
+  const handleDeleteUsefulInfoItem = (id: string) => {
+    const updated = usefulInfoItems.filter(item => item.id !== id);
+    saveUsefulInfo(updated);
+  };
+
+  const handleSaveFlashcards = (cards: Flashcard[]) => {
+    setFlashcards(prev => [...cards, ...prev]);
+  };
+
+  const handleDeleteFlashcard = (id: string) => {
+    setFlashcards(prev => prev.filter(c => c.id !== id));
+  };
+
+  const handleUpdateUsefulInfoItem = (id: string, title: string, note: string) => {
+    const updated = usefulInfoItems.map(item => 
+      item.id === id ? { ...item, title, note } : item
+    );
+    saveUsefulInfo(updated);
+  };
+
+  const isImageSaved = filteredUsefulInfoItems.some(item => item.imageFilename === activeLightboxImage);
+  const savedItem = filteredUsefulInfoItems.find(item => item.imageFilename === activeLightboxImage);
+
+  const handleToggleSaveUsefulInfo = (customTitle: string) => {
+    if (!activeLightboxImage) return;
+    if (isImageSaved && savedItem) {
+      handleDeleteUsefulInfoItem(savedItem.id);
+    } else {
+      handleSaveUsefulInfoItem({
+        bookId: activeBookId,
+        imageFilename: activeLightboxImage,
+        title: customTitle,
+        note: '',
+        sectionId: activeSection?.id || undefined,
+        sectionTitle: activeSection?.title || undefined
+      });
+    }
+  };
 
   // Responsive Layout detection (Desktop vs Mobile)
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
@@ -179,6 +261,9 @@ function AppContent() {
   const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showFlashcardModal, setShowFlashcardModal] = useState(false);
+  const [searchTarget, setSearchTarget] = useState<number | null>(null);
 
   const [showDock, setShowDock] = useState(true);
 
@@ -201,6 +286,34 @@ function AppContent() {
     return localStorage.getItem('readable_auth_email') !== null;
   });
 
+  // EdTech role + classroom state
+  const [userRole, setUserRole] = useState<'student' | 'teacher' | 'individual' | null>(() => {
+    return localStorage.getItem('readable_user_role') as 'student' | 'teacher' | 'individual' | null;
+  });
+  // Tracks role selected but not yet signed in
+  const [pendingRole, setPendingRole] = useState<'student' | 'teacher' | 'individual' | null>(null);
+  const [classCode, setClassCode] = useState<string | null>(() =>
+    localStorage.getItem('readable_class_code')
+  );
+  const [studentToken] = useState<string>(() => {
+    let token = localStorage.getItem('readable_student_token');
+    if (!token) {
+      token = `student_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem('readable_student_token', token);
+    }
+    return token;
+  });
+  const [studentAlias, setStudentAlias] = useState<string>(() =>
+    localStorage.getItem('readable_student_alias') || ''
+  );
+  const [classTitle, setClassTitle] = useState<string>(() =>
+    localStorage.getItem('readable_class_title') || ''
+  );
+  const [classXPContributed, setClassXPContributed] = useState(0);
+  const [hasSkippedJoin, setHasSkippedJoin] = useState(() =>
+    localStorage.getItem('readable_class_join_skipped') === 'true'
+  );
+
   const uploadBookToFirestore = async (email: string, payload: BookPayload) => {
     try {
       // 1. Upload book metadata
@@ -211,21 +324,9 @@ function AppContent() {
         sections: payload.sections
       });
 
-      // 2. Upload chapters
-      const chapPromises = Object.entries(payload.contents).map(([chId, content]) => {
-        return setDoc(doc(db, 'users', email, 'books', payload.bookId, 'chapters', chId), { content });
-      });
-
-      // 3. Upload images (filtering out overly large files to remain safe)
-      const imgPromises = Object.entries(payload.images).map(([imgId, base64]) => {
-        if (base64 && base64.length < 800000) {
-          return setDoc(doc(db, 'users', email, 'books', payload.bookId, 'images', imgId), { base64 });
-        }
-        return Promise.resolve();
-      });
-
-      await Promise.all([...chapPromises, ...imgPromises]);
-      console.log(`Cloud Backup: Successfully stored "${payload.title}" in Firestore!`);
+      // User requested NOT to store chapters/images in Firestore to save quota.
+      // They are stored locally in IndexedDB anyway.
+      console.log(`Cloud Backup: Successfully stored metadata for "${payload.title}" in Firestore!`);
     } catch (err) {
       console.error(`Cloud Backup failed for book ${payload.bookId}:`, err);
     }
@@ -325,8 +426,11 @@ function AppContent() {
     }
   };
 
-  const handleLogin = (email: string) => {
+  const handleLogin = (email: string, role?: 'student' | 'teacher' | 'individual') => {
     localStorage.setItem('readable_auth_email', email);
+    const resolvedRole = role || (localStorage.getItem('readable_user_role') as 'student' | 'teacher' | 'individual') || 'student';
+    localStorage.setItem('readable_user_role', resolvedRole);
+    setUserRole(resolvedRole);
     setIsAuthenticated(true);
     setView('library');
     const uid = auth.currentUser?.uid; if (uid) progressionManager.syncFromFirebase(uid, syncState);
@@ -336,7 +440,13 @@ function AppContent() {
     localStorage.removeItem('readable_auth_email');
     localStorage.removeItem('readable_auth_name');
     localStorage.removeItem('readable_auth_picture');
+    localStorage.removeItem('readable_user_role');
+    localStorage.removeItem('readable_class_code');
+    localStorage.removeItem('readable_student_alias');
     setIsAuthenticated(false);
+    setUserRole(null);
+    setClassCode(null);
+    setStudentAlias('');
   };
 
   // Sync state on app load if already authenticated
@@ -366,7 +476,7 @@ function AppContent() {
   }, [currentStep, isTourActive, sections, activeSection]);
 
   // Localization and Images states
-  const { currentLang: language, setLanguage, t } = useLanguage();
+  const { currentLang: language, t } = useLanguage();
   const [activeImages, setActiveImages] = useState<Record<string, string>>({});
 
   // AI recommendations
@@ -421,10 +531,14 @@ function AppContent() {
     saveHighlights(updated);
   };
 
-  // AI concept/sentence explainer handler
+  // AI concept/sentence explainer handler — also logs word lookups to classroom
   const handleExplainText = async (text: string): Promise<string> => {
     if (!apiKey.trim()) {
       throw new Error(language === 'vi' ? 'Khóa AI chưa được cấu hình. Vui lòng vào Cài đặt để điền khóa của bạn.' : 'AI API Key is missing. Connect a key in Settings first.');
+    }
+    // Log word lookup to classroom if student is in a class
+    if (classCode && studentToken && activeSection) {
+      ClassroomService.submitWordLookup(classCode, studentToken, text.trim().split(' ')[0], activeSection.id);
     }
     return await GeminiClient.explainConcept(aiProvider, apiKey, text, activeBookTitle);
   };
@@ -438,10 +552,6 @@ function AppContent() {
   const handleAiProviderChange = (provider: 'gemini' | 'groq') => {
     setAiProvider(provider);
     localStorage.setItem('gamified_reader_ai_provider', provider);
-  };
-
-  const handleLanguageChange = (lang: any) => {
-    setLanguage(lang);
   };
 
 
@@ -472,6 +582,43 @@ function AppContent() {
   }, [activeBookId]);
 
   // Select a book from the shelf
+  const handleDeleteBook = async (bookId: string) => {
+    // 1. Delete from ProgressionManager
+    progressionManager.deleteBook(bookId);
+    
+    // 2. Delete from IndexedDB and LocalStorage
+    await IDBStorage.removeItem(`epub_content_${bookId}`);
+    await IDBStorage.removeItem(`epub_images_${bookId}`);
+    localStorage.removeItem(`epub_sections_${bookId}`);
+    
+    // 3. Delete from Firestore if authenticated
+    const email = localStorage.getItem('readable_auth_email');
+    if (email) {
+      try {
+        const { doc, deleteDoc, getFirestore } = await import('firebase/firestore');
+        const db = getFirestore();
+        await deleteDoc(doc(db, 'users', email, 'books', bookId));
+      } catch (err) {
+        console.warn('Failed to delete book from Firestore', err);
+      }
+    }
+    
+    // 4. Update state
+    updateStateFromManager();
+    
+    // 5. Clear active book if it was the deleted one
+    if (activeBookId === bookId) {
+      setActiveBookId("");
+      setActiveBookTitle('');
+      setSections([]);
+      setContentMap({});
+      setActiveImages({});
+      localStorage.removeItem('gamified_reader_active_book_id');
+      localStorage.removeItem('gamified_reader_book_title');
+      localStorage.removeItem('gamified_reader_sections');
+    }
+  };
+
   const handleSelectBook = (id: string) => {
     setActiveBookId(id);
     localStorage.setItem('gamified_reader_active_book_id', id);
@@ -503,7 +650,7 @@ function AppContent() {
   };
 
   // EPUB file parser callback
-  const handleEpubUpload = async (file: File) => {
+  const handleFileUpload = async (file: File) => {
     setIsParsing(true);
     try {
       const parsedBook = await EpubParser.parse(file);
@@ -527,24 +674,37 @@ function AppContent() {
         mappedContents[`${bookId}_${ch.id}`] = ch.content;
       });
 
-      // Save section metadata to localStorage (small)
-      localStorage.setItem(`epub_sections_${bookId}`, JSON.stringify(mappedSections));
+      let imageMap: Record<string, string> = {};
+      try {
+        // Save section metadata to localStorage (small)
+        localStorage.setItem(`epub_sections_${bookId}`, JSON.stringify(mappedSections));
 
-      // Save large content + images to IndexedDB (no quota limit)
-      await IDBStorage.setItem(`epub_content_${bookId}`, mappedContents);
+        // Save large content + images to IndexedDB (no quota limit)
+        await IDBStorage.setItem(`epub_content_${bookId}`, mappedContents);
 
-      const imageMap = parsedBook.images ?? {};
-      await IDBStorage.setItem(`epub_images_${bookId}`, imageMap);
-      setActiveImages(imageMap);
+        imageMap = parsedBook.images ?? {};
+        await IDBStorage.setItem(`epub_images_${bookId}`, imageMap);
+        setActiveImages(imageMap);
+      } catch (storageErr: any) {
+        console.warn('Storage Quota Exceeded. Book will be available in memory for this session only.', storageErr);
+        if (storageErr.name === 'QuotaExceededError' || storageErr.message?.includes('quota')) {
+          alert('This file is too large to store permanently in your browser. It will be available to read for this session only.');
+        }
+      }
 
       // Register inside progression manager shelf
-      progressionManager.registerUploadedBook(
-        bookId,
-        parsedBook.title,
-        parsedBook.author,
-        mappedSections.length,
-        parsedBook.chapters.reduce((acc, c) => acc + c.wordCount, 0)
-      );
+      try {
+        progressionManager.registerUploadedBook(
+          bookId,
+          parsedBook.title,
+          parsedBook.author,
+          mappedSections.length,
+          parsedBook.chapters.reduce((acc, c) => acc + c.wordCount, 0),
+          parsedBook.toc
+        );
+      } catch (e) {
+        console.warn('Could not register book in progression manager:', e);
+      }
 
       // Upload parsed payload to Firestore if authenticated
       const email = localStorage.getItem('readable_auth_email');
@@ -570,9 +730,13 @@ function AppContent() {
       setSections(mappedSections);
       setContentMap(mappedContents);
 
-      localStorage.setItem('gamified_reader_active_book_id', bookId);
-      localStorage.setItem('gamified_reader_book_title', parsedBook.title);
-      localStorage.setItem('gamified_reader_sections', JSON.stringify(mappedSections));
+      try {
+        localStorage.setItem('gamified_reader_active_book_id', bookId);
+        localStorage.setItem('gamified_reader_book_title', parsedBook.title);
+        localStorage.setItem('gamified_reader_sections', JSON.stringify(mappedSections));
+      } catch (e) {
+        console.warn('Could not save active book state to local storage:', e);
+      }
 
       updateStateFromManager();
       setView('path');
@@ -680,6 +844,12 @@ function AppContent() {
 
     updateStateFromManager();
     setShowLevelUp(true);
+
+    // Push progress to classroom if student is in a class
+    if (classCode && studentToken) {
+      ClassroomService.submitStudentProgress(classCode, studentToken, sectionId, rewards.xpGained);
+      setClassXPContributed(prev => prev + rewards.xpGained);
+    }
   };
 
   // Triggered when user passes quiz successfully
@@ -789,7 +959,7 @@ function AppContent() {
   };
 
   const handleAddWord = (word: string, definition: string, translation: string) => {
-    progressionManager.addSavedWord(word, definition, translation);
+    progressionManager.addSavedWord(word, definition, translation, pronunciation);
     updateStateFromManager();
   };
 
@@ -833,6 +1003,7 @@ function AppContent() {
       currentTheme={stats.currentTheme}
       currentFont={stats.currentFont}
       onSelectBook={handleSelectBook}
+      onDeleteBook={handleDeleteBook}
       onUnlockTheme={handleUnlockTheme}
       onUnlockFeature={handleUnlockFeature}
       onUnlockFont={handleUnlockFont}
@@ -851,30 +1022,28 @@ function AppContent() {
       onSetBookSection={handleSetBookSection}
       onUpdateBookTags={handleUpdateBookTags}
       savedWords={stats.savedWords}
-      onEpubUpload={handleEpubUpload}
+      onFileUpload={handleFileUpload}
       isParsing={isParsing}
     />
   );
 
+  const activeBookItem = library.find(b => b.id === activeBookId);
+  
   const pathViewNode = (
     <PathView
       sections={sections}
       completedSections={stats.completedSections}
       onSelectSection={handleSelectSection}
       onResetProgress={handleResetProgress}
-      apiKey={apiKey}
-      onApiKeyChange={handleApiKeyChange}
-      aiProvider={aiProvider}
-      onAiProviderChange={handleAiProviderChange}
       activeBookTitle={activeBookTitle}
-      onEpubUpload={handleEpubUpload}
+      toc={activeBookItem?.toc}
+      onFileUpload={handleFileUpload}
       onRestoreDefault={handleRestoreDefault}
       isParsing={isParsing}
       isSidebar={isDesktop}
       currentTheme={stats.currentTheme}
       onBackToLibrary={() => setView('library')}
       language={language}
-      onLanguageChange={handleLanguageChange}
       onStartTour={startTour}
       onLogout={handleLogout}
     />
@@ -891,7 +1060,9 @@ function AppContent() {
       }}
       onComplete={handleCompleteReading}
       hasVerificationActive={!!apiKey.trim()}
+      highlights={highlights}
       onAddHighlight={handleAddHighlight}
+      onUpdateHighlight={handleUpdateNote}
       onPrevSection={handlePrevSection}
       onNextSection={handleNextSection}
       isFocusMode={isFocusMode}
@@ -907,6 +1078,11 @@ function AppContent() {
       onExplainText={handleExplainText}
       onJumpToSection={handleJumpToSection}
       onAddWord={handleAddWord}
+      usefulInfoItems={filteredUsefulInfoItems}
+      onSaveUsefulInfo={handleSaveUsefulInfoItem}
+      onDeleteUsefulInfo={handleDeleteUsefulInfoItem}
+      onOpenLightbox={(filename) => setActiveLightboxImage(filename)}
+      searchTarget={searchTarget}
     />
   ) : null;
 
@@ -917,6 +1093,7 @@ function AppContent() {
       sectionId={pendingCompletion.id}
       sectionTitle={activeSection.title}
       sectionContent={contentMap[pendingCompletion.id] || ''}
+      images={activeImages}
       onBack={() => {
         setView('reader');
         setPendingCompletion(null);
@@ -936,6 +1113,16 @@ function AppContent() {
       isFocusMode={isFocusMode}
       onToggleFocusMode={() => setIsFocusMode(prev => !prev)}
       language={language}
+      usefulInfoItems={filteredUsefulInfoItems}
+      onDeleteUsefulInfo={handleDeleteUsefulInfoItem}
+      onUpdateUsefulInfo={handleUpdateUsefulInfoItem}
+      activeImages={activeImages}
+      onOpenLightbox={(filename) => setActiveLightboxImage(filename)}
+      flashcards={flashcards.filter(f => f.bookId === (activeSection ? activeSection.id.split('_')[0] : 'book_default'))}
+      onSaveFlashcards={handleSaveFlashcards}
+      onDeleteFlashcard={handleDeleteFlashcard}
+      aiProvider={aiProvider}
+      apiKey={apiKey}
     />
   );
 
@@ -972,6 +1159,12 @@ function AppContent() {
       active: showHighlightsSidebar
     },
     {
+      title: 'Search',
+      icon: <Search className="w-full h-full" />,
+      onClick: () => setShowSearchModal(true),
+      active: showSearchModal
+    },
+    {
       title: authPicture ? t('profile') : t('xpStats'),
       icon: authPicture ? (
         <img 
@@ -1004,27 +1197,101 @@ function AppContent() {
   const xpIntoCurrentLevel = stats.xp % 100;
 
   if (!isAuthenticated) {
-    return <LoginView onLogin={handleLogin} language={language} />;
+    // Step 1: ask for role (if not chosen yet)
+    if (!pendingRole && !userRole) {
+      return <RoleSelectView onSelectRole={(role) => {
+        localStorage.setItem('readable_user_role', role);
+        setPendingRole(role);
+      }} />;
+    }
+    // Step 2: sign in via the original (working) LoginView
+    return (
+      <LoginView 
+        onLogin={(email) => handleLogin(email, pendingRole || userRole || 'student')} 
+        onBack={() => {
+          setPendingRole(null);
+          setUserRole(null);
+          localStorage.removeItem('readable_user_role');
+        }}
+        language={language} 
+      />
+    );
+  }
+
+  // Teacher gets full Mission Control dashboard
+  if (userRole === 'teacher' && !isPreviewMode) {
+    const teacherUid = auth.currentUser?.uid || localStorage.getItem('readable_auth_email') || 'teacher';
+    return (
+      <TeacherDashboard
+        teacherUid={teacherUid}
+        apiKey={apiKey}
+        onApiKeyChange={handleApiKeyChange}
+        aiProvider={aiProvider}
+        onAiProviderChange={handleAiProviderChange}
+        onFileUpload={handleFileUpload}
+        isParsing={isParsing}
+        onPreviewStudentView={() => setIsPreviewMode(true)}
+      />
+    );
+  }
+
+  // Student without a class code sees the join screen (skippable)
+  // Only show this prompt if the user actively selected the student role
+  // and hasn't joined or skipped yet.
+  if (!classCode && !hasSkippedJoin && userRole === 'student') {
+    return (
+      <StudentJoinView
+        studentToken={studentToken}
+        onJoin={(code, alias) => {
+          localStorage.setItem('readable_class_code', code);
+          localStorage.setItem('readable_student_alias', alias);
+          // Fetch class title for banner
+          ClassroomService.getClassData(code).then(data => {
+            if (data) {
+              localStorage.setItem('readable_class_title', data.title);
+              setClassTitle(data.title);
+            }
+          });
+          setClassCode(code);
+          setStudentAlias(alias);
+        }}
+        onSkip={() => {
+          localStorage.setItem('readable_class_join_skipped', 'true');
+          setHasSkippedJoin(true);
+        }}
+      />
+    );
   }
 
   const typoSafeguard = ['vi', 'hi', 'zh'].includes(language) ? 'leading-loose' : 'leading-relaxed';
 
   return (
-    <div className={`min-h-screen ${typoSafeguard}`}>
-      <FocusLabLayout
-        isDesktop={isDesktop}
-        view={view}
-        activeSectionId={activeSection?.id || null}
-        isFocusMode={isFocusMode}
-        currentTheme={stats.currentTheme}
-        showHighlightsSidebar={showHighlightsSidebar}
-        onCloseHighlightsSidebar={() => setShowHighlightsSidebar(false)}
-        libraryView={libraryViewNode}
-        pathView={pathViewNode}
-        readerView={readerViewNode}
-        quizView={quizViewNode}
-        highlightsSidebar={highlightsSidebarNode}
-      />
+    <div className={`h-screen w-screen overflow-hidden ${typoSafeguard} bg-[var(--bg-color)] text-[var(--text-color)] flex flex-col`}>
+      {/* Class banner for students who joined a class */}
+      {classCode && studentAlias && (
+        <ClassBanner
+          classCode={classCode}
+          classTitle={classTitle}
+          studentAlias={studentAlias}
+          xpContributed={classXPContributed}
+        />
+      )}
+      <div className="flex-1 relative overflow-hidden">
+        <FocusLabLayout
+          isDesktop={isDesktop}
+          view={view}
+          activeSectionId={activeSection?.id || null}
+          isFocusMode={isFocusMode}
+          currentTheme={stats.currentTheme}
+          showHighlightsSidebar={showHighlightsSidebar}
+          onCloseHighlightsSidebar={() => setShowHighlightsSidebar(false)}
+          libraryView={libraryViewNode}
+          pathView={pathViewNode}
+          readerView={readerViewNode}
+          quizView={quizViewNode}
+          highlightsSidebar={highlightsSidebarNode}
+        />
+      </div>
 
       {/* Floating Navigation Dock & Language Picker (hidden in Focus Mode, Quiz, or Theme Transition) */}
       {!isFocusMode && view !== 'quiz' && !reconfigTheme && (
@@ -1266,6 +1533,54 @@ function AppContent() {
             </div>
           </motion.div>
         </AnimatePresence>
+      )}
+
+      {/* Global Image Lightbox */}
+      <FlashcardStudyModal
+        isOpen={showFlashcardModal}
+        onClose={() => setShowFlashcardModal(false)}
+        flashcards={flashcards.filter(f => f.bookId === (activeSection ? activeSection.id.split('_')[0] : 'book_default'))}
+      />
+      
+      <SearchModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        sections={sections}
+        contentMap={contentMap}
+        onResultClick={(sectionId, paraIndex) => {
+          const targetSection = sections.find(s => s.id === sectionId);
+          if (targetSection) {
+            handleSelectSection(targetSection);
+            setSearchTarget(paraIndex);
+            setView('reader');
+          }
+        }}
+      />
+
+      {activeLightboxImage && activeImages[activeLightboxImage] && (
+        <ImageLightbox
+          isOpen={true}
+          imageSrc={activeImages[activeLightboxImage]}
+          imageFilename={activeLightboxImage}
+          onClose={() => setActiveLightboxImage(null)}
+          isSaved={isImageSaved}
+          onToggleSave={handleToggleSaveUsefulInfo}
+          language={language}
+          savedTitle={savedItem?.title}
+        />
+      )}
+
+      {/* Return to Teacher Dashboard Floating Button */}
+      {userRole === 'teacher' && isPreviewMode && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100]">
+          <button
+            onClick={() => setIsPreviewMode(false)}
+            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-full shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1 border-2 border-indigo-400"
+          >
+            <School className="w-5 h-5" />
+            Return to Teacher Dashboard
+          </button>
+        </div>
       )}
 
       {/* Interactive Guided Feature Tour Spotlight & Tooltip Overlay */}

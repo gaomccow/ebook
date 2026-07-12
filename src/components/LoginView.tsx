@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, Check } from 'lucide-react';
+import { Settings, Check, ArrowLeft } from 'lucide-react';
 import { auth as firebaseAuth } from '../services/firebase';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import type { Language } from '../utils/translations';
 
 interface LoginViewProps {
   onLogin: (email: string) => void;
+  onBack?: () => void;
   language: Language;
 }
 
@@ -53,43 +54,34 @@ const getActiveClientId = () => {
   return DEFAULT_GOOGLE_CLIENT_ID;
 };
 
-export const LoginView: React.FC<LoginViewProps> = ({ onLogin, language }) => {
+export const LoginView: React.FC<LoginViewProps> = ({ onLogin, onBack, language }) => {
   const [showConfig, setShowConfig] = useState(false);
   const [clientId, setClientId] = useState(getActiveClientId);
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleOAuthSubmit = () => {
+  const handleOAuthSubmit = async () => {
     try {
-      const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-        callback: async (response: any) => {
-          if (response && response.access_token) {
-            try {
-              const credential = GoogleAuthProvider.credential(null, response.access_token);
-              const userCredential = await signInWithCredential(firebaseAuth, credential);
-              const user = userCredential.user;
+      const provider = new GoogleAuthProvider();
+      provider.addScope('https://www.googleapis.com/auth/userinfo.email');
+      provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+      
+      const userCredential = await signInWithPopup(firebaseAuth, provider);
+      const user = userCredential.user;
 
-              if (user && user.email) {
-                localStorage.setItem('readable_auth_name', user.displayName || '');
-                localStorage.setItem('readable_auth_picture', user.photoURL || '');
-                onLogin(user.email);
-              } else {
-                onLogin('google-user@readable.app');
-              }
-            } catch (err) {
-              console.error('Firebase Google Auth failed', err);
-              onLogin('google-user@readable.app');
-            }
-          }
-        },
-      });
-      tokenClient.requestAccessToken();
+      if (user && user.email) {
+        localStorage.setItem('readable_auth_name', user.displayName || '');
+        localStorage.setItem('readable_auth_picture', user.photoURL || '');
+        onLogin(user.email);
+      } else {
+        onLogin('google-user@readable.app');
+      }
     } catch (err) {
-      console.error('OAuth token flow error:', err);
+      console.error('Firebase Google Auth failed:', err);
+      // Fallback for development if the user explicitly cancels or there's a configuration issue.
+      // We don't auto-login on failure anymore to prevent unexpected behavior.
       alert(language === 'vi'
-        ? 'Google Identity initialization failed. Vui lòng kiểm tra Client ID hoặc JavaScript Origin.'
-        : 'Google Identity initialization failed. Please verify your Google Client ID and JavaScript Origins.');
+        ? 'Đăng nhập Google thất bại. Vui lòng thử lại.'
+        : 'Google Sign-in failed. Please try again.');
     }
   };
 
@@ -134,6 +126,17 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, language }) => {
             <GoogleIcon />
             <span>{language === 'vi' ? 'Tiếp tục với Google' : 'Sign in with Google'}</span>
           </button>
+          
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl border-2 border-slate-200 border-b-4 bg-white hover:bg-slate-50 text-slate-500 font-black text-xs uppercase tracking-wide active:border-b-0 active:translate-y-[4px] transition-all duration-75 select-none shadow-sm cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{language === 'vi' ? 'Quay lại' : 'Go Back'}</span>
+            </button>
+          )}
         </div>
 
         <div className="mb-5 text-right">
