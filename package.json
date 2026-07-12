@@ -16,8 +16,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^1.21.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "xmldom": "^0.6.0"
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.1",
