@@ -367,7 +367,6 @@ All questions must have "type" (one of the 4 types), "question" (string), and "e
     correctAnswerIndex: number,
     options: string[]
   ): Promise<string> {
-    const correctAnswer = options[correctAnswerIndex];
     const prompt = `A student answered a reading comprehension question incorrectly.
 
 Question: "${question}"

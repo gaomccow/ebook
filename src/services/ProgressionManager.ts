@@ -531,6 +531,7 @@ export class ProgressionManager {
       originalWord: originalWord.trim(),
       definition: definition.trim(),
       translation: translation.trim(),
+      pronunciation: pronunciation?.trim(),
       masteryScore: 0, // Starts at 0
       nextReviewDate: Date.now() // review immediately
     };

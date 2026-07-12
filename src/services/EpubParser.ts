@@ -39,7 +39,7 @@ export class EpubParser {
 
     // 2. Parse the OPF file (manifest, metadata, spine)
     const opfText = await this.getFileText(zip, opfPath);
-    const { title, author, manifest, spine } = this.parseOpf(opfText);
+    const { title, author, manifest, spine, tocId } = this.parseOpf(opfText);
 
     // Extract TOC if available (EPUB 2 NCX)
     let toc: TocItem[] | undefined;
@@ -47,7 +47,7 @@ export class EpubParser {
       const ncxPath = this.resolveRelativePath(opfBaseDir, manifest[tocId].href);
       try {
         const ncxText = await this.getFileText(zip, ncxPath);
-        toc = this.parseNcx(ncxText);
+        toc = EpubParser.parseNcx(ncxText);
       } catch (e) {
         console.warn("Failed to parse NCX TOC", e);
       }
@@ -480,5 +480,25 @@ export class EpubParser {
       author: 'Self-Imported',
       chapters
     };
+  }
+
+  private static parseNcx(ncxText: string): TocItem[] {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(ncxText, 'application/xml');
+    const navPoints = doc.querySelectorAll('navPoint');
+    const toc: TocItem[] = [];
+    navPoints.forEach((np) => {
+      /* const id = np.getAttribute('id') || ''; */
+      const text = np.querySelector('navLabel text')?.textContent || '';
+      const src = np.querySelector('content')?.getAttribute('src') || '';
+      // Very basic parsing without hierarchy
+      toc.push({
+        /* id, */
+        label: text,
+        href: src,
+        subitems: []
+      });
+    });
+    return toc;
   }
 }

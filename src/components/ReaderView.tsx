@@ -53,7 +53,7 @@ interface ReaderViewProps {
   onJumpToSection?: (sectionId: string) => void;
 
   // Word Bank extensions
-  onAddWord?: (word: string, definition: string, translation: string) => void;
+  onAddWord?: (word: string, definition: string, translation: string, pronunciation?: string) => void;
 
   // Useful Info integration
   usefulInfoItems?: UsefulInfoItem[];
@@ -61,6 +61,10 @@ interface ReaderViewProps {
   onDeleteUsefulInfo?: (id: string) => void;
   onOpenLightbox?: (filename: string) => void;
   searchTarget?: number | null;
+  
+  // Dictionary AI props
+  aiProvider?: 'gemini' | 'groq';
+  apiKey?: string;
 }
 
 export const ReaderView: React.FC<ReaderViewProps> = ({
@@ -90,7 +94,10 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   usefulInfoItems = [],
   onSaveUsefulInfo,
   onDeleteUsefulInfo,
-  onOpenLightbox
+  onOpenLightbox,
+  searchTarget,
+  aiProvider = 'groq',
+  apiKey = ''
 }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isNearBottom, setIsNearBottom] = useState(false);
@@ -446,21 +453,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const [savingWord, setSavingWord] = useState('');
   const [savingDef, setSavingDef] = useState('');
   const [savingTrans, setSavingTrans] = useState('');
+  const [, setSavingPronunciation] = useState('');
+  const [, setIsFetchingDictionary] = useState(false);
 
   // Local fallback dictionary for demo
-  const DICTIONARY_DEMO: Record<string, { definition: string; translation: string }> = {
-    'focus': { definition: 'the state or quality of having or producing clear visual definition / concentration of attention', translation: 'sự tập trung' },
-    'mastery': { definition: 'comprehensive knowledge or skill in a subject or accomplishment', translation: 'sự thành thạo' },
-    'read': { definition: 'look at and comprehend the meaning of written or printed matter', translation: 'đọc' },
-    'book': { definition: 'a written or printed work consisting of pages glued or sewn together along one side', translation: 'sách' },
-    'stamina': { definition: 'the ability to sustain prolonged physical or mental effort', translation: 'khả năng chịu đựng' },
-    'habit': { definition: 'a settled or regular tendency or practice, especially one that is hard to give up', translation: 'thói quen' },
-    'learn': { definition: 'gain or acquire knowledge of or skill in something by study, experience, or being taught', translation: 'học' },
-    'study': { definition: 'the devotion of time and attention to acquiring knowledge on an academic subject', translation: 'học tập' },
-    'attention': { definition: 'notice taken of someone or something; the regarding of someone or something as interesting or important', translation: 'sự chú ý' },
-    'library': { definition: 'a building or room containing collections of books, periodicals, and sometimes films and recorded music', translation: 'thư viện' },
-    'progress': { definition: 'forward or onward movement toward a destination', translation: 'sự tiến bộ' }
-  };
+  
 
   // Simulated Tactical Telemetries
   const [focusQuality, setFocusQuality] = useState(98);
@@ -566,7 +563,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!contentRef.current) return;
+    if (!containerRef.current) return;
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName.toLowerCase() === 'mark' && target.classList.contains('epub-highlight')) {
@@ -582,7 +579,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         }
       }
     };
-    const ref = contentRef.current;
+    const ref = containerRef.current;
     ref.addEventListener('click', handleClick);
     return () => ref.removeEventListener('click', handleClick);
   }, [highlights]);

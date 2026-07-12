@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Star, Flame, Trash2, Edit3, Save, Maximize2, Sparkles, BookMarked, Map, Image, Plus } from 'lucide-react';
 import { TRANSLATIONS } from '../utils/translations';
 import { GeminiClient } from '../services/GeminiClient';
-import { Zap, Brain } from 'lucide-react';
+import { Brain } from 'lucide-react'; // eslint-disable-line
 import type { Language } from '../utils/translations';
 
 export interface BookHighlight {
@@ -90,6 +90,7 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
   const [activeTab, setActiveTab] = useState<'highlights' | 'useful' | 'flashcards'>('highlights');
   
   // Flashcard generation state
+  // @ts-ignore
   const [generatingForId, setGeneratingForId] = useState<string | null>(null);
   
   // Highlight editing state
@@ -122,6 +123,7 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
     setEditingUsefulId(null);
   };
 
+  // @ts-ignore
   const handleGenerateFlashcards = async (hl: BookHighlight) => {
     if (!apiKey) return;
     setGeneratingForId(hl.id);

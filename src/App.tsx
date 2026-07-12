@@ -507,7 +507,7 @@ function AppContent() {
 
   // Add highlight clip
   const handleAddHighlight = (text: string) => {
-    if (!activeSection) return;
+    if (!activeSection) return '';
     const newHighlight: BookHighlight = {
       id: `hl_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       sectionId: activeSection.id,
@@ -517,6 +517,7 @@ function AppContent() {
       createdAt: Date.now()
     };
     saveHighlights([newHighlight, ...highlights]);
+    return newHighlight.id;
   };
 
   // Delete highlight clip
@@ -699,8 +700,7 @@ function AppContent() {
           parsedBook.title,
           parsedBook.author,
           mappedSections.length,
-          parsedBook.chapters.reduce((acc, c) => acc + c.wordCount, 0),
-          parsedBook.toc
+          parsedBook.chapters.reduce((acc, c) => acc + c.wordCount, 0)
         );
       } catch (e) {
         console.warn('Could not register book in progression manager:', e);
@@ -958,7 +958,7 @@ function AppContent() {
     updateStateFromManager();
   };
 
-  const handleAddWord = (word: string, definition: string, translation: string) => {
+  const handleAddWord = (word: string, definition: string, translation: string, pronunciation?: string) => {
     progressionManager.addSavedWord(word, definition, translation, pronunciation);
     updateStateFromManager();
   };
@@ -1027,7 +1027,7 @@ function AppContent() {
     />
   );
 
-  const activeBookItem = library.find(b => b.id === activeBookId);
+  /* const activeBookItem */ 
   
   const pathViewNode = (
     <PathView
@@ -1036,7 +1036,6 @@ function AppContent() {
       onSelectSection={handleSelectSection}
       onResetProgress={handleResetProgress}
       activeBookTitle={activeBookTitle}
-      toc={activeBookItem?.toc}
       onFileUpload={handleFileUpload}
       onRestoreDefault={handleRestoreDefault}
       isParsing={isParsing}
