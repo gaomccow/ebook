@@ -364,8 +364,8 @@ All questions must have "type" (one of the 4 types), "question" (string), and "e
     apiKey: string,
     question: string,
     wrongAnswer: string,
-    correctAnswerIndex: number,
-    options: string[]
+    _correctAnswerIndex: number,
+    _options: string[]
   ): Promise<string> {
     const prompt = `A student answered a reading comprehension question incorrectly.
 
