@@ -51,6 +51,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
     const lowerQuery = debouncedQuery.toLowerCase();
     const newResults: SearchResult[] = [];
+    const parser = new DOMParser();
 
     for (const section of sections) {
       const content = contentMap[section.id];
@@ -64,8 +65,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         // Skip images
         if (p.startsWith('[IMG:') && p.endsWith(']')) continue;
 
-        // Strip HTML (simple regex since it's mostly plain text with some tags)
-        const plainText = p.replace(/<[^>]+>/g, '');
+        // Strip HTML safely
+        const doc = parser.parseFromString(p, 'text/html');
+        const plainText = doc.body.textContent || '';
         const lowerText = plainText.toLowerCase();
 
         const matchIndex = lowerText.indexOf(lowerQuery);

@@ -48,7 +48,7 @@ const DEFAULT_GOOGLE_CLIENT_ID = '402229559463-t12fua9d7iqcmtf128u9ivknshr6og3e.
 
 const getActiveClientId = () => {
   const stored = localStorage.getItem('readable_google_client_id');
-  if (stored && stored.includes('.apps.googleusercontent.com') && stored.trim().length > 30) {
+  if (stored && stored.trim().endsWith('.apps.googleusercontent.com') && stored.trim().length > 30) {
     return stored.trim();
   }
   return DEFAULT_GOOGLE_CLIENT_ID;

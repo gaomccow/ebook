@@ -131,7 +131,7 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
       const cards = await GeminiClient.generateFlashcards(aiProvider, apiKey, hl.text, hl.note);
       
       const newFlashcards: Flashcard[] = cards.map(c => ({
-        id: `fc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        id: `fc_${Date.now()}_${crypto.randomUUID().split('-')[0]}`,
         bookId: hl.sectionId.split('_')[0] || 'book_default',
         highlightId: hl.id,
         question: c.question,

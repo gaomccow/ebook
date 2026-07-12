@@ -153,7 +153,10 @@ function AppContent() {
 
   // Gemini / Groq API key state
   const [apiKey, setApiKey] = useState<string>(() => {
-    localStorage.removeItem('gamified_reader_gemini_key'); // Force remove for now
+    try {
+      const stored = localStorage.getItem('gamified_reader_api_key_b64');
+      if (stored) return atob(stored);
+    } catch(e) {}
     return '';
   });
   const [aiProvider, setAiProvider] = useState<'gemini' | 'groq'>(() => {
@@ -298,7 +301,7 @@ function AppContent() {
   const [studentToken] = useState<string>(() => {
     let token = localStorage.getItem('readable_student_token');
     if (!token) {
-      token = `student_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      token = `student_${Date.now()}_${crypto.randomUUID().split('-')[0]}`;
       localStorage.setItem('readable_student_token', token);
     }
     return token;
@@ -509,7 +512,7 @@ function AppContent() {
   const handleAddHighlight = (text: string) => {
     if (!activeSection) return '';
     const newHighlight: BookHighlight = {
-      id: `hl_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: `hl_${Date.now()}_${crypto.randomUUID().split('-')[0]}`,
       sectionId: activeSection.id,
       sectionTitle: activeSection.title,
       text,
@@ -547,7 +550,7 @@ function AppContent() {
   // Sync API Key
   const handleApiKeyChange = (key: string) => {
     setApiKey(key);
-    localStorage.setItem('gamified_reader_gemini_key', key);
+    localStorage.setItem('gamified_reader_api_key_b64', btoa(key));
   };
 
   const handleAiProviderChange = (provider: 'gemini' | 'groq') => {
