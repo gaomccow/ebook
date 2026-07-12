@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Flame, Trash2, Edit3, Save, Maximize2, Sparkles, BookMarked, Map, Image, Plus } from 'lucide-react';
+import { Star, Flame, Trash2, Edit3, Save, Maximize2, Sparkles, BookMarked, Map, Image, Plus, Zap } from 'lucide-react';
 import { TRANSLATIONS } from '../utils/translations';
 import { GeminiClient } from '../services/GeminiClient';
 import { Brain } from 'lucide-react'; // eslint-disable-line
@@ -218,6 +218,18 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
           <Map className="w-3.5 h-3.5" />
           <span>{language === 'vi' ? 'Thông tin hữu ích' : 'Useful Info'}</span>
         </button>
+        <button
+          onClick={() => setActiveTab('flashcards')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all border-2
+            ${activeTab === 'flashcards'
+              ? 'bg-duo-purple border-duo-purple-dark text-white shadow-[0_2.5px_0_0_#8c25e0]'
+              : 'bg-transparent border-transparent text-[var(--text-color)]/60 hover:bg-black/5 dark:hover:bg-white/5'
+            }
+          `}
+        >
+          <Brain className="w-3.5 h-3.5" />
+          <span>{language === 'vi' ? 'Thẻ ghi nhớ' : 'Flashcards'}</span>
+        </button>
       </div>
 
       {/* Lists container */}
@@ -299,13 +311,27 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
                             ) : (
                               <span className="text-[10px] text-gray-400 italic">No notes added.</span>
                             )}
-                            <button
-                              onClick={() => startEditing(hl)}
-                              className="text-gray-400 hover:text-duo-blue p-0.5 transition-colors"
-                              title="Edit Note"
-                            >
-                              <Edit3 className="w-3 h-3" />
-                            </button>
+                            <div className="flex items-center">
+                              <button
+                                onClick={() => startEditing(hl)}
+                                className="text-gray-400 hover:text-duo-blue p-0.5 transition-colors"
+                                title="Edit Note"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => handleGenerateFlashcards(hl)}
+                                disabled={generatingForId === hl.id}
+                                className="text-gray-400 hover:text-duo-purple p-0.5 transition-colors ml-1 disabled:opacity-50"
+                                title="Generate Flashcards"
+                              >
+                                {generatingForId === hl.id ? (
+                                  <div className="w-3 h-3 border-2 border-duo-purple border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Zap className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
