@@ -26,6 +26,25 @@ export interface RecommendationData {
 
 export class GeminiClient {
 
+  private static async fetchGroq(apiKey: string, body: any): Promise<Response> {
+    try {
+      return await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(body)
+      });
+    } catch (e: any) {
+      if (e.message?.includes('Failed to fetch')) {
+        throw new Error('Network error or CORS blocked. Note: Groq blocks direct browser API calls. Please use Google Gemini instead.');
+      }
+      throw e;
+    }
+  }
+
+
   /**
    * Generates AI flashcards based on highlighted text and an optional user note.
    */
@@ -193,21 +212,14 @@ Respond ONLY with a JSON object exactly like this:
       
       return JSON.parse(textResponse);
     } else {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: 'You are a dictionary that outputs only JSON.' },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.1
-        })
+      const response = await this.fetchGroq(apiKey, {
+        model: 'llama-3.1-8b-instant',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: 'You are a dictionary that outputs only JSON.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.1
       });
 
       if (!response.ok) {
@@ -327,21 +339,14 @@ ${trimmedText}
 - For "long_answer" and "summary": include "idealAnswer" (ideal reference or rubric string).
 All questions must have "type" (one of the 4 types), "question" (string), and "explanation" (string).`;
       
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.2
-        })
+      const response = await this.fetchGroq(apiKey, {
+        model: 'llama-3.3-70b-versatile',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2
       });
 
       if (!response.ok) {
@@ -374,18 +379,11 @@ Their wrong answer: "${wrongAnswer}"
 
 Give a short, helpful hint (1-2 sentences max) that nudges them toward the right answer WITHOUT directly revealing it. Do not say what the correct answer is.`;
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',   // cheapest available Groq model
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.4,
-        max_tokens: 120
-      })
+    const response = await this.fetchGroq(apiKey, {
+      model: 'llama-3.1-8b-instant',   // cheapest available Groq model
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.4,
+      max_tokens: 120
     });
 
     if (!response.ok) {
@@ -473,21 +471,14 @@ For each recommended book, provide:
     else {
       const systemPrompt = `You are a book recommendation assistant. You must output a JSON object containing a "recommendations" array of exactly 3 book recommendations. Each recommendation must have: "title" (string), "author" (string), "tag" (string, single-word tag), "description" (string), and "reason" (string).`;
       
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.5
-        })
+      const response = await this.fetchGroq(apiKey, {
+        model: 'llama-3.3-70b-versatile',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.5
       });
 
       if (!response.ok) {
@@ -601,18 +592,11 @@ ${concept}
       const data = await response.json();
       return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No explanation generated.';
     } else {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.1-8b-instant', // cheapest and fastest Groq model
-          messages: [
-            { role: 'user', content: prompt }
-          ]
-        })
+      const response = await this.fetchGroq(apiKey, {
+        model: 'llama-3.1-8b-instant', // cheapest and fastest Groq model
+        messages: [
+          { role: 'user', content: prompt }
+        ]
       });
       if (!response.ok) {
         const errText = await response.text();
@@ -705,21 +689,14 @@ Provide constructive feedback explaining what they did well, what was missing co
     else {
       const systemPrompt = `You are an AI grader. You must output a JSON object containing: "correct" (boolean) and "feedback" (string) explaining your grading. Guidelines: evaluate the student's response based on the strictness level and criteria provided.`;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.2
-        })
+      const response = await this.fetchGroq(apiKey, {
+        model: 'llama-3.3-70b-versatile',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2
       });
 
       if (!response.ok) {
@@ -782,18 +759,14 @@ Questions should help students understand the words in context, explore meaning,
       const parsed = JSON.parse(text);
       return parsed.questions || [];
     } else {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: 'You are an expert teacher who generates discussion questions. Respond only with JSON.' },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.7
-        })
+      const response = await this.fetchGroq(apiKey, {
+        model: 'llama-3.3-70b-versatile',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: 'You are an expert teacher who generates discussion questions. Respond only with JSON.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
       });
       if (!response.ok) throw new Error(`Groq discussion question generation failed: ${response.statusText}`);
       const json = await response.json();
