@@ -66,6 +66,9 @@ interface TrophyRoomProps {
   recommendationsLoading: boolean;
   onGenerateRecommendations: () => void;
   apiKey: string;
+  onApiKeyChange?: (key: string) => void;
+  aiProvider?: 'gemini' | 'groq';
+  onAiProviderChange?: (provider: 'gemini' | 'groq') => void;
 
   // Localization
   language: Language;
@@ -118,6 +121,9 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   recommendationsLoading,
   onGenerateRecommendations,
   apiKey,
+  onApiKeyChange,
+  aiProvider,
+  onAiProviderChange,
   language,
   librarySections = [],
   onAddLibrarySection,
@@ -767,29 +773,47 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="w-full bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-3xl p-6 shadow-[0_6px_0_0_var(--border-color)] flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex-1 pr-0 md:pr-4">
-                  <h4 className="font-black text-sm uppercase tracking-wider">
-                    {apiKey ? t('aiRecommendations') : t('aiSettings')}
-                  </h4>
-                  <p className="text-[10px] text-gray-400 font-bold mt-1 leading-relaxed">
-                    {apiKey 
-                      ? 'Scan your active bookshelf titles and generate 3 custom suggested reads matching your stamina goals.' 
-                      : 'Provide your API Key in the path settings to unlock customized recommendations.'
-                    }
-                  </p>
+              <div className="w-full bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-3xl p-6 shadow-[0_6px_0_0_var(--border-color)] flex flex-col items-start gap-4">
+                <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <h4 className="font-black text-sm uppercase tracking-wider">
+                      {apiKey ? t('aiRecommendations') : t('aiSettings')}
+                    </h4>
+                    <p className="text-[10px] text-gray-400 font-bold mt-1 leading-relaxed">
+                      {apiKey 
+                        ? 'Scan your active bookshelf titles and generate 3 custom suggested reads matching your stamina goals.' 
+                        : 'Provide your API Key to unlock AI Recommendations, Dictionary, and Flashcards.'
+                      }
+                    </p>
+                  </div>
+                  {apiKey && (
+                    <button
+                      onClick={onGenerateRecommendations}
+                      className="px-5 py-2.5 bg-duo-yellow border-duo-yellow-dark text-gray-800 rounded-2xl text-xs font-black uppercase tracking-wider btn-3d shrink-0"
+                    >
+                      ✨ {t('scanLibrary')}
+                    </button>
+                  )}
                 </div>
-                {apiKey ? (
-                  <button
-                    onClick={onGenerateRecommendations}
-                    className="px-5 py-2.5 bg-duo-yellow border-duo-yellow-dark text-gray-800 rounded-2xl text-xs font-black uppercase tracking-wider btn-3d shrink-0"
-                  >
-                    ✨ {t('scanLibrary')}
-                  </button>
-                ) : (
-                  <span className="text-[9px] font-black uppercase bg-gray-100 text-gray-400 px-3 py-1.5 rounded-xl border border-gray-200 shrink-0">
-                    Key Required
-                  </span>
+                
+                {onApiKeyChange && (
+                  <div className="w-full flex flex-col md:flex-row items-center gap-3 pt-4 border-t-2 border-gray-100">
+                    <select
+                      value={aiProvider}
+                      onChange={(e) => onAiProviderChange?.(e.target.value as 'gemini' | 'groq')}
+                      className="px-3 py-2 bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-black uppercase outline-none focus:border-duo-purple focus:ring-1 focus:ring-duo-purple shrink-0 w-full md:w-auto"
+                    >
+                      <option value="gemini">Google Gemini</option>
+                      <option value="groq">Groq (Llama 3)</option>
+                    </select>
+                    <input
+                      type="password"
+                      placeholder="Enter API Key (e.g. AIza... or gsk_...)"
+                      value={apiKey}
+                      onChange={(e) => onApiKeyChange(e.target.value)}
+                      className="flex-1 px-4 py-2 bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-black outline-none focus:border-duo-purple focus:ring-1 focus:ring-duo-purple w-full"
+                    />
+                  </div>
                 )}
               </div>
             )}

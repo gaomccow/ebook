@@ -1017,6 +1017,9 @@ function AppContent() {
       recommendationsLoading={recommendationsLoading}
       onGenerateRecommendations={handleGenerateRecommendations}
       apiKey={apiKey}
+      onApiKeyChange={handleApiKeyChange}
+      aiProvider={aiProvider}
+      onAiProviderChange={handleAiProviderChange}
       language={language}
       librarySections={stats.librarySections}
       onAddLibrarySection={handleAddLibrarySection}
