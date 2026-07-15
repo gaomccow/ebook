@@ -149,8 +149,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   useEffect(() => {
     if (!activeClassCode) return;
-    setIsLoadingStudents(true);
-    ClassroomService.getClassProgress(activeClassCode).then(data => {
+    const unsubscribe = ClassroomService.subscribeToClassProgress(activeClassCode, (data) => {
       setStudents(data);
       setIsLoadingStudents(false);
     });
@@ -160,6 +159,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       setIsLoadingWords(false);
     });
     ClassroomService.getTopWords(activeClassCode, null, 10).then(setAllWords);
+
+    return () => unsubscribe();
   }, [activeClassCode]);
 
   // Fetch individual student quiz history

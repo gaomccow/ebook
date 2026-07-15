@@ -1,7 +1,7 @@
 import { db } from './firebase';
 import {
   doc, getDoc, setDoc, addDoc, collection,
-  query, where, getDocs, serverTimestamp, updateDoc
+  query, where, getDocs, serverTimestamp, updateDoc, onSnapshot
 } from 'firebase/firestore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -253,6 +253,23 @@ export class ClassroomService {
     } catch {
       return [];
     }
+  }
+
+  /**
+   * Subscribe to real-time student records for the teacher dashboard.
+   */
+  public static subscribeToClassProgress(
+    code: string,
+    callback: (students: StudentRecord[]) => void
+  ): () => void {
+    const q = collection(db, 'classes', code, 'students');
+    return onSnapshot(q, (snap) => {
+      const students = snap.docs.map(d => ({ ...(d.data() as StudentRecord), token: d.data().token || d.id }));
+      callback(students);
+    }, (error) => {
+      console.warn('subscribeToClassProgress error:', error);
+      callback([]);
+    });
   }
 
   /**
