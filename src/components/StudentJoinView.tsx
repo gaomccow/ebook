@@ -90,7 +90,7 @@ export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, 
               You'll get a fun anonymous alias — no real name needed!
             </p>
 
-            <div>
+            <form onSubmit={handleSubmit}>
               {/* Code boxes */}
               <div
                 className="flex gap-2 justify-center mb-4 cursor-text"
@@ -149,7 +149,7 @@ export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, 
                   </>
                 )}
               </motion.button>
-            </div>
+            </form>
 
             <button
               onClick={onSkip}
