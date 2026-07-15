@@ -1,15 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Hash, ArrowRight, ChevronRight, Waves } from 'lucide-react';
+import { Hash, ArrowRight, ChevronRight, Waves, ArrowLeft } from 'lucide-react';
 import { ClassroomService } from '../services/ClassroomService';
 
 interface StudentJoinViewProps {
   studentToken: string;
   onJoin: (code: string, alias: string) => void;
   onSkip: () => void;
+  onBack?: () => void;
 }
 
-export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, onJoin, onSkip }) => {
+export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, onJoin, onSkip, onBack }) => {
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, 
     }
   };
 
-  const codeChars = code.padEnd(6, '').split('');
+  const codeChars = Array.from({ length: 6 }, (_, i) => code[i] || '');
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-[#e8f4fd] via-[#f0f4ff] to-[#e8f0fe] flex flex-col items-center justify-center relative">
@@ -54,6 +55,16 @@ export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, 
           <path fill="#4f9ef8" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
         </svg>
       </div>
+
+      {onBack && !joinedAlias && (
+        <button
+          onClick={onBack}
+          className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-white/50 transition-all font-bold text-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Go Back
+        </button>
+      )}
 
       <AnimatePresence mode="wait">
         {!joinedAlias ? (
