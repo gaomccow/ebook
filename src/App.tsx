@@ -1228,6 +1228,14 @@ function AppContent() {
     );
   }
 
+  // If authenticated but no role is selected (e.g. they clicked "Go Back" from join screen)
+  if (isAuthenticated && !userRole) {
+    return <RoleSelectView onSelectRole={(role) => {
+      localStorage.setItem('readable_user_role', role);
+      setUserRole(role);
+    }} />;
+  }
+
   // Teacher gets full Mission Control dashboard
   if (userRole === 'teacher' && !isPreviewMode) {
     const teacherUid = auth.currentUser?.uid || localStorage.getItem('readable_auth_email') || 'teacher';
