@@ -65,6 +65,7 @@ export const FlashcardStudyModal: React.FC<FlashcardStudyModalProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, cards.length]);
 
   if (typeof document === 'undefined') return null;

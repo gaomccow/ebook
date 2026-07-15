@@ -22,8 +22,8 @@ export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, 
     setError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
     if (code.length !== 6) { setError('Enter your 6-character class code.'); return; }
     setIsLoading(true);
     setError(null);
@@ -79,7 +79,7 @@ export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, 
               You'll get a fun anonymous alias — no real name needed!
             </p>
 
-            <form onSubmit={handleSubmit}>
+            <div>
               {/* Code boxes */}
               <div
                 className="flex gap-2 justify-center mb-4 cursor-text"
@@ -101,6 +101,9 @@ export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, 
                   ref={inputRef}
                   value={code}
                   onChange={handleInput}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSubmit(e);
+                  }}
                   className="absolute opacity-0 w-0 h-0"
                   autoFocus
                 />
@@ -135,7 +138,7 @@ export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ studentToken, 
                   </>
                 )}
               </motion.button>
-            </form>
+            </div>
 
             <button
               onClick={onSkip}

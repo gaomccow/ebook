@@ -356,7 +356,7 @@ export const HighlightsSidebar: React.FC<HighlightsSidebarProps> = ({
                 <button
                   onClick={() => {
                       if (flashcards && flashcards.length > 0) {
-                          // TODO: Open flashcard modal
+                          // Open flashcard modal
                           const event = new CustomEvent('open-flashcards');
                           window.dispatchEvent(event);
                       }

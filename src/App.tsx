@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { LanguageList } from './components/LanguagePicker';
 import { db, auth } from './services/firebase';
-import { doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, deleteDoc } from 'firebase/firestore';
 
 interface BookPayload {
   bookId: string;
@@ -156,7 +156,7 @@ function AppContent() {
     try {
       const stored = localStorage.getItem('gamified_reader_api_key_b64');
       if (stored) return atob(stored);
-    } catch(e) {}
+    } catch(e) { console.error(e); }
     return '';
   });
   const [aiProvider, setAiProvider] = useState<'gemini' | 'groq'>(() => {
@@ -266,6 +266,12 @@ function AppContent() {
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showFlashcardModal, setShowFlashcardModal] = useState(false);
+
+  useEffect(() => {
+    const handleOpenFlashcards = () => setShowFlashcardModal(true);
+    window.addEventListener('open-flashcards', handleOpenFlashcards);
+    return () => window.removeEventListener('open-flashcards', handleOpenFlashcards);
+  }, []);
   const [searchTarget, setSearchTarget] = useState<number | null>(null);
 
   const [showDock, setShowDock] = useState(true);
@@ -599,8 +605,7 @@ function AppContent() {
     const email = localStorage.getItem('readable_auth_email');
     if (email) {
       try {
-        const { doc, deleteDoc, getFirestore } = await import('firebase/firestore');
-        const db = getFirestore();
+
         await deleteDoc(doc(db, 'users', email, 'books', bookId));
       } catch (err) {
         console.warn('Failed to delete book from Firestore', err);

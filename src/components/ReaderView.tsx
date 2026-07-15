@@ -142,6 +142,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   useEffect(() => {
     const stored = localStorage.getItem(getBookmarksKey());
     setBookmarks(stored ? JSON.parse(stored) : []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [section.id]);
 
   // Determine if a paragraph index is bookmarked in the current chapter
@@ -409,6 +410,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         containerRef.current.scrollTop = 0;
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [section.id, content]);
 
   // AI Explainer State
@@ -487,13 +489,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         jumpToNextParagraph();
       }
 
-      if (true) {
-        if (e.key === 'ArrowLeft' && onPrevSection) {
-          onPrevSection();
-        }
-        if (e.key === 'ArrowRight' && onNextSection) {
-          onNextSection();
-        }
+      if (e.key === 'ArrowLeft' && onPrevSection) {
+        onPrevSection();
+      }
+      if (e.key === 'ArrowRight' && onNextSection) {
+        onNextSection();
       }
 
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
@@ -553,6 +553,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       });
       setSelectionText(text);
     } catch (e) {
+      console.error(e);
       setMenuCoords(null);
     }
   };

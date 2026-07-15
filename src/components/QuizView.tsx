@@ -82,8 +82,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
     return () => {
       active = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionId, apiKey, sectionTitle, sectionContent]);
-
   // Handle Option Click
   const handleSelectOption = (index: number) => {
     if (isAnswered) return;

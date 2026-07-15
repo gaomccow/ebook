@@ -459,18 +459,10 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
             {/* Add Section Form overlay */}
             <AnimatePresence>
               {showAddSection && (
-                <motion.form
+                <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (newSectionName.trim() && onAddLibrarySection) {
-                      onAddLibrarySection(newSectionName.trim());
-                      setNewSectionName('');
-                      setShowAddSection(false);
-                    }
-                  }}
                   className="bg-slate-50 dark:bg-slate-800/40 border-2 border-dashed border-[var(--border-color)] rounded-3xl p-4 flex gap-3 items-center overflow-hidden"
                 >
                   <input
@@ -479,15 +471,31 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                     placeholder="Enter section name (e.g. Non Fiction)..."
                     value={newSectionName}
                     onChange={(e) => setNewSectionName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newSectionName.trim() && onAddLibrarySection) {
+                          onAddLibrarySection(newSectionName.trim());
+                          setNewSectionName('');
+                          setShowAddSection(false);
+                        }
+                      }
+                    }}
                     className="flex-1 px-4 py-2.5 rounded-2xl border-2 border-[var(--border-color)] focus:border-duo-blue focus:outline-none font-bold text-xs bg-[var(--card-bg)] text-[var(--text-color)]"
                   />
                   <button
-                    type="submit"
+                    onClick={() => {
+                      if (newSectionName.trim() && onAddLibrarySection) {
+                        onAddLibrarySection(newSectionName.trim());
+                        setNewSectionName('');
+                        setShowAddSection(false);
+                      }
+                    }}
                     className="px-5 py-2.5 bg-duo-green border-b-4 border-duo-green-dark text-white font-black text-xs uppercase tracking-wider rounded-2xl btn-3d"
                   >
                     Create
                   </button>
-                </motion.form>
+                </motion.div>
               )}
             </AnimatePresence>
 
@@ -559,30 +567,35 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <Folder className={`w-4 h-4 shrink-0 ${isUncategorized ? 'text-gray-400' : 'text-duo-orange'}`} />
                       {isEditing ? (
-                        <form
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            if (editingSectionName.trim() && onRenameLibrarySection) {
-                              onRenameLibrarySection(section.id, editingSectionName.trim());
-                              setEditingSectionId(null);
-                            }
-                          }}
-                          className="flex items-center gap-1.5 flex-1 max-w-xs"
-                        >
+                        <div className="flex items-center gap-1.5 flex-1 max-w-xs">
                           <input
                             type="text"
                             required
                             value={editingSectionName}
                             onChange={(e) => setEditingSectionName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (editingSectionName.trim() && onRenameLibrarySection) {
+                                  onRenameLibrarySection(section.id, editingSectionName.trim());
+                                  setEditingSectionId(null);
+                                }
+                              }
+                            }}
                             className="px-2 py-1 rounded-lg border-2 border-[var(--border-color)] font-bold text-xs focus:outline-none bg-[var(--card-bg)] text-[var(--text-color)]"
                           />
-                          <button type="submit" className="p-1 text-duo-green hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                          <button onClick={() => {
+                            if (editingSectionName.trim() && onRenameLibrarySection) {
+                              onRenameLibrarySection(section.id, editingSectionName.trim());
+                              setEditingSectionId(null);
+                            }
+                          }} className="p-1 text-duo-green hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
                             <Check className="w-3.5 h-3.5" />
                           </button>
-                          <button type="button" onClick={() => setEditingSectionId(null)} className="p-1 text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                          <button onClick={() => setEditingSectionId(null)} className="p-1 text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
                             <X className="w-3.5 h-3.5" />
                           </button>
-                        </form>
+                        </div>
                       ) : (
                         <span className="font-black text-xs uppercase tracking-wider text-[var(--text-color)]/90 truncate">
                           {section.name} ({books.length})

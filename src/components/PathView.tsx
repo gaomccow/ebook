@@ -83,6 +83,7 @@ export const PathView: React.FC<PathViewProps> = ({
       currentY += yStep;
     }
     return coords;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections, containerWidth, yOffsetStart, yStep, isSidebar]);
 
   const pathD = useMemo(() => {

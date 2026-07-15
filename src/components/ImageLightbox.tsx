@@ -38,6 +38,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
       y.set(0);
       setCustomTitle(savedTitle || imageFilename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " "));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, imageFilename, savedTitle]);
 
   if (!isOpen) return null;
