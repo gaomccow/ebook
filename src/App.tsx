@@ -1252,6 +1252,10 @@ function AppContent() {
     return (
       <StudentJoinView
         studentToken={studentToken}
+        onBack={() => {
+          localStorage.removeItem('readable_user_role');
+          setUserRole(null);
+        }}
         onJoin={(code, alias) => {
           localStorage.setItem('readable_class_code', code);
           localStorage.setItem('readable_student_alias', alias);
