@@ -863,7 +863,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         `}>
           {/* Draggable Bookmark Ribbon hanging off the card */}
           {!isFocusMode && (
-            <div id="tour-bookmark-ribbon" className="absolute top-6 -right-2 z-20 flex flex-col items-center">
+            <div id="tour-bookmark-ribbon" className="sticky top-6 float-right -mr-2 md:-mr-8 z-20 flex flex-col items-center">
               <Tooltip
                 content={
                   currentChapterBookmarks.length > 0 

@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Fish, Settings2, Upload, Copy, Check,
   Users, TrendingUp, MessageSquare, Plus, Trash2, Calendar, RefreshCw,
-  Star, AlertCircle, BarChart2, Loader2, School, X, CheckCircle, HelpCircle
+  Star, AlertCircle, BarChart2, Loader2, School, X, CheckCircle, HelpCircle,
+  LogOut
 } from 'lucide-react';
 import { ClassroomService } from '../services/ClassroomService';
 import type { ClassData, StudentRecord, TopWord, QuizAnswerEvent } from '../services/ClassroomService';
@@ -27,6 +28,7 @@ interface TeacherDashboardProps {
   onFileUpload: (file: File) => void;
   isParsing: boolean;
   onPreviewStudentView?: () => void;
+  onLogout?: () => void;
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -96,8 +98,12 @@ const WordHeatmap: React.FC<{ words: TopWord[] }> = ({ words }) => {
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
-  teacherUid, apiKey, onApiKeyChange, aiProvider, onAiProviderChange, onFileUpload, isParsing, onPreviewStudentView
+  teacherUid, apiKey, onApiKeyChange, aiProvider, onAiProviderChange, onFileUpload, isParsing, onPreviewStudentView, onLogout
 }) => {
+  const teacherName = localStorage.getItem('readable_auth_name') || '';
+  const teacherPicture = localStorage.getItem('readable_auth_picture') || '';
+  const teacherEmail = localStorage.getItem('readable_auth_email') || '';
+
   const [activeTab, setActiveTab] = useState<'setup' | 'mission' | 'aquarium' | 'settings'>('setup');
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [activeClassCode, setActiveClassCode] = useState<string | null>(null);
@@ -120,10 +126,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [isLoadingQuizAnswers, setIsLoadingQuizAnswers] = useState(false);
   const [isImportingLMS, setIsImportingLMS] = useState<string | null>(null);
   const [isPopulatingMock, setIsPopulatingMock] = useState(false);
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  const [savingCommentId, setSavingCommentId] = useState<string | null>(null);
 
   // Settings states
   const [tempKey, setTempKey] = useState(apiKey);
   const [tempProvider, setTempProvider] = useState(aiProvider);
+  const [tempQuizFormat, setTempQuizFormat] = useState<'binary'|'mixed'>('mixed');
 
   const activeClass = classes.find(c => c.classCode === activeClassCode) || null;
   const totalClassXP = students.reduce((sum, s) => sum + (s.xp || 0), 0);
@@ -179,6 +188,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     if (activeClass) {
       setClassTitle(activeClass.title || '');
       setDeadlineInput(activeClass.deadline || '');
+      setTempQuizFormat(activeClass.quizFormat || 'mixed');
     }
   }, [activeClass]);
 
@@ -260,7 +270,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     if (activeClassCode) {
       await ClassroomService.updateClassSettings(activeClassCode, {
         title: classTitle,
-        deadline: deadlineInput || null
+        deadline: deadlineInput || null,
+        quizFormat: tempQuizFormat
       });
       await loadClasses();
     }
@@ -268,6 +279,31 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     onApiKeyChange(tempKey);
     onAiProviderChange(tempProvider);
     alert('Settings saved!');
+  };
+
+  const handleSaveComment = async (answerId: string) => {
+    if (!activeClassCode) return;
+    setSavingCommentId(answerId);
+    try {
+      const comment = commentDrafts[answerId] || '';
+      await ClassroomService.addQuizComment(activeClassCode, answerId, comment);
+      
+      // Update local state
+      setStudentQuizAnswers(prev => 
+        prev.map(ans => ans.id === answerId ? { ...ans, teacherComment: comment } : ans)
+      );
+      
+      // Clear draft
+      setCommentDrafts(prev => {
+        const next = { ...prev };
+        delete next[answerId];
+        return next;
+      });
+    } catch (e) {
+      alert('Failed to save comment.');
+    } finally {
+      setSavingCommentId(null);
+    }
   };
 
   const TABS = [
@@ -312,14 +348,50 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </button>
         )}
 
-        <div className="ml-auto flex items-center gap-3 text-xs text-gray-400">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span>{activeStudents24h} active today</span>
+        <div className="ml-auto flex items-center gap-4">
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span>{activeStudents24h} active today</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" />
+              <span>{students.length} students</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5" />
-            <span>{students.length} students</span>
+
+          <span className="text-gray-200 h-6 w-px bg-gray-200" />
+
+          <div className="flex items-center gap-3">
+            {teacherPicture ? (
+              <img
+                src={teacherPicture}
+                referrerPolicy="no-referrer"
+                alt="Teacher Profile"
+                className="w-8 h-8 rounded-xl border border-indigo-100 object-cover shadow-sm"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 text-white font-black text-xs flex items-center justify-center shadow-sm">
+                {teacherName ? teacherName.charAt(0).toUpperCase() : 'T'}
+              </div>
+            )}
+            <div className="flex flex-col max-w-[120px] text-left">
+              <span className="text-xs font-black text-gray-700 truncate leading-none mb-0.5">
+                {teacherName || 'Teacher'}
+              </span>
+              <span className="text-[10px] font-bold text-gray-400 truncate leading-none">
+                {teacherEmail || 'teacher@readable.app'}
+              </span>
+            </div>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="p-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl transition-all border border-red-150 cursor-pointer shadow-sm hover:scale-105"
+                title="Logout"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -748,6 +820,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   </select>
                 </div>
                 <div>
+                  <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">AI Quiz Format</label>
+                  <select 
+                    value={tempQuizFormat} 
+                    onChange={e => setTempQuizFormat(e.target.value as 'binary' | 'mixed')}
+                    className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-indigo-400 text-sm font-medium"
+                  >
+                    <option value="mixed">Mixed (Multiple Choice / Short Answer)</option>
+                    <option value="binary">True/False (Binary)</option>
+                  </select>
+                </div>
+                <div>
                   <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">API Key</label>
                   <input
                     type="password"
@@ -883,6 +966,37 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                                 <p>{answer.evaluationHint}</p>
                               </div>
                             )}
+
+                            {/* Teacher Commenting */}
+                            {answer.id && (
+                              <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Teacher Comment</p>
+                                {answer.teacherComment && commentDrafts[answer.id] === undefined ? (
+                                  <div className="bg-blue-50 text-blue-900 p-3 rounded-xl text-sm mb-2">
+                                    {answer.teacherComment}
+                                  </div>
+                                ) : null}
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Add a comment..."
+                                    value={commentDrafts[answer.id] ?? answer.teacherComment ?? ''}
+                                    onChange={(e) => setCommentDrafts({ ...commentDrafts, [answer.id!]: e.target.value })}
+                                    className="flex-1 px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-400"
+                                  />
+                                  {(commentDrafts[answer.id] !== undefined) && (
+                                    <button
+                                      onClick={() => handleSaveComment(answer.id!)}
+                                      disabled={savingCommentId === answer.id}
+                                      className="px-4 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded-lg disabled:opacity-50"
+                                    >
+                                      {savingCommentId === answer.id ? 'Saving...' : 'Save'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="mt-3 text-right">
                               <span className="text-[10px] text-gray-400 font-bold uppercase">{new Date(answer.timestamp).toLocaleString()}</span>
                             </div>

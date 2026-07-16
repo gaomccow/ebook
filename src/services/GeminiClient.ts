@@ -244,11 +244,22 @@ Respond ONLY with a JSON object exactly like this:
     provider: 'gemini' | 'groq',
     apiKey: string,
     title: string,
-    text: string
+    text: string,
+    quizFormat: 'binary' | 'mixed' = 'mixed'
   ): Promise<QuizData> {
     const trimmedText = text.length > 5000 ? text.substring(0, 5000) + '...' : text;
     
-    const prompt = `
+    const prompt = quizFormat === 'binary' 
+      ? `
+Generate a reading comprehension quiz for the section titled "${title}".
+The quiz must contain exactly 3 True/False or Yes/No questions checking for comprehension.
+Return them as "multiple_choice" questions, where the "options" array contains exactly 2 strings (e.g. ["True", "False"]).
+
+Source Text:
+"""
+${trimmedText}
+"""
+    ` : `
 Generate a reading comprehension quiz for the section titled "${title}".
 The quiz must contain exactly 4 questions checking for comprehension and concept reflection, using four distinct question types:
 1. "multiple_choice": A detail-oriented test question with exactly 4 options.

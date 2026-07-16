@@ -63,7 +63,15 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
     const fetchQuiz = async () => {
       try {
-        const data = await GeminiClient.generateQuiz(aiProvider, apiKey, sectionTitle, sectionContent);
+        let format: 'binary' | 'mixed' = 'mixed';
+        const classCode = localStorage.getItem('readable_class_code');
+        if (classCode) {
+          const classData = await ClassroomService.getClassData(classCode);
+          if (classData && classData.quizFormat) {
+            format = classData.quizFormat;
+          }
+        }
+        const data = await GeminiClient.generateQuiz(aiProvider, apiKey, sectionTitle, sectionContent, format);
         if (active) {
           setQuizData(data);
           setLoading(false);

@@ -14,6 +14,7 @@ export interface ClassData {
   deadline: string | null;
   createdAt: string;
   classCode: string;
+  quizFormat?: 'binary' | 'mixed';
 }
 
 export interface StudentRecord {
@@ -45,6 +46,8 @@ export interface QuizAnswerEvent {
   isCorrect: boolean | null;
   evaluationHint: string | null;
   timestamp: string;
+  id?: string;
+  teacherComment?: string;
 }
 
 // ─── Alias generation ─────────────────────────────────────────────────────────
@@ -101,7 +104,8 @@ export class ClassroomService {
       assignedBookTitle: assignedBookTitle || null,
       deadline: null,
       createdAt: new Date().toISOString(),
-      classCode: code
+      classCode: code,
+      quizFormat: 'mixed'
     });
 
     return code;
@@ -277,7 +281,7 @@ export class ClassroomService {
    */
   public static async updateClassSettings(
     code: string,
-    updates: Partial<Pick<ClassData, 'title' | 'deadline' | 'bookId' | 'assignedBookTitle'>>
+    updates: Partial<Pick<ClassData, 'title' | 'deadline' | 'bookId' | 'assignedBookTitle' | 'quizFormat'>>
   ): Promise<void> {
     try {
       await updateDoc(doc(db, 'classes', code), updates);
@@ -466,7 +470,7 @@ export class ClassroomService {
       const q = query(answersRef, where('token', '==', token));
       const snap = await getDocs(q);
       
-      const answers = snap.docs.map(doc => doc.data() as QuizAnswerEvent);
+      const answers = snap.docs.map(doc => ({ ...doc.data() as QuizAnswerEvent, id: doc.id }));
       console.log(`Fetched ${answers.length} quiz answers for token ${token}`);
       // Sort client-side by timestamp descending to avoid needing a composite index
       answers.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -475,6 +479,19 @@ export class ClassroomService {
     } catch (e) {
       console.error('Error getting student quiz answers:', e);
       return [];
+    }
+  }
+
+  /**
+   * Add a teacher's comment to a quiz answer.
+   */
+  public static async addQuizComment(classCode: string, answerId: string, comment: string): Promise<void> {
+    try {
+      const answerRef = doc(db, `classes/${classCode}/quizAnswers`, answerId);
+      await updateDoc(answerRef, { teacherComment: comment });
+    } catch (e) {
+      console.error('Error adding quiz comment:', e);
+      throw e;
     }
   }
 }

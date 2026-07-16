@@ -31,7 +31,7 @@ import type { UserStats } from './services/ProgressionManager';
 import { EpubParser } from './services/EpubParser';
 import { GeminiClient } from './services/GeminiClient';
 import { IDBStorage } from './services/IDBStorage';
-import { Home, Compass, BookOpen, Highlighter, Flame, ChevronLeft, ChevronRight, HelpCircle, Globe, School, Search } from 'lucide-react';
+import { Home, Compass, BookOpen, Highlighter, Flame, ChevronLeft, ChevronRight, HelpCircle, Globe, School, Search, MessageSquare } from 'lucide-react';
 import { FloatingDock } from './components/ui/FloatingDock';
 import { Tooltip } from './components/ui/Tooltip';
 import { TourProvider, useTour } from './services/TourContext';
@@ -42,6 +42,7 @@ import { StudentJoinView } from './components/StudentJoinView';
 import { ClassBanner } from './components/ClassBanner';
 import { TeacherDashboard } from './components/TeacherDashboard';
 import { ClassroomService } from './services/ClassroomService';
+import { StudentFeedbackModal } from './components/StudentFeedbackModal';
 
 // Default static reading material (Deep Focus guide)
 const DEFAULT_SECTIONS: SectionNode[] = [
@@ -264,6 +265,7 @@ function AppContent() {
   const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showFlashcardModal, setShowFlashcardModal] = useState(false);
 
@@ -1249,6 +1251,7 @@ function AppContent() {
         onFileUpload={handleFileUpload}
         isParsing={isParsing}
         onPreviewStudentView={() => setIsPreviewMode(true)}
+        onLogout={handleLogout}
       />
     );
   }
@@ -1455,6 +1458,19 @@ function AppContent() {
                 </div>
               </div>
 
+              {/* Feedback Button */}
+              {classCode && studentToken && (
+                <div className="mb-6">
+                  <button
+                    onClick={() => setShowFeedbackModal(true)}
+                    className="w-full py-3 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 font-black text-xs uppercase tracking-wider rounded-2xl hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    View Quiz Feedback
+                  </button>
+                </div>
+              )}
+
               {/* UI Text Size Control */}
               <div className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 p-4 rounded-2xl mb-6 text-left">
                 <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-2 text-center md:text-left">
@@ -1500,6 +1516,13 @@ function AppContent() {
         newTotalXP={completionRewards.newTotalXP}
         streak={completionRewards.streak}
         isFirstTime={completionRewards.isFirstTime}
+      />
+
+      <StudentFeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        classCode={classCode}
+        studentToken={studentToken}
       />
 
       {/* React-safe Theme reconfiguration matrix overlay */}
