@@ -1,3 +1,6 @@
+import { rateLimiter, RATE_LIMIT_PRESETS } from '../utils/rateLimiter';
+import { logger } from '../utils/logger';
+
 export interface QuizQuestion {
   type: 'multiple_choice' | 'short_answer' | 'long_answer' | 'summary';
   question: string;
@@ -26,7 +29,16 @@ export interface RecommendationData {
 
 export class GeminiClient {
 
+  private static checkRateLimit(apiKey: string): void {
+    if (!rateLimiter.isAllowed(`ai_request_${apiKey.slice(-8)}`, RATE_LIMIT_PRESETS.AI_REQUEST)) {
+      const waitSeconds = rateLimiter.getTimeUntilReset(`ai_request_${apiKey.slice(-8)}`, RATE_LIMIT_PRESETS.AI_REQUEST);
+      logger.warn('AI API rate limit exceeded');
+      throw new Error(`Rate limit exceeded for AI features. Please wait ${waitSeconds} seconds before trying again.`);
+    }
+  }
+
   private static async fetchGroq(apiKey: string, body: any): Promise<Response> {
+    this.checkRateLimit(apiKey);
     try {
       return await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -37,12 +49,14 @@ export class GeminiClient {
         body: JSON.stringify(body)
       });
     } catch (e: any) {
+      logger.error('Groq fetch error', e);
       if (e.message?.includes('Failed to fetch')) {
         throw new Error('Network error or CORS blocked. Note: Groq blocks direct browser API calls. Please use Google Gemini instead.');
       }
       throw e;
     }
   }
+
 
 
   /**
@@ -377,12 +391,14 @@ All questions must have "type" (one of the 4 types), "question" (string), and "e
    * Always uses the cheapest Groq model (llama-3.1-8b-instant).
    */
   public static async generateHint(
+    provider: 'gemini' | 'groq',
     apiKey: string,
     question: string,
     wrongAnswer: string,
     _correctAnswerIndex: number,
     _options: string[]
   ): Promise<string> {
+    const fallback = 'Think carefully about the details mentioned in the text. Re-read the relevant section and try again.';
     const prompt = `A student answered a reading comprehension question incorrectly.
 
 Question: "${question}"
@@ -390,22 +406,34 @@ Their wrong answer: "${wrongAnswer}"
 
 Give a short, helpful hint (1-2 sentences max) that nudges them toward the right answer WITHOUT directly revealing it. Do not say what the correct answer is.`;
 
+    if (provider === 'gemini') {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 120, temperature: 0.4 }
+          })
+        }
+      );
+      if (!response.ok) return fallback;
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || fallback;
+    }
+
     const response = await this.fetchGroq(apiKey, {
-      model: 'llama-3.1-8b-instant',   // cheapest available Groq model
+      model: 'llama-3.1-8b-instant',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.4,
       max_tokens: 120
     });
 
-    if (!response.ok) {
-      // Silently fail – just return a generic nudge
-      return 'Think carefully about the details mentioned in the text. Re-read the relevant section and try again.';
-    }
+    if (!response.ok) return fallback;
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content?.trim() ||
-      'Think carefully about the details mentioned in the text. Re-read the relevant section and try again.';
-
+    return data.choices?.[0]?.message?.content?.trim() || fallback;
   }
 
 
@@ -746,7 +774,7 @@ Questions should help students understand the words in context, explore meaning,
 
     if (provider === 'gemini') {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -787,4 +815,45 @@ Questions should help students understand the words in context, explore meaning,
       return parsed.questions || [];
     }
   }
+
+  /**
+   * Validates the provided API key by sending a minimal test prompt.
+   */
+  public static async testConnection(provider: 'gemini' | 'groq', apiKey: string): Promise<boolean> {
+    if (!apiKey || !apiKey.trim()) {
+      throw new Error('API Key cannot be empty.');
+    }
+    if (provider === 'gemini') {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Ping test' }] }],
+            generationConfig: { maxOutputTokens: 5 }
+          })
+        }
+      );
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        const msg = errJson.error?.message || `API error (${response.status})`;
+        throw new Error(msg);
+      }
+      return true;
+    } else {
+      const response = await this.fetchGroq(apiKey, {
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: 'Ping test' }],
+        max_tokens: 5
+      });
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        const msg = errJson.error?.message || `Groq API error (${response.status})`;
+        throw new Error(msg);
+      }
+      return true;
+    }
+  }
 }
+

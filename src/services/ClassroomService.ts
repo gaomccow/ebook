@@ -3,6 +3,9 @@ import {
   doc, getDoc, setDoc, addDoc, collection,
   query, where, getDocs, serverTimestamp, updateDoc, onSnapshot
 } from 'firebase/firestore';
+import { sanitizeString, sanitizeClassCode } from '../utils/sanitizer';
+import { rateLimiter, RATE_LIMIT_PRESETS } from '../utils/rateLimiter';
+import { logger } from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,6 +93,14 @@ export class ClassroomService {
     bookId: string | null = null,
     assignedBookTitle: string | null = null
   ): Promise<string> {
+    const cleanTitle = sanitizeString(classTitle, 100);
+    const cleanBookTitle = assignedBookTitle ? sanitizeString(assignedBookTitle, 100) : null;
+
+    if (!rateLimiter.isAllowed(`create_class_${teacherUid}`, RATE_LIMIT_PRESETS.DB_WRITE)) {
+      logger.warn('Rate limit exceeded for class creation', { teacherUid });
+      throw new Error('Too many requests. Please wait a moment before creating another class.');
+    }
+
     let code = '';
     for (let attempt = 0; attempt < 5; attempt++) {
       code = generateClassCode();
@@ -98,16 +109,17 @@ export class ClassroomService {
     }
 
     await setDoc(doc(db, 'classes', code), {
-      title: classTitle,
+      title: cleanTitle,
       teacherUid,
       bookId: bookId || null,
-      assignedBookTitle: assignedBookTitle || null,
+      assignedBookTitle: cleanBookTitle,
       deadline: null,
       createdAt: new Date().toISOString(),
       classCode: code,
       quizFormat: 'mixed'
     });
 
+    logger.info('Class created successfully', { classCode: code, teacherUid });
     return code;
   }
 
@@ -119,7 +131,8 @@ export class ClassroomService {
       const q = query(collection(db, 'classes'), where('teacherUid', '==', teacherUid));
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data() as ClassData);
-    } catch {
+    } catch (e) {
+      logger.error('Failed to fetch teacher classes', e);
       return [];
     }
   }
@@ -128,11 +141,14 @@ export class ClassroomService {
    * Verify a class code exists and return class metadata.
    */
   public static async getClassData(code: string): Promise<ClassData | null> {
+    const cleanCode = sanitizeClassCode(code);
+    if (!cleanCode) return null;
     try {
-      const snap = await getDoc(doc(db, 'classes', code));
+      const snap = await getDoc(doc(db, 'classes', cleanCode));
       if (!snap.exists()) return null;
       return snap.data() as ClassData;
-    } catch {
+    } catch (e) {
+      logger.error('Failed to fetch class data', e);
       return null;
     }
   }
@@ -141,16 +157,24 @@ export class ClassroomService {
    * Student joins a class. Returns the alias assigned to them.
    */
   public static async joinClass(code: string, studentToken: string): Promise<string | null> {
-    const classSnap = await getDoc(doc(db, 'classes', code));
+    const cleanCode = sanitizeClassCode(code);
+    if (!cleanCode) return null;
+
+    if (!rateLimiter.isAllowed(`join_class_${studentToken}`, RATE_LIMIT_PRESETS.DB_WRITE)) {
+      logger.warn('Rate limit exceeded for joining class', { studentToken });
+      throw new Error('Too many attempts. Please wait a minute before trying again.');
+    }
+
+    const classSnap = await getDoc(doc(db, 'classes', cleanCode));
     if (!classSnap.exists()) return null;
 
-    const existingSnap = await getDoc(doc(db, 'classes', code, 'students', studentToken));
+    const existingSnap = await getDoc(doc(db, 'classes', cleanCode, 'students', studentToken));
     if (existingSnap.exists()) {
       return (existingSnap.data() as StudentRecord).alias;
     }
 
     const alias = generateAlias();
-    await setDoc(doc(db, 'classes', code, 'students', studentToken), {
+    await setDoc(doc(db, 'classes', cleanCode, 'students', studentToken), {
       token: studentToken,
       alias,
       xp: 0,
@@ -158,6 +182,7 @@ export class ClassroomService {
       lastActive: new Date().toISOString()
     });
 
+    logger.info('Student joined class', { classCode: cleanCode, studentToken, alias });
     return alias;
   }
 
@@ -170,18 +195,27 @@ export class ClassroomService {
     word: string,
     chapterId: string
   ): Promise<void> {
-    if (!code || !studentToken || !word) return;
+    const cleanCode = sanitizeClassCode(code);
+    const cleanWord = sanitizeString(word, 50);
+    if (!cleanCode || !studentToken || !cleanWord) return;
+
+    if (!rateLimiter.isAllowed(`word_lookup_${studentToken}`, { maxRequests: 20, windowMs: 60 * 1000 })) {
+      logger.warn('Rate limit exceeded for word lookup events', { studentToken });
+      return;
+    }
+
     try {
-      await addDoc(collection(db, 'classes', code, 'wordEvents'), {
+      await addDoc(collection(db, 'classes', cleanCode, 'wordEvents'), {
         token: studentToken,
-        word: word.toLowerCase().trim(),
-        chapterId,
+        word: cleanWord.toLowerCase(),
+        chapterId: sanitizeString(chapterId, 50),
         timestamp: serverTimestamp()
       });
     } catch (e) {
-      console.warn('ClassroomService: word lookup submission failed silently', e);
+      logger.warn('ClassroomService: word lookup submission failed', e);
     }
   }
+
 
   /**
    * Aggregate the top N most looked-up words for a given chapter.

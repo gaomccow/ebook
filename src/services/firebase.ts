@@ -3,13 +3,13 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCXP660HMMAiJ-ASC4hmsXKTKHFIn9oRb4",
-  authDomain: "readable-app-4d7f5.firebaseapp.com",
-  projectId: "readable-app-4d7f5",
-  storageBucket: "readable-app-4d7f5.firebasestorage.app",
-  messagingSenderId: "402229559463",
-  appId: "1:402229559463:web:593907f83ca5f546d45b82",
-  measurementId: "G-RP2Y2YL53N"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCXP660HMMAiJ-ASC4hmsXKTKHFIn9oRb4",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "readable-app-4d7f5.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "readable-app-4d7f5",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "readable-app-4d7f5.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "402229559463",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:402229559463:web:593907f83ca5f546d45b82",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-RP2Y2YL53N"
 };
 
 const app = initializeApp(firebaseConfig);

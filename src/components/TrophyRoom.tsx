@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Flame, Trophy, Palette, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Award, Sparkles, Type, FolderPlus, Folder, Tag, Trash2, Edit2, Plus, Check, X, Upload, RefreshCw } from 'lucide-react';
+import { Star, Flame, Trophy, Palette, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Award, Sparkles, Type, FolderPlus, Folder, Tag, Trash2, Edit2, Plus, Check, X, Upload, RefreshCw, Settings } from 'lucide-react';
 import { VelocityChart } from './VelocityChart';
 import { Leaderboard } from './Leaderboard';
 import AquariumSandbox from './AquariumSandbox';
@@ -66,9 +66,7 @@ interface TrophyRoomProps {
   recommendationsLoading: boolean;
   onGenerateRecommendations: () => void;
   apiKey: string;
-  onApiKeyChange?: (key: string) => void;
-  aiProvider?: 'gemini' | 'groq';
-  onAiProviderChange?: (provider: 'gemini' | 'groq') => void;
+  onOpenSettings?: () => void;
 
   // Localization
   language: Language;
@@ -121,9 +119,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   recommendationsLoading,
   onGenerateRecommendations,
   apiKey,
-  onApiKeyChange,
-  aiProvider,
-  onAiProviderChange,
+  onOpenSettings,
   language,
   librarySections = [],
   onAddLibrarySection,
@@ -795,39 +791,29 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                     <p className="text-[10px] text-gray-400 font-bold mt-1 leading-relaxed">
                       {apiKey 
                         ? 'Scan your active bookshelf titles and generate 3 custom suggested reads matching your stamina goals.' 
-                        : 'Provide your API Key to unlock AI Recommendations, Dictionary, and Flashcards.'
+                        : (language === 'vi'
+                          ? 'Thêm khóa API trong Cài đặt để mở khóa gợi ý sách, từ điển và flashcard.'
+                          : 'Add your API key in Settings to unlock recommendations, dictionary, and flashcards.')
                       }
                     </p>
                   </div>
-                  {apiKey && (
+                  {apiKey ? (
                     <button
                       onClick={onGenerateRecommendations}
                       className="px-5 py-2.5 bg-duo-yellow border-duo-yellow-dark text-gray-800 rounded-2xl text-xs font-black uppercase tracking-wider btn-3d shrink-0"
                     >
                       ✨ {t('scanLibrary')}
                     </button>
+                  ) : onOpenSettings && (
+                    <button
+                      onClick={onOpenSettings}
+                      className="px-5 py-2.5 bg-duo-purple border-purple-800 text-white rounded-2xl text-xs font-black uppercase tracking-wider btn-3d shrink-0 flex items-center gap-2"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                      {language === 'vi' ? 'Mở Cài Đặt' : 'Open Settings'}
+                    </button>
                   )}
                 </div>
-                
-                {onApiKeyChange && (
-                  <div className="w-full flex flex-col md:flex-row items-center gap-3 pt-4 border-t-2 border-gray-100">
-                    <select
-                      value={aiProvider}
-                      onChange={(e) => onAiProviderChange?.(e.target.value as 'gemini' | 'groq')}
-                      className="px-3 py-2 bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-black uppercase outline-none focus:border-duo-purple focus:ring-1 focus:ring-duo-purple shrink-0 w-full md:w-auto"
-                    >
-                      <option value="gemini">Google Gemini</option>
-                      <option value="groq">Groq (Llama 3)</option>
-                    </select>
-                    <input
-                      type="password"
-                      placeholder="Enter API Key (e.g. AIza... or gsk_...)"
-                      value={apiKey}
-                      onChange={(e) => onApiKeyChange(e.target.value)}
-                      className="flex-1 px-4 py-2 bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-black outline-none focus:border-duo-purple focus:ring-1 focus:ring-duo-purple w-full"
-                    />
-                  </div>
-                )}
               </div>
             )}
           </div>

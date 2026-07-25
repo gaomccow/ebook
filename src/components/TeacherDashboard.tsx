@@ -11,6 +11,7 @@ import type { ClassData, StudentRecord, TopWord, QuizAnswerEvent } from '../serv
 import { GeminiClient } from '../services/GeminiClient';
 
 
+
 // Aquarium milestone thresholds
 const MILESTONES = [
   { label: 'Kelp Forest', xp: 1500, emoji: '🌿', color: '#58cc02' },

@@ -90,8 +90,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
     return () => {
       active = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionId, apiKey, sectionTitle, sectionContent]);
+  }, [sectionId, apiKey, aiProvider, sectionTitle, sectionContent]);
   // Handle Option Click
   const handleSelectOption = (index: number) => {
     if (isAnswered) return;
@@ -170,6 +169,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
         setHintLoading(true);
         try {
           const h = await GeminiClient.generateHint(
+            aiProvider,
             apiKey,
             question.question,
             answeredText,
@@ -204,6 +204,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
         setHintLoading(true);
         try {
           const h = await GeminiClient.generateHint(
+            aiProvider,
             apiKey,
             question.question,
             textInput,

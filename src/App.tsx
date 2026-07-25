@@ -31,7 +31,7 @@ import type { UserStats } from './services/ProgressionManager';
 import { EpubParser } from './services/EpubParser';
 import { GeminiClient } from './services/GeminiClient';
 import { IDBStorage } from './services/IDBStorage';
-import { Home, Compass, BookOpen, Highlighter, Flame, ChevronLeft, ChevronRight, HelpCircle, Globe, School, Search, MessageSquare } from 'lucide-react';
+import { Home, Compass, BookOpen, Highlighter, Flame, ChevronLeft, ChevronRight, HelpCircle, Globe, School, Search, MessageSquare, Settings } from 'lucide-react';
 import { FloatingDock } from './components/ui/FloatingDock';
 import { Tooltip } from './components/ui/Tooltip';
 import { TourProvider, useTour } from './services/TourContext';
@@ -43,6 +43,8 @@ import { ClassBanner } from './components/ClassBanner';
 import { TeacherDashboard } from './components/TeacherDashboard';
 import { ClassroomService } from './services/ClassroomService';
 import { StudentFeedbackModal } from './components/StudentFeedbackModal';
+import { SettingsModal } from './components/SettingsModal';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Default static reading material (Deep Focus guide)
 const DEFAULT_SECTIONS: SectionNode[] = [
@@ -264,6 +266,7 @@ function AppContent() {
   // Highlights, Stats and Dock visibility toggles
   const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -447,17 +450,33 @@ function AppContent() {
     const uid = auth.currentUser?.uid; if (uid) progressionManager.syncFromFirebase(uid, syncState);
   };
 
+  const clearClassroomState = () => {
+    localStorage.removeItem('readable_class_code');
+    localStorage.removeItem('readable_student_alias');
+    localStorage.removeItem('readable_class_title');
+    localStorage.removeItem('readable_class_join_skipped');
+    setClassCode(null);
+    setStudentAlias('');
+    setClassTitle('');
+    setHasSkippedJoin(false);
+    setClassXPContributed(0);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('readable_auth_email');
     localStorage.removeItem('readable_auth_name');
     localStorage.removeItem('readable_auth_picture');
     localStorage.removeItem('readable_user_role');
-    localStorage.removeItem('readable_class_code');
-    localStorage.removeItem('readable_student_alias');
+    clearClassroomState();
     setIsAuthenticated(false);
     setUserRole(null);
-    setClassCode(null);
-    setStudentAlias('');
+  };
+
+  const handleSwitchRole = () => {
+    localStorage.removeItem('readable_user_role');
+    clearClassroomState();
+    setUserRole(null);
+    setShowSettingsModal(false);
   };
 
   // Sync state on app load if already authenticated
@@ -557,8 +576,13 @@ function AppContent() {
 
   // Sync API Key
   const handleApiKeyChange = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem('gamified_reader_api_key_b64', btoa(key));
+    const trimmed = key.trim();
+    setApiKey(trimmed);
+    if (trimmed) {
+      localStorage.setItem('gamified_reader_api_key_b64', btoa(trimmed));
+    } else {
+      localStorage.removeItem('gamified_reader_api_key_b64');
+    }
   };
 
   const handleAiProviderChange = (provider: 'gemini' | 'groq') => {
@@ -1024,9 +1048,7 @@ function AppContent() {
       recommendationsLoading={recommendationsLoading}
       onGenerateRecommendations={handleGenerateRecommendations}
       apiKey={apiKey}
-      onApiKeyChange={handleApiKeyChange}
-      aiProvider={aiProvider}
-      onAiProviderChange={handleAiProviderChange}
+      onOpenSettings={() => setShowSettingsModal(true)}
       language={language}
       librarySections={stats.librarySections}
       onAddLibrarySection={handleAddLibrarySection}
@@ -1202,6 +1224,12 @@ function AppContent() {
       icon: <Globe className="w-full h-full text-duo-blue" />,
       onClick: () => setShowLanguagePicker(prev => !prev),
       active: showLanguagePicker
+    },
+    {
+      title: language === 'vi' ? 'Cài đặt' : 'Settings',
+      icon: <Settings className="w-full h-full text-duo-purple" />,
+      onClick: () => setShowSettingsModal(true),
+      active: showSettingsModal
     }
   ];
 
@@ -1242,19 +1270,22 @@ function AppContent() {
   if (userRole === 'teacher' && !isPreviewMode) {
     const teacherUid = auth.currentUser?.uid || localStorage.getItem('readable_auth_email') || 'teacher';
     return (
-      <TeacherDashboard
-        teacherUid={teacherUid}
-        apiKey={apiKey}
-        onApiKeyChange={handleApiKeyChange}
-        aiProvider={aiProvider}
-        onAiProviderChange={handleAiProviderChange}
-        onFileUpload={handleFileUpload}
-        isParsing={isParsing}
-        onPreviewStudentView={() => setIsPreviewMode(true)}
-        onLogout={handleLogout}
-      />
+      <ProtectedRoute isAuthenticated={isAuthenticated} userRole={userRole} requiredRole="teacher">
+        <TeacherDashboard
+          teacherUid={teacherUid}
+          apiKey={apiKey}
+          onApiKeyChange={handleApiKeyChange}
+          aiProvider={aiProvider}
+          onAiProviderChange={handleAiProviderChange}
+          onFileUpload={handleFileUpload}
+          isParsing={isParsing}
+          onPreviewStudentView={() => setIsPreviewMode(true)}
+          onLogout={handleLogout}
+        />
+      </ProtectedRoute>
     );
   }
+
 
   // Student without a class code sees the join screen (skippable)
   // Only show this prompt if the user actively selected the student role
@@ -1458,6 +1489,20 @@ function AppContent() {
                 </div>
               </div>
 
+              {/* Settings Button in Profile Modal */}
+              <div className="mb-4">
+                <button
+                  onClick={() => {
+                    setShowStatsModal(false);
+                    setShowSettingsModal(true);
+                  }}
+                  className="w-full py-3 bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 font-black text-xs uppercase tracking-wider rounded-2xl hover:bg-purple-200 dark:hover:bg-purple-900 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Settings className="w-4 h-4" />
+                  {language === 'vi' ? 'Cài Đặt Khóa AI & Tài Khoản' : 'AI Key & Settings'}
+                </button>
+              </div>
+
               {/* Feedback Button */}
               {classCode && studentToken && (
                 <div className="mb-6">
@@ -1505,6 +1550,20 @@ function AppContent() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        apiKey={apiKey}
+        onApiKeyChange={handleApiKeyChange}
+        aiProvider={aiProvider}
+        onAiProviderChange={handleAiProviderChange}
+        userRole={userRole}
+        onSwitchRole={handleSwitchRole}
+        language={language}
+        onLogout={handleLogout}
+      />
 
       {/* Level Up celebratory popup modal */}
       <LevelUpModal

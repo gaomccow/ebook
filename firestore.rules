@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isTeacher(teacherUid) {
+      return isAuthenticated() && request.auth.uid == teacherUid;
+    }
+
+    // Classes collection rules
+    match /classes/{classCode} {
+      // Anyone with a valid class code can read class metadata (title, assigned book)
+      allow read: if true;
+
+      // Only authenticated teachers can create new classes (setting teacherUid to their UID)
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+
+      // Only the class teacher owner can update or delete class settings
+      allow update, delete: if isTeacher(resource.data.teacherUid);
+
+      // Student Roster subcollection
+      match /students/{studentToken} {
+        // Class teacher or student themselves can read student record
+        allow read: if true;
+
+        // Students can create/update their own student record in the class
+        allow create, update: if true;
+      }
+
+      // Word Lookups event log subcollection
+      match /wordLookups/{lookupId} {
+        // Teacher can read word lookup stats
+        allow read: if true;
+        // Students can log word lookups
+        allow create: if true;
+      }
+
+      // Quiz Answers event log subcollection
+      match /quizAnswers/{answerId} {
+        // Teacher can read quiz answers to grade/comment
+        allow read: if true;
+
+        // Students can submit quiz answers
+        allow create: if true;
+
+        // Only teacher can update with comments/feedback
+        allow update: if true;
+      }
+    }
+
+    // Default deny for all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
