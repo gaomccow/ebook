@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, BookOpen, Loader2, Cpu, CheckCircle2, ChevronRight, Filter } from 'lucide-react';
 import { GeminiClient } from '../services/GeminiClient';
 import type { BookRecommendation } from '../services/GeminiClient';
+import { CEFR_LEVEL_OPTIONS } from '../utils/cefr';
 
 interface BookFinderModalProps {
   isOpen: boolean;
@@ -145,12 +146,11 @@ export const BookFinderModal: React.FC<BookFinderModalProps> = ({
                   onChange={(e) => setLevel(e.target.value)}
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:border-duo-blue"
                 >
-                  <option value="A1">A1 — Beginner</option>
-                  <option value="A2">A2 — Elementary</option>
-                  <option value="B1">B1 — Intermediate</option>
-                  <option value="B2">B2 — Upper Intermediate</option>
-                  <option value="C1">C1 — Advanced</option>
-                  <option value="C2">C2 — Mastery</option>
+                  {CEFR_LEVEL_OPTIONS.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.code} — {isVi ? opt.descVi : opt.desc}
+                    </option>
+                  ))}
                 </select>
               </div>
 

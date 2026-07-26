@@ -6,6 +6,7 @@ import {
 import { sanitizeString, sanitizeClassCode } from '../utils/sanitizer';
 import { rateLimiter, RATE_LIMIT_PRESETS } from '../utils/rateLimiter';
 import { logger } from '../utils/logger';
+import type { CEFRLevel } from '../utils/cefr';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,7 +27,7 @@ export interface StudentRecord {
   xp: number;
   completedChapters: string[];
   lastActive: string;
-  level?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  level?: CEFRLevel;
 }
 
 export interface WordEvent {

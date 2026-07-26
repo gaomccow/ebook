@@ -9,6 +9,7 @@ import {
 import { ClassroomService } from '../services/ClassroomService';
 import type { ClassData, StudentRecord, TopWord, QuizAnswerEvent } from '../services/ClassroomService';
 import { GeminiClient } from '../services/GeminiClient';
+import { ALL_CEFR_LEVELS } from '../utils/cefr';
 
 
 
@@ -647,7 +648,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             }}
                             className="text-xs font-black bg-indigo-100/80 border border-indigo-200 text-indigo-700 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer"
                           >
-                            {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const).map(lvl => (
+                            {ALL_CEFR_LEVELS.map(lvl => (
                               <option key={lvl} value={lvl}>{lvl}</option>
                             ))}
                           </select>
