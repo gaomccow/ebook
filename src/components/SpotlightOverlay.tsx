@@ -35,9 +35,16 @@ export const SpotlightOverlay: React.FC = () => {
         setTimeout(() => {
           const rect = el.getBoundingClientRect();
           setTargetRect(rect);
-        }, 100);
+        }, 120);
       } else {
-        setTargetRect(null);
+        // Keep checking if view is mounting asynchronously
+        setTimeout(() => {
+          const retryEl = document.getElementById(currentStep.targetId) || document.querySelector(`#${currentStep.targetId}`);
+          if (retryEl) {
+            retryEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTargetRect(retryEl.getBoundingClientRect());
+          }
+        }, 300);
       }
     };
 
@@ -189,12 +196,19 @@ export const SpotlightOverlay: React.FC = () => {
 
           {/* Navigation Controls Footer */}
           <div className="flex items-center justify-between pt-2">
-            <button
-              onClick={skipTour}
-              className="text-[10px] font-black text-inherit opacity-50 hover:opacity-90 uppercase tracking-widest cursor-pointer transition-colors"
-            >
-              Skip
-            </button>
+            {/* Step Dots Indicator */}
+            <div className="flex items-center gap-1">
+              {steps.map((_, idx) => (
+                <span
+                  key={idx}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === activeStepIndex 
+                      ? 'w-4 bg-indigo-500' 
+                      : 'w-1.5 bg-slate-400/40'
+                  }`}
+                />
+              ))}
+            </div>
 
             <div className="flex gap-2">
               {activeStepIndex > 0 && (

@@ -62,9 +62,11 @@ interface ReaderViewProps {
   onOpenLightbox?: (filename: string) => void;
   searchTarget?: number | null;
   
-  // Dictionary AI props
+  // Dictionary & AI target language props
   aiProvider?: 'gemini' | 'groq';
   apiKey?: string;
+  aiTargetLanguage?: string;
+  onAiTargetLanguageChange?: (lang: string) => void;
 }
 
 export const ReaderView: React.FC<ReaderViewProps> = ({
@@ -97,7 +99,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   onOpenLightbox,
   searchTarget,
   aiProvider = 'groq',
-  apiKey = ''
+  apiKey = '',
+  aiTargetLanguage = 'en',
+  onAiTargetLanguageChange
 }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isNearBottom, setIsNearBottom] = useState(false);
@@ -760,7 +764,24 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             </span>
           </div>
           
-          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4">
+            {/* AI Target Language Dropdown Tab */}
+            <div className="flex items-center gap-1 bg-slate-200/25 dark:bg-slate-800/25 rounded-full px-2.5 py-1 border border-[var(--border-color)]/20 shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-duo-purple shrink-0" />
+              <select
+                value={aiTargetLanguage || 'en'}
+                onChange={(e) => onAiTargetLanguageChange && onAiTargetLanguageChange(e.target.value)}
+                className="bg-transparent text-xs font-bold text-[var(--text-color)] outline-none cursor-pointer"
+              >
+                <option value="en">AI: EN 🇺🇸</option>
+                <option value="vi">AI: VI 🇻🇳</option>
+                <option value="es">AI: ES 🇪🇸</option>
+                <option value="fr">AI: FR 🇫🇷</option>
+                <option value="de">AI: DE 🇩🇪</option>
+                <option value="zh">AI: ZH 🇨🇳</option>
+                <option value="hi">AI: HI 🇮🇳</option>
+              </select>
+            </div>
             {/* Maps & Pictures Button */}
             {images && Object.keys(images).length > 0 && (
               <button

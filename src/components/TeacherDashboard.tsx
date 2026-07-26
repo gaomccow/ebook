@@ -625,15 +625,35 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 ) : (
                   <div className="flex flex-col gap-2">
                     {students.sort((a, b) => (b.xp || 0) - (a.xp || 0)).map(s => (
-                      <div key={s.token} onClick={() => setSelectedStudent(s)} className="flex items-center gap-3 p-3 rounded-xl bg-indigo-50/50 hover:bg-indigo-50 transition-colors cursor-pointer">
-                        <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-xs font-black text-indigo-700">
+                      <div key={s.token} className="flex items-center gap-3 p-3 rounded-xl bg-indigo-50/50 hover:bg-indigo-50 transition-colors cursor-pointer">
+                        <div onClick={() => setSelectedStudent(s)} className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-xs font-black text-indigo-700 shrink-0">
                           {s.alias?.slice(0, 2).toUpperCase()}
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div onClick={() => setSelectedStudent(s)} className="flex-1 min-w-0">
                           <p className="font-bold text-sm text-gray-800 truncate">{s.alias}</p>
                           <p className="text-xs text-gray-400">{(s.completedChapters || []).length} chapters · {s.xp || 0} XP</p>
                         </div>
-                        <div className="text-right shrink-0">
+
+                        {/* Student CEFR Level Diversity Pill Selector */}
+                        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                          <span className="text-[10px] font-black text-indigo-400 uppercase tracking-wider hidden sm:inline">CEFR:</span>
+                          <select
+                            value={s.level || 'B2'}
+                            onChange={async (e) => {
+                              const newLvl = e.target.value;
+                              if (!activeClassCode) return;
+                              setStudents(prev => prev.map(item => item.token === s.token ? { ...item, level: newLvl as any } : item));
+                              await ClassroomService.updateStudentLevel(activeClassCode, s.token, newLvl);
+                            }}
+                            className="text-xs font-black bg-indigo-100/80 border border-indigo-200 text-indigo-700 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer"
+                          >
+                            {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const).map(lvl => (
+                              <option key={lvl} value={lvl}>{lvl}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="text-right shrink-0" onClick={() => setSelectedStudent(s)}>
                           <div className={`text-xs font-black px-2 py-0.5 rounded-full ${Date.now() - new Date(s.lastActive).getTime() < 24*60*60*1000 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                             {Date.now() - new Date(s.lastActive).getTime() < 24*60*60*1000 ? 'Active' : 'Inactive'}
                           </div>

@@ -515,6 +515,24 @@ export class ProgressionManager {
     }
   }
 
+  public addCustomBook(title: string, author: string, tag: string = 'General', sectionsCount: number = 5, _description?: string): void {
+    const id = generateRandomId('book');
+    const newBook: BookArchiveItem = {
+      id,
+      title,
+      author,
+      sectionsCount,
+      wordCount: sectionsCount * 250,
+      progress: 0,
+      startedAt: new Date().toISOString(),
+      completedAt: null,
+      masteryLevel: 'none',
+      tags: [tag]
+    };
+    this.state.library.push(newBook);
+    this.saveState();
+  }
+
   // --- WORD BANK VOCABULARY ---
 
   public addSavedWord(originalWord: string, definition: string, translation: string, pronunciation?: string): void {

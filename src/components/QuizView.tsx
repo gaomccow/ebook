@@ -39,9 +39,13 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
 
-  // New inputs for diverse question formats
+  // Dynamic question states
   const [textInput, setTextInput] = useState('');
   const [isSelfGradingMode, setIsSelfGradingMode] = useState(false);
+  const [gapAnswers, setGapAnswers] = useState<string[]>([]);
+  const [matchingSelections, setMatchingSelections] = useState<{ left: number | null; right: number | null }>({ left: null, right: null });
+  const [userMatches, setUserMatches] = useState<Record<number, number>>({});
+  const [shuffledRights, setShuffledRights] = useState<string[]>([]);
 
   // TTS state
   const [isPlayingTTS, setIsPlayingTTS] = useState(false);
@@ -90,7 +94,25 @@ export const QuizView: React.FC<QuizViewProps> = ({
     return () => {
       active = false;
     };
-  }, [sectionId, apiKey, aiProvider, sectionTitle, sectionContent]);
+  }, [apiKey, sectionTitle, sectionContent, aiProvider]);
+
+  // Reset and initialize question specific state
+  useEffect(() => {
+    if (!quizData) return;
+    const question = quizData.questions[currentQuestionIndex];
+    if (!question) return;
+
+    if (question.type === 'fill_in_the_blank') {
+      const count = question.blanks?.length || 1;
+      setGapAnswers(new Array(count).fill(''));
+    } else if (question.type === 'matching' && question.matchingPairs) {
+      const rights = question.matchingPairs.map(p => p.right);
+      setShuffledRights([...rights].sort(() => Math.random() - 0.5));
+      setUserMatches({});
+      setMatchingSelections({ left: null, right: null });
+    }
+  }, [currentQuestionIndex, quizData]);
+
   // Handle Option Click
   const handleSelectOption = (index: number) => {
     if (isAnswered) return;
@@ -220,9 +242,29 @@ export const QuizView: React.FC<QuizViewProps> = ({
         } finally {
           setHintLoading(false);
         }
-      } else {
-        logAnswer(isCorrectAnswer, textInput);
       }
+    } else if (question.type === 'fill_in_the_blank') {
+      if (gapAnswers.some(a => !a.trim()) || isAnswered) return;
+      const expected = question.blanks || [];
+      const isCorrectAnswer = gapAnswers.every((userAns, idx) => {
+        const target = expected[idx] || '';
+        return userAns.trim().toLowerCase() === target.trim().toLowerCase();
+      });
+      setIsCorrect(isCorrectAnswer);
+      setIsAnswered(true);
+      logAnswer(isCorrectAnswer, gapAnswers.join(' | '));
+    } else if (question.type === 'matching') {
+      if (isAnswered || !question.matchingPairs) return;
+      let isCorrectAnswer = true;
+      question.matchingPairs.forEach((pair, leftIdx) => {
+        const matchedRightText = shuffledRights[userMatches[leftIdx]];
+        if (matchedRightText !== pair.right) {
+          isCorrectAnswer = false;
+        }
+      });
+      setIsCorrect(isCorrectAnswer);
+      setIsAnswered(true);
+      logAnswer(isCorrectAnswer, 'Matching paired');
     } else {
       // For long_answer and summary: call evaluateResponse API
       if (!textInput.trim() || isAnswered) return;
@@ -568,8 +610,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         ? 'border-duo-green bg-duo-green/5 text-duo-green-dark'
                         : 'border-red-500 bg-red-50 text-red-700'
                       : 'border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-color)] focus:border-duo-blue'
-                    }
-                  `}
+                    }`}
                 />
                 {isAnswered && (
                   <div className="text-xs font-semibold px-2 mt-1">
@@ -581,6 +622,138 @@ export const QuizView: React.FC<QuizViewProps> = ({
                     </span>
                   </div>
                 )}
+              </div>
+            )}
+
+            {currentQuestion.type === 'fill_in_the_blank' && (
+              <div className="flex flex-col gap-4 p-4 bg-[var(--card-bg)] rounded-2xl border-2 border-[var(--border-color)]">
+                <div className="text-base font-bold leading-relaxed flex flex-wrap items-center gap-2">
+                  {(currentQuestion.sentenceWithBlanks || currentQuestion.question).split('___').map((part, i, arr) => (
+                    <React.Fragment key={i}>
+                      <span>{part}</span>
+                      {i < arr.length - 1 && (
+                        <input
+                          type="text"
+                          value={gapAnswers[i] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setGapAnswers(prev => {
+                              const next = [...prev];
+                              next[i] = val;
+                              return next;
+                            });
+                          }}
+                          disabled={isAnswered}
+                          placeholder={`blank #${i + 1}`}
+                          className={`px-3 py-1 text-sm font-mono font-bold rounded-xl border-2 outline-none transition-all min-w-[100px] text-center
+                            ${isAnswered
+                              ? gapAnswers[i]?.trim().toLowerCase() === (currentQuestion.blanks?.[i] || '').trim().toLowerCase()
+                                ? 'border-duo-green bg-duo-green/10 text-duo-green-dark'
+                                : 'border-red-500 bg-red-50 text-red-600'
+                              : 'border-duo-blue/40 bg-duo-blue/5 text-duo-blue focus:border-duo-blue'
+                            }
+                          `}
+                        />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+
+                {isAnswered && (
+                  <div className="text-xs font-semibold px-2 mt-2 pt-2 border-t border-[var(--border-color)]">
+                    <span className="text-slate-400 uppercase tracking-wider block text-[9px] mb-1">
+                      Correct Answers:
+                    </span>
+                    <span className="font-mono text-duo-green font-bold">
+                      {currentQuestion.blanks?.join(', ')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {currentQuestion.type === 'matching' && currentQuestion.matchingPairs && (
+              <div className="flex flex-col gap-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Tap a left concept, then tap its matching right definition:
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Left Column */}
+                  <div className="flex flex-col gap-2.5">
+                    {currentQuestion.matchingPairs.map((pair, leftIdx) => {
+                      const isSelectedLeft = matchingSelections.left === leftIdx;
+                      const hasMatchedRight = userMatches[leftIdx] !== undefined;
+
+                      return (
+                        <button
+                          key={`left-${leftIdx}`}
+                          disabled={isAnswered}
+                          onClick={() => {
+                            if (matchingSelections.right !== null) {
+                              // Pair with selected right
+                              setUserMatches(prev => ({ ...prev, [leftIdx]: matchingSelections.right! }));
+                              setMatchingSelections({ left: null, right: null });
+                            } else {
+                              setMatchingSelections(prev => ({ ...prev, left: leftIdx }));
+                            }
+                          }}
+                          className={`p-3 rounded-2xl border-2 text-xs font-bold text-left transition-all relative ${
+                            isSelectedLeft
+                              ? 'border-duo-blue bg-duo-blue/10 text-duo-blue'
+                              : hasMatchedRight
+                              ? 'border-duo-green bg-duo-green/10 text-duo-green-dark'
+                              : 'border-[var(--border-color)] bg-[var(--card-bg)] hover:border-duo-blue/50'
+                          }`}
+                        >
+                          <span>{pair.left}</span>
+                          {hasMatchedRight && (
+                            <span className="absolute top-2 right-2 text-[10px] bg-duo-green text-white px-1.5 py-0.5 rounded-full font-mono">
+                              #{userMatches[leftIdx] + 1}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="flex flex-col gap-2.5">
+                    {shuffledRights.map((rightText, rightIdx) => {
+                      const isSelectedRight = matchingSelections.right === rightIdx;
+                      const matchedByLeft = Object.keys(userMatches).find(k => userMatches[Number(k)] === rightIdx);
+
+                      return (
+                        <button
+                          key={`right-${rightIdx}`}
+                          disabled={isAnswered}
+                          onClick={() => {
+                            if (matchingSelections.left !== null) {
+                              // Pair with selected left
+                              setUserMatches(prev => ({ ...prev, [matchingSelections.left!]: rightIdx }));
+                              setMatchingSelections({ left: null, right: null });
+                            } else {
+                              setMatchingSelections(prev => ({ ...prev, right: rightIdx }));
+                            }
+                          }}
+                          className={`p-3 rounded-2xl border-2 text-xs font-bold text-left transition-all relative ${
+                            isSelectedRight
+                              ? 'border-duo-blue bg-duo-blue/10 text-duo-blue'
+                              : matchedByLeft !== undefined
+                              ? 'border-duo-green bg-duo-green/10 text-duo-green-dark'
+                              : 'border-[var(--border-color)] bg-[var(--card-bg)] hover:border-duo-blue/50'
+                          }`}
+                        >
+                          <span>{rightText}</span>
+                          {matchedByLeft !== undefined && (
+                            <span className="absolute top-2 right-2 text-[10px] bg-duo-green text-white px-1.5 py-0.5 rounded-full font-mono">
+                              #{rightIdx + 1}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -747,18 +920,27 @@ export const QuizView: React.FC<QuizViewProps> = ({
                       disabled={
                         currentQuestion.type === 'multiple_choice' 
                           ? selectedOptionIndex === null 
+                          : currentQuestion.type === 'fill_in_the_blank'
+                          ? gapAnswers.some(a => !a.trim())
+                          : currentQuestion.type === 'matching'
+                          ? Object.keys(userMatches).length < (currentQuestion.matchingPairs?.length || 1)
                           : !textInput.trim()
                       }
                       onClick={handleCheckAnswer}
                       className={`
                         w-full py-4 rounded-2xl font-black text-lg tracking-wide uppercase shadow-md transition-all max-w-sm
-                        ${(currentQuestion.type === 'multiple_choice' ? selectedOptionIndex === null : !textInput.trim())
+                        ${(
+                            currentQuestion.type === 'multiple_choice' ? selectedOptionIndex === null :
+                            currentQuestion.type === 'fill_in_the_blank' ? gapAnswers.some(a => !a.trim()) :
+                            currentQuestion.type === 'matching' ? Object.keys(userMatches).length < (currentQuestion.matchingPairs?.length || 1) :
+                            !textInput.trim()
+                          )
                           ? 'bg-duo-gray text-gray-400 border-2 border-duo-gray shadow-none cursor-not-allowed'
                           : 'btn-3d btn-3d-blue'
                         }
                       `}
                     >
-                      {currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'short_answer'
+                      {currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'short_answer' || currentQuestion.type === 'fill_in_the_blank' || currentQuestion.type === 'matching'
                         ? 'Check Answer'
                         : 'Submit Response'
                       }
@@ -804,7 +986,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                     <button
                       onClick={handleNext}
                       className={`w-full py-3.5 rounded-2xl btn-3d font-extrabold uppercase text-sm tracking-wide max-w-xs
-                        ${isCorrect ? 'btn-3d-green' : 'btn-3d-gray border-red-500! text-red-700!'}
+                        ${isCorrect ? 'btn-3d-green' : 'btn-3d-gray !border-red-500 !text-red-700'}
                       `}
                     >
                       {isCorrect 

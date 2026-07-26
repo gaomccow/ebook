@@ -45,6 +45,7 @@ import { ClassroomService } from './services/ClassroomService';
 import { StudentFeedbackModal } from './components/StudentFeedbackModal';
 import { SettingsModal } from './components/SettingsModal';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { BookFinderModal } from './components/BookFinderModal';
 
 // Default static reading material (Deep Focus guide)
 const DEFAULT_SECTIONS: SectionNode[] = [
@@ -165,6 +166,12 @@ function AppContent() {
   const [aiProvider, setAiProvider] = useState<'gemini' | 'groq'>(() => {
     return (localStorage.getItem('gamified_reader_ai_provider') as 'gemini' | 'groq') || 'gemini';
   });
+
+  const [aiTargetLanguage, setAiTargetLanguage] = useState<string>(() => {
+    return localStorage.getItem('gamified_reader_ai_target_lang') || 'en';
+  });
+
+  const [isBookFinderOpen, setIsBookFinderOpen] = useState(false);
 
   // Quiz details
   const [pendingCompletion, setPendingCompletion] = useState<{ id: string; wordCount: number } | null>(null);
@@ -571,7 +578,7 @@ function AppContent() {
     if (classCode && studentToken && activeSection) {
       ClassroomService.submitWordLookup(classCode, studentToken, text.trim().split(' ')[0], activeSection.id);
     }
-    return await GeminiClient.explainConcept(aiProvider, apiKey, text, activeBookTitle);
+    return await GeminiClient.explainConcept(aiProvider, apiKey, text, activeBookTitle, aiTargetLanguage);
   };
 
   // Sync API Key
@@ -1047,6 +1054,7 @@ function AppContent() {
       recommendations={recommendations}
       recommendationsLoading={recommendationsLoading}
       onGenerateRecommendations={handleGenerateRecommendations}
+      onOpenBookFinder={() => setIsBookFinderOpen(true)}
       apiKey={apiKey}
       onOpenSettings={() => setShowSettingsModal(true)}
       language={language}
@@ -1117,6 +1125,13 @@ function AppContent() {
       onDeleteUsefulInfo={handleDeleteUsefulInfoItem}
       onOpenLightbox={(filename) => setActiveLightboxImage(filename)}
       searchTarget={searchTarget}
+      aiProvider={aiProvider}
+      apiKey={apiKey}
+      aiTargetLanguage={aiTargetLanguage}
+      onAiTargetLanguageChange={(lang) => {
+        setAiTargetLanguage(lang);
+        localStorage.setItem('gamified_reader_ai_target_lang', lang);
+      }}
     />
   ) : null;
 
@@ -1687,6 +1702,20 @@ function AppContent() {
         </div>
       )}
 
+      {/* AI Book Finder Modal */}
+      <BookFinderModal
+        isOpen={isBookFinderOpen}
+        onClose={() => setIsBookFinderOpen(false)}
+        apiKey={apiKey}
+        aiProvider={aiProvider}
+        onAddBook={(title, author, tag) => {
+          progressionManager.addCustomBook(title, author, tag, 5, 'Comprehensive AI Book Selection');
+          setLibrary(progressionManager.getLibrary() as BookItem[]);
+          setIsBookFinderOpen(false);
+        }}
+        language={language}
+      />
+
       {/* Interactive Guided Feature Tour Spotlight & Tooltip Overlay */}
       {/* Spotlight Tour Cutout Overlay Component */}
       <SpotlightOverlay />
@@ -1697,7 +1726,11 @@ function AppContent() {
 function App() {
   return (
     <LanguageProvider>
-      <TourProvider>
+      <TourProvider onViewChange={(_view, _sidebar) => {
+        // Handle step view switches dynamically
+        const appElem = document.querySelector('.main-app-content');
+        if (appElem) appElem.scrollIntoView();
+      }}>
         <AppContent />
       </TourProvider>
     </LanguageProvider>

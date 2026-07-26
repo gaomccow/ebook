@@ -83,7 +83,16 @@ export const TRANSLATIONS = {
     font_font_space_grotesk_name: "Space Grotesk",
     font_font_space_grotesk_desc: "Maximalist, punchy, retro-futuristic styling. Great for adding raw layout attitude to structural chapter headers and quote lists.",
     font_font_lexend_name: "Lexend Deca",
-    font_font_lexend_desc: "Developed using cognitive reading tests to explicitly disrupt tracking issues and reading blocks. Maximizes fluid word velocity."
+    font_font_lexend_desc: "Developed using cognitive reading tests to explicitly disrupt tracking issues and reading blocks. Maximizes fluid word velocity.",
+    gapFillTitle: "Fill in the Blanks",
+    matchingTitle: "Connect the Matching Pairs",
+    aiExplainLanguage: "AI Target Language",
+    bookFinderTitle: "AI Book Discovery Engine",
+    aiThinking: "AI Deep Reasoning Engine",
+    studentLevel: "CEFR Level",
+    matchSuccess: "Match Found!",
+    matchTryAgain: "Try matching another pair.",
+    checkGapAnswers: "Check Answers"
   },
   fr: {
     bookshelf: "Bibliothèque",
@@ -286,7 +295,16 @@ export const TRANSLATIONS = {
     font_font_space_grotesk_name: "Space Grotesk",
     font_font_space_grotesk_desc: "Phong cách tương lai tối đa hóa, mạnh mẽ. Tuyệt vời để thêm cá tính vào các tiêu đề chương và trích dẫn.",
     font_font_lexend_name: "Lexend Deca",
-    font_font_lexend_desc: "Phát triển qua các bài kiểm tra nhận thức đọc để phá vỡ các khối cản trở và lỗi mất dấu chữ. Tối đa hóa tốc độ đọc trôi chảy."
+    font_font_lexend_desc: "Phát triển qua các bài kiểm tra nhận thức đọc để phá vỡ các khối cản trở và lỗi mất dấu chữ. Tối đa hóa tốc độ đọc trôi chảy.",
+    gapFillTitle: "Điền vào chỗ trống",
+    matchingTitle: "Nối các cặp từ tương ứng",
+    aiExplainLanguage: "Ngôn ngữ giải thích AI",
+    bookFinderTitle: "Công cụ tìm sách AI",
+    aiThinking: "Hệ thống suy luận AI",
+    studentLevel: "Cấp độ CEFR",
+    matchSuccess: "Chính xác!",
+    matchTryAgain: "Hãy thử nối lại.",
+    checkGapAnswers: "Kiểm tra đáp án"
   },
   hi: {
     bookshelf: "किताबों की अलमारी",

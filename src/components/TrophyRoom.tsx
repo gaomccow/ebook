@@ -65,6 +65,7 @@ interface TrophyRoomProps {
   recommendations: BookRecommendation[];
   recommendationsLoading: boolean;
   onGenerateRecommendations: () => void;
+  onOpenBookFinder?: () => void;
   apiKey: string;
   onOpenSettings?: () => void;
 
@@ -118,6 +119,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
   recommendations,
   recommendationsLoading,
   onGenerateRecommendations,
+  onOpenBookFinder,
   apiKey,
   onOpenSettings,
   language,
@@ -731,10 +733,22 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
 
           {/* AI Book Recommendations (Duolingo Style Panels) */}
           <div className="flex flex-col gap-4 mt-4">
-            <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-duo-yellow fill-duo-yellow/20" />
-              {t('aiRecommendations')}
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-duo-yellow fill-duo-yellow/20" />
+                {t('aiRecommendations')}
+              </h2>
+
+              {onOpenBookFinder && (
+                <button
+                  onClick={onOpenBookFinder}
+                  className="px-4 py-2 bg-duo-purple hover:bg-purple-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider btn-3d shadow-[0_3px_0_0_#581c87] flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{t('bookFinderTitle')}</span>
+                </button>
+              )}
+            </div>
 
             {recommendationsLoading ? (
               <div className="w-full bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-3xl p-6 flex flex-col items-center justify-center text-center gap-3 shadow-[0_6px_0_0_var(--border-color)]">

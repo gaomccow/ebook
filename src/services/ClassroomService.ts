@@ -26,6 +26,7 @@ export interface StudentRecord {
   xp: number;
   completedChapters: string[];
   lastActive: string;
+  level?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 }
 
 export interface WordEvent {
@@ -525,6 +526,19 @@ export class ClassroomService {
       await updateDoc(answerRef, { teacherComment: comment });
     } catch (e) {
       console.error('Error adding quiz comment:', e);
+      throw e;
+    }
+  }
+
+  /**
+   * Update a student's CEFR diversity level setting (e.g. A1, A2, B1, B2, C1, C2).
+   */
+  public static async updateStudentLevel(classCode: string, token: string, level: string): Promise<void> {
+    try {
+      const studentRef = doc(db, `classes/${classCode}/students`, token);
+      await updateDoc(studentRef, { level });
+    } catch (e) {
+      console.error('Error updating student level:', e);
       throw e;
     }
   }

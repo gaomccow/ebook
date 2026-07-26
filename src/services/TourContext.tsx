@@ -88,9 +88,25 @@ export const TOUR_STEPS: TourStep[] = [
   }
 ];
 
-export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface TourProviderProps {
+  children: React.ReactNode;
+  onViewChange?: (view: 'path' | 'reader' | 'library', sidebar?: boolean) => void;
+}
+
+export const TourProvider: React.FC<TourProviderProps> = ({ children, onViewChange }) => {
   const [isTourActive, setIsTourActive] = useState(false);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+
+  // Auto-trigger view switch when currentStep changes
+  useEffect(() => {
+    if (!isTourActive) return;
+    const step = TOUR_STEPS[activeStepIndex];
+    if (step && onViewChange) {
+      if (step.viewRequired) {
+        onViewChange(step.viewRequired, step.sidebarRequired);
+      }
+    }
+  }, [isTourActive, activeStepIndex, onViewChange]);
 
   // Check localStorage on initial launch
   useEffect(() => {
