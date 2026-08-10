@@ -569,7 +569,7 @@ For each recommended book, provide:
     }
 
     const cleanQuestions = data.questions.map((q: any) => {
-      const type = ['multiple_choice', 'short_answer', 'long_answer', 'summary'].includes(q.type)
+      const type = ['multiple_choice', 'short_answer', 'long_answer', 'summary', 'fill_in_the_blank', 'matching'].includes(q.type)
         ? q.type
         : 'multiple_choice';
 
@@ -606,6 +606,33 @@ For each recommended book, provide:
           type,
           question: questionText,
           acceptedAnswers: accepted,
+          explanation: explanationText
+        };
+      } else if (type === 'fill_in_the_blank') {
+        const sentenceWithBlanks = q.sentenceWithBlanks || '___ is correct.';
+        const blanks = Array.isArray(q.blanks) ? q.blanks.map((b: any) => String(b).trim()) : ['correct'];
+        return {
+          type,
+          question: questionText,
+          sentenceWithBlanks,
+          blanks,
+          explanation: explanationText
+        };
+      } else if (type === 'matching') {
+        const pairs = Array.isArray(q.matchingPairs) && q.matchingPairs.length > 0
+          ? q.matchingPairs.map((p: any) => ({
+              left: String(p.left || 'Term').trim(),
+              right: String(p.right || 'Definition').trim()
+            }))
+          : [
+              { left: 'Left 1', right: 'Right 1' },
+              { left: 'Left 2', right: 'Right 2' },
+              { left: 'Left 3', right: 'Right 3' }
+            ];
+        return {
+          type,
+          question: questionText,
+          matchingPairs: pairs,
           explanation: explanationText
         };
       } else {
