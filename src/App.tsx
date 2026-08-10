@@ -1124,6 +1124,7 @@ function AppContent() {
       }}
       onComplete={handleCompleteReading}
       hasVerificationActive={!!apiKey.trim()}
+      xpClaimMode={xpClaimMode}
       highlights={highlights}
       onAddHighlight={handleAddHighlight}
       onUpdateHighlight={handleUpdateNote}

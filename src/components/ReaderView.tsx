@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { GeminiClient } from '../services/GeminiClient';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -110,6 +110,23 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [isChangingChapter, setIsChangingChapter] = useState(false);
+
+  // Synchrously reset scroll position to 0 on section change to prevent carryover bottom detections
+  useLayoutEffect(() => {
+    setIsNearBottom(false);
+    const hasBookmark = bookmarks.some(b => b.sectionId === section.id);
+    if (!hasBookmark && containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+    
+    // Set transitions cooldown
+    setIsChangingChapter(true);
+    const timer = setTimeout(() => {
+      setIsChangingChapter(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [section.id]);
 
 
   // Bookmark State & Scroll Restoration
@@ -692,10 +709,10 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
 
   // Auto-claim XP handler
   useEffect(() => {
-    if (isNearBottom && xpClaimMode === 'auto' && !hasVerificationActive) {
+    if (isNearBottom && xpClaimMode === 'auto' && !hasVerificationActive && !isChangingChapter) {
       onComplete(section.wordCount);
     }
-  }, [isNearBottom, xpClaimMode, hasVerificationActive, onComplete, section.wordCount]);
+  }, [isNearBottom, xpClaimMode, hasVerificationActive, onComplete, section.wordCount, isChangingChapter]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
