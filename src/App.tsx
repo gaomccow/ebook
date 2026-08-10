@@ -46,6 +46,7 @@ import { StudentFeedbackModal } from './components/StudentFeedbackModal';
 import { SettingsModal } from './components/SettingsModal';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { BookFinderModal } from './components/BookFinderModal';
+import { OnboardingModal } from './components/OnboardingModal';
 
 // Default static reading material (Deep Focus guide)
 const DEFAULT_SECTIONS: SectionNode[] = [
@@ -287,6 +288,27 @@ function AppContent() {
   const [searchTarget, setSearchTarget] = useState<number | null>(null);
 
   const [showDock, setShowDock] = useState(true);
+
+  // Onboarding preferences
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return localStorage.getItem('gamified_reader_onboarded') !== 'true';
+  });
+  const [quizProficiency, setQuizProficiency] = useState<'easy' | 'medium' | 'strict'>(() => {
+    return (localStorage.getItem('gamified_reader_quiz_proficiency') as any) || 'medium';
+  });
+  const [xpClaimMode, setXpClaimMode] = useState<'auto' | 'manual'>(() => {
+    return (localStorage.getItem('gamified_reader_xp_mode') as any) || 'manual';
+  });
+
+  const handleOnboardingComplete = (prefs: { quizProficiency: 'easy' | 'medium' | 'strict', xpClaimMode: 'auto' | 'manual' }) => {
+    localStorage.setItem('gamified_reader_onboarded', 'true');
+    localStorage.setItem('gamified_reader_quiz_proficiency', prefs.quizProficiency);
+    localStorage.setItem('gamified_reader_xp_mode', prefs.xpClaimMode);
+    
+    setQuizProficiency(prefs.quizProficiency);
+    setXpClaimMode(prefs.xpClaimMode);
+    setShowOnboarding(false);
+  };
 
   // Synchronize root font-size with selected text size
   useEffect(() => {
@@ -1149,6 +1171,7 @@ function AppContent() {
       }}
       onSuccess={handleQuizSuccess}
       isDesktop={isDesktop}
+      quizProficiency={quizProficiency}
     />
   ) : null;
 
@@ -1590,6 +1613,7 @@ function AppContent() {
         newTotalXP={completionRewards.newTotalXP}
         streak={completionRewards.streak}
         isFirstTime={completionRewards.isFirstTime}
+        isAuto={xpClaimMode === 'auto'}
       />
 
       <StudentFeedbackModal
@@ -1719,6 +1743,12 @@ function AppContent() {
       {/* Interactive Guided Feature Tour Spotlight & Tooltip Overlay */}
       {/* Spotlight Tour Cutout Overlay Component */}
       <SpotlightOverlay />
+
+      {/* Onboarding Preferences Modal */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   );
 }

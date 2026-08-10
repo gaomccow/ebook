@@ -132,6 +132,7 @@ export const BookFinderModal: React.FC<BookFinderModalProps> = ({
                   <option value="Technology & AI">Technology & AI</option>
                   <option value="Business & Leadership">Business & Leadership</option>
                   <option value="Philosophy & Wisdom">Philosophy & Wisdom</option>
+                  <option value="Educational Textbooks">Educational Textbooks</option>
                 </select>
               </div>
 

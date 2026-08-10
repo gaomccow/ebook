@@ -67,6 +67,7 @@ interface ReaderViewProps {
   apiKey?: string;
   aiTargetLanguage?: string;
   onAiTargetLanguageChange?: (lang: string) => void;
+  xpClaimMode?: 'auto' | 'manual';
 }
 
 export const ReaderView: React.FC<ReaderViewProps> = ({
@@ -101,7 +102,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   aiProvider = 'groq',
   apiKey = '',
   aiTargetLanguage = 'en',
-  onAiTargetLanguageChange
+  onAiTargetLanguageChange,
+  xpClaimMode = 'manual',
 }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isNearBottom, setIsNearBottom] = useState(false);
@@ -653,9 +655,19 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     const handleScroll = () => {
       if (!containerRef.current) return;
       const element = containerRef.current;
-      const scrollTop = element.scrollTop;
-      const totalHeight = element.scrollHeight - element.clientHeight;
+      const { scrollTop, scrollHeight, clientHeight } = element;
       
+      if (scrollHeight - scrollTop - clientHeight < 50) {
+        if (!isNearBottom) {
+          setIsNearBottom(true);
+        }
+      } else {
+        if (isNearBottom) {
+          setIsNearBottom(false);
+        }
+      }
+      
+      const totalHeight = element.scrollHeight - element.clientHeight;
       if (totalHeight <= 0) {
         setScrollProgress(100);
         return;
@@ -663,8 +675,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       
       const progress = (scrollTop / totalHeight) * 100;
       setScrollProgress(Math.min(100, Math.max(0, progress)));
-
-
     };
 
     const container = containerRef.current;
@@ -678,7 +688,14 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         container.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [content, hasDistractionShield]);
+  }, [content, hasDistractionShield, isNearBottom]); // Re-bind on isNearBottom change for precise tracking
+
+  // Auto-claim XP handler
+  useEffect(() => {
+    if (isNearBottom && xpClaimMode === 'auto' && !hasVerificationActive) {
+      onComplete(section.wordCount);
+    }
+  }, [isNearBottom, xpClaimMode, hasVerificationActive, onComplete, section.wordCount]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

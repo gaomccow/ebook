@@ -54,7 +54,7 @@ export class EpubParser {
     }
 
     // Extract images as base64 URLs
-    const images: Record<string, string> = {};
+    const images: Record<string, string> = Object.create(null);
     const imageKeys = Object.keys(manifest).filter(key => {
       const type = manifest[key].mediaType || '';
       return type.startsWith('image/');
@@ -209,7 +209,7 @@ export class EpubParser {
     if (creatorNode) author = creatorNode.textContent || '';
 
     // Get Manifest Items
-    const manifest: Record<string, { href: string; mediaType: string }> = {};
+    const manifest: Record<string, { href: string; mediaType: string }> = Object.create(null);
     const itemNodes = doc.querySelectorAll('manifest > item');
     itemNodes.forEach(item => {
       const id = item.getAttribute('id');

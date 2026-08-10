@@ -301,7 +301,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         delete next[answerId];
         return next;
       });
-    } catch (e) {
+    } catch {
       alert('Failed to save comment.');
     } finally {
       setSavingCommentId(null);

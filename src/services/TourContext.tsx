@@ -23,67 +23,69 @@ interface TourContextType {
 
 const TourContext = createContext<TourContextType | undefined>(undefined);
 
-export const TOUR_STEPS: TourStep[] = [
+import { useLanguage } from '../context/LanguageContext';
+
+export const getTourSteps = (isVi: boolean): TourStep[] => [
   {
     targetId: 'tour-learning-path',
-    title: 'Learning Journey Map 🗺️',
-    description: 'This winding Duolingo-style tree path displays your active chapters and milestones. Click nodes to unlock new sections and test your comprehension!',
+    title: isVi ? 'Bản Đồ Học Tập 🗺️' : 'Learning Journey Map 🗺️',
+    description: isVi 
+      ? 'Đây là cây học tập theo phong cách Duolingo hiển thị các chương của bạn. Bấm vào các nút để mở khóa và làm bài kiểm tra!'
+      : 'This winding Duolingo-style tree path displays your active chapters and milestones. Click nodes to unlock new sections and test your comprehension!',
     position: 'right',
     viewRequired: 'path'
   },
   {
     targetId: 'ai-settings-btn',
-    title: 'AI Credentials Panel 🔑',
-    description: 'Configure your Gemini AI credentials here. This powers smart vocabulary translation, automated quiz questions, and inline AI explanations.',
+    title: isVi ? 'Bảng Điều Khiển AI 🔑' : 'AI Credentials Panel 🔑',
+    description: isVi 
+      ? 'Thiết lập API key của bạn tại đây để sử dụng tính năng dịch, giải thích và kiểm tra AI tự động.'
+      : 'Configure your Gemini AI credentials here. This powers smart vocabulary translation, automated quiz questions, and inline AI explanations.',
     position: 'bottom',
     viewRequired: 'path'
   },
   {
     targetId: 'tour-focus-reader',
-    title: 'Active Focus Reader 📖',
-    description: 'Read chapters inside this immersive center column. Tap text to trigger dictionary translation, voice synthesis, or AI tutor definitions.',
+    title: isVi ? 'Trình Đọc Tập Trung 📖' : 'Active Focus Reader 📖',
+    description: isVi
+      ? 'Đọc trong giao diện tập trung này. Chọn văn bản để dịch, nghe phát âm hoặc yêu cầu AI giải thích.'
+      : 'Read chapters inside this immersive center column. Tap text to trigger dictionary translation, voice synthesis, or AI tutor definitions.',
     position: 'bottom',
     viewRequired: 'reader'
   },
   {
     targetId: 'tour-bookmark-ribbon',
-    title: 'Draggable Bookmark Ribbon 🔖',
-    description: 'Drag this tab down or click it to bookmark your current reading location. The app will auto-scroll back to this exact paragraph when you return!',
+    title: isVi ? 'Thẻ Đánh Dấu Của Bạn 🔖' : 'Draggable Bookmark Ribbon 🔖',
+    description: isVi
+      ? 'Kéo hoặc bấm vào thẻ này để lưu vị trí đang đọc. Lần sau hệ thống sẽ tự động cuộn đến đúng đoạn này!'
+      : 'Drag this tab down or click it to bookmark your current reading location. The app will auto-scroll back to this exact paragraph when you return!',
     position: 'bottom',
     viewRequired: 'reader'
   },
   {
-    targetId: 'tour-focus-reader',
-    title: 'Highlighting & AI Explanations ✍️',
-    description: 'Simply select any word or sentence in the text: a context popover will appear. Click Highlight to save a margin note, or click Explain for an instant AI breakdown of terms.',
-    position: 'top',
-    viewRequired: 'reader'
-  },
-  {
     targetId: 'tour-highlights-sidebar',
-    title: 'Analytical Control Board 📊',
-    description: 'Tracks your stats, streak, highlights collection, and custom margin annotations.',
+    title: isVi ? 'Bảng Phân Tích Thông Minh 📊' : 'Analytical Control Board 📊',
+    description: isVi
+      ? 'Theo dõi số liệu, chuỗi ngày học, thẻ ghi nhớ và các đoạn đã highlight.'
+      : 'Tracks your stats, streak, flashcards, highlights collection, and custom margin annotations.',
     position: 'left',
     sidebarRequired: true
   },
   {
     targetId: 'tour-leaderboard-tab',
-    title: 'Global Leaderboard 🏆',
-    description: 'Switch to this tab to see the weekly rankings of competitors. Complete chapters and quizzes to gain XP and climb to the top!',
+    title: isVi ? 'Bảng Xếp Hạng 🏆' : 'Global Leaderboard 🏆',
+    description: isVi
+      ? 'Xem thứ hạng của bạn so với những người khác. Nhận XP bằng cách học để thăng hạng!'
+      : 'Switch to this tab to see the weekly rankings of competitors. Complete chapters and quizzes to gain XP and climb to the top!',
     position: 'bottom',
     viewRequired: 'library'
   },
   {
-    targetId: 'tour-xp-shop',
-    title: 'XP Customization Shop 🏪',
-    description: 'Spend your accumulated XP points here to buy custom environments (like Frosted Glassmorphism or Obsidian Midnight) and premium typography!',
-    position: 'top',
-    viewRequired: 'library'
-  },
-  {
     targetId: 'tour-floating-dock',
-    title: 'Navigation Command Dock ↕',
-    description: 'Switch views smoothly between your Library bookshelf, path map, active reader, highlights sidebar, and level-up stats.',
+    title: isVi ? 'Thanh Điều Hướng ↕' : 'Navigation Command Dock ↕',
+    description: isVi
+      ? 'Chuyển đổi giữa thư viện sách, bản đồ học tập, trình đọc và cài đặt dễ dàng.'
+      : 'Switch views smoothly between your Library bookshelf, path map, active reader, highlights sidebar, and level-up stats.',
     position: 'top'
   }
 ];
@@ -94,19 +96,23 @@ interface TourProviderProps {
 }
 
 export const TourProvider: React.FC<TourProviderProps> = ({ children, onViewChange }) => {
+  const { currentLang } = useLanguage();
+  const isVi = currentLang === 'vi';
+  const steps = getTourSteps(isVi);
+
   const [isTourActive, setIsTourActive] = useState(false);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
   // Auto-trigger view switch when currentStep changes
   useEffect(() => {
     if (!isTourActive) return;
-    const step = TOUR_STEPS[activeStepIndex];
+    const step = steps[activeStepIndex];
     if (step && onViewChange) {
       if (step.viewRequired) {
         onViewChange(step.viewRequired, step.sidebarRequired);
       }
     }
-  }, [isTourActive, activeStepIndex, onViewChange]);
+  }, [isTourActive, activeStepIndex, onViewChange, steps]);
 
   // Check localStorage on initial launch
   useEffect(() => {
@@ -128,7 +134,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, onViewChan
   };
 
   const nextStep = () => {
-    if (activeStepIndex < TOUR_STEPS.length - 1) {
+    if (activeStepIndex < steps.length - 1) {
       setActiveStepIndex(prev => prev + 1);
     } else {
       setIsTourActive(false);
@@ -147,14 +153,14 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, onViewChan
     localStorage.setItem('gamified_reader_tour_done', 'true');
   };
 
-  const currentStep = isTourActive ? TOUR_STEPS[activeStepIndex] : null;
+  const currentStep = isTourActive ? steps[activeStepIndex] : null;
 
   return (
     <TourContext.Provider
       value={{
         isTourActive,
         activeStepIndex,
-        steps: TOUR_STEPS,
+        steps: steps,
         startTour,
         nextStep,
         prevStep,

@@ -11,6 +11,7 @@ interface LevelUpModalProps {
   newTotalXP: number;
   streak: number;
   isFirstTime: boolean;
+  isAuto?: boolean;
 }
 
 export const LevelUpModal: React.FC<LevelUpModalProps> = ({
@@ -21,7 +22,8 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
   streakBonus,
   newTotalXP,
   streak,
-  isFirstTime
+  isFirstTime,
+  isAuto
 }) => {
   const [progressXP, setProgressXP] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -59,9 +61,19 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
   const confettiCount = 60;
   const colors = ['#58cc02', '#1cb0f6', '#ff9600', '#ffc800', '#aa3bff'];
 
+  // Auto close if isAuto is true
+  useEffect(() => {
+    if (isOpen && isAuto) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isAuto, onClose]);
+
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && !isAuto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           {/* Confetti container */}
           {showConfetti && (
@@ -221,6 +233,26 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
             >
               Continue
             </motion.button>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Auto-claim Toast Version */}
+      {isOpen && isAuto && (
+        <div className="fixed top-4 right-4 z-50 pointer-events-none">
+          <motion.div
+            initial={{ opacity: 0, x: 50, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className="bg-duo-green text-white p-4 rounded-2xl shadow-xl flex items-center gap-4 border-2 border-duo-green-dark"
+          >
+            <div className="bg-white/20 p-2 rounded-xl">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="font-black text-sm uppercase tracking-wider">Chapter Complete</p>
+              <p className="font-bold text-xs opacity-90">+{xpGained} XP Auto-claimed!</p>
+            </div>
           </motion.div>
         </div>
       )}

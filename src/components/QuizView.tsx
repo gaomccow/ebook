@@ -15,6 +15,7 @@ interface QuizViewProps {
   onBack: () => void;
   onSuccess: () => void;
   isDesktop: boolean;
+  quizProficiency?: 'easy' | 'medium' | 'strict';
 }
 
 export const QuizView: React.FC<QuizViewProps> = ({
@@ -26,7 +27,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
   images,
   onBack,
   onSuccess,
-  isDesktop
+  isDesktop,
+  quizProficiency = 'medium'
 }) => {
   const [showPassage, setShowPassage] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [isPlayingTTS, setIsPlayingTTS] = useState(false);
 
   // AI Evaluation Rigor/Proficiency Rigor
-  const [proficiency, setProficiency] = useState<'easy' | 'medium' | 'strict'>('medium');
   const [evaluationLoading, setEvaluationLoading] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<{ correct: boolean; feedback: string } | null>(null);
 
@@ -210,39 +211,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
       } else {
         logAnswer(isCorrectAnswer, answeredText);
       }
-    } else if (question.type === 'short_answer') {
-      if (!textInput.trim() || isAnswered) return;
-      
-      const userAnswerClean = textInput.trim().toLowerCase();
-      const isCorrectAnswer = question.acceptedAnswers?.some(
-        ans => userAnswerClean.includes(ans.toLowerCase()) || ans.toLowerCase().includes(userAnswerClean)
-      ) || false;
-
-      setIsCorrect(isCorrectAnswer);
-      setIsAnswered(true);
-      setHint(null);
-
-      if (!isCorrectAnswer && apiKey.trim()) {
-        setHintLoading(true);
-        try {
-          const h = await GeminiClient.generateHint(
-            aiProvider,
-            apiKey,
-            question.question,
-            textInput,
-            0,
-            [question.acceptedAnswers?.[0] || 'correct']
-          );
-          setHint(h);
-          logAnswer(isCorrectAnswer, textInput, h);
-        } catch {
-          const fallbackHint = 'Try reviewing the passage to find the specific fact.';
-          setHint(fallbackHint);
-          logAnswer(isCorrectAnswer, textInput, fallbackHint);
-        } finally {
-          setHintLoading(false);
-        }
-      }
     } else if (question.type === 'fill_in_the_blank') {
       if (gapAnswers.some(a => !a.trim()) || isAnswered) return;
       const expected = question.blanks || [];
@@ -278,8 +246,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
           apiKey,
           question.question,
           textInput,
-          question.idealAnswer || '',
-          proficiency
+          question.idealAnswer || question.acceptedAnswers?.join(', ') || '',
+          quizProficiency
         );
         setEvaluationResult(result);
         setIsCorrect(result.correct);
@@ -596,34 +564,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
               </div>
             )}
 
-            {currentQuestion.type === 'short_answer' && (
-              <div className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  disabled={isAnswered}
-                  placeholder="Type your short answer..."
-                  className={`w-full p-4 rounded-2xl border-2 font-bold focus:outline-none transition-all
-                    ${isAnswered
-                      ? isCorrect
-                        ? 'border-duo-green bg-duo-green/5 text-duo-green-dark'
-                        : 'border-red-500 bg-red-50 text-red-700'
-                      : 'border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-color)] focus:border-duo-blue'
-                    }`}
-                />
-                {isAnswered && (
-                  <div className="text-xs font-semibold px-2 mt-1">
-                    <span className="text-slate-400 uppercase tracking-wider block text-[9px] mb-1">
-                      Accepted answers:
-                    </span>
-                    <span className="font-mono text-[var(--text-color)]">
-                      {currentQuestion.acceptedAnswers?.join(', ')}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+
 
             {currentQuestion.type === 'fill_in_the_blank' && (
               <div className="flex flex-col gap-4 p-4 bg-[var(--card-bg)] rounded-2xl border-2 border-[var(--border-color)]">
@@ -757,51 +698,23 @@ export const QuizView: React.FC<QuizViewProps> = ({
               </div>
             )}
 
-            {(currentQuestion.type === 'long_answer' || currentQuestion.type === 'summary') && (
+            {(currentQuestion.type === 'long_answer' || currentQuestion.type === 'summary' || currentQuestion.type === 'short_answer') && (
               <div className="flex flex-col gap-4">
                 <textarea
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   disabled={isAnswered || evaluationLoading}
-                  rows={6}
+                  rows={currentQuestion.type === 'short_answer' ? 2 : 6}
                   placeholder={
                     currentQuestion.type === 'summary'
                       ? 'Write your summary of this section...'
+                      : currentQuestion.type === 'short_answer'
+                      ? 'Type your short answer...'
                       : 'Write your detailed analysis...'
                   }
                   className="w-full p-4 rounded-2xl border-2 border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-color)] font-bold focus:outline-none focus:border-duo-blue resize-y transition-all disabled:opacity-85 animate-none"
                 />
 
-                {/* AI Proficiency Rigor Toggles */}
-                {!isAnswered && (
-                  <div className="flex flex-col gap-2 p-3 bg-slate-200/25 dark:bg-slate-800/25 rounded-2xl border border-[var(--border-color)]/20">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                      AI Grading Strictness (Proficiency Level):
-                    </span>
-                    <div className="flex gap-2">
-                      {(['easy', 'medium', 'strict'] as const).map((lvl) => {
-                        const isSelected = proficiency === lvl;
-                        const colors = {
-                          easy: 'border-green-500 text-green-700 bg-green-500/5 hover:bg-green-500/10 shadow-[0_2px_0_0_#499914]',
-                          medium: 'border-duo-blue text-duo-blue bg-duo-blue/5 hover:bg-duo-blue/10 shadow-[0_2px_0_0_#1899d6]',
-                          strict: 'border-red-500 text-red-600 bg-red-500/5 hover:bg-red-500/10 shadow-[0_2px_0_0_#ef4444]'
-                        }[lvl];
-
-                        return (
-                          <button
-                            key={lvl}
-                            onClick={() => setProficiency(lvl)}
-                            className={`flex-1 py-1.5 rounded-xl border-2 text-[10px] font-black uppercase tracking-wider transition-all btn-3d
-                              ${isSelected ? colors : 'bg-[var(--card-bg)] border-[var(--border-color)] text-gray-400 hover:text-gray-600'}
-                            `}
-                          >
-                            {lvl === 'easy' ? '🟢 Easy (Lenient)' : lvl === 'medium' ? '🟡 Balanced' : '🔴 Strict'}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
                 {/* AI Loading status */}
                 {evaluationLoading && (
