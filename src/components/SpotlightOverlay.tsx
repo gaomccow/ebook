@@ -168,7 +168,7 @@ export const SpotlightOverlay: React.FC = () => {
             top: tooltipPos.top,
             left: tooltipPos.left,
           }}
-          className="w-80 liquid-glass-tooltip rounded-3xl p-5 pointer-events-auto z-[102] flex flex-col gap-3 text-left text-[var(--text-color)]"
+          className="w-80 bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-2xl border-4 border-indigo-500/20 pointer-events-auto z-[102] flex flex-col gap-3 text-left text-[var(--text-color)]"
         >
           {/* Header info */}
           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2.5 opacity-80">

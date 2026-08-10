@@ -28,6 +28,7 @@ interface SettingsModalProps {
   onSwitchRole?: () => void;
   language?: string;
   onLogout?: () => void;
+  onTriggerOnboarding?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -40,7 +41,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   userRole,
   onSwitchRole,
   language = 'en',
-  onLogout
+  onLogout,
+  onTriggerOnboarding
 }) => {
   const isVi = language === 'vi';
 
@@ -156,6 +158,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               )}
             </div>
+ 
+            {/* Learning Preferences Onboarding Button */}
+            {onTriggerOnboarding && (
+              <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border-2 border-indigo-100 dark:border-indigo-900/40 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black tracking-widest text-indigo-500 dark:text-indigo-400 uppercase block">
+                      {isVi ? 'Độ khó & Phần thưởng' : 'Proficiency & Rewards'}
+                    </span>
+                    <span className="text-sm font-black text-slate-800 dark:text-slate-100 mt-0.5 block">
+                      {isVi ? 'Sở thích học tập' : 'Learning Preferences'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    onClose();
+                    onTriggerOnboarding();
+                  }}
+                  className="px-4 py-2 text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-md hover:shadow-indigo-500/20 cursor-pointer"
+                >
+                  {isVi ? 'Điều chỉnh' : 'Adjust'}
+                </button>
+              </div>
+            )}
 
             {/* AI Provider Selector */}
             <div className="space-y-2">

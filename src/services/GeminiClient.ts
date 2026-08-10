@@ -695,12 +695,23 @@ ${concept}
     question: string,
     userAnswer: string,
     idealAnswer: string,
-    proficiency: 'easy' | 'medium' | 'strict'
+    proficiency: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10' | 'G11' | 'G12'
   ): Promise<{ correct: boolean; feedback: string }> {
     const strictnessGuide = {
-      easy: "Be lenient. As long as the user demonstrates a basic, general understanding of the core concept, mark it correct.",
-      medium: "Be balanced. The user must address the key concepts and be reasonably accurate. Small details or phrasing differences can be ignored, but omissions of major parts are incorrect.",
-      strict: "Be strict. The user's response must be highly accurate, comprehensive, and cover all major aspects of the ideal response. Any major gaps mean it should be marked incorrect."
+      'A1': "Beginner (A1): Be highly lenient. Mark as correct if the user grasps the absolute core concept, even if phrased very simply with minor inaccuracies.",
+      'A2': "Elementary (A2): Be lenient. Expect basic comprehension of the main idea. Ignore small details as long as the primary concept is present.",
+      'B1': "Intermediate (B1): Be balanced. Expect the user to address the key concepts accurately. Small details or phrasing differences can be ignored.",
+      'B2': "Upper Intermediate (B2): Be moderately strict. The user must address key concepts accurately and include relevant supporting details.",
+      'C1': "Advanced (C1): Be strict. The user's response must be highly accurate, comprehensive, and cover major aspects of the ideal response.",
+      'C2': "Mastery (C2): Be extremely strict. The user must provide a nuanced, fully accurate, and comprehensive response covering all aspects.",
+      'G5': "Grade 5 Native: Be lenient. Expect basic, clear comprehension of the core idea. Ignore minor mistakes.",
+      'G6': "Grade 6 Native: Be somewhat lenient. The user must address the key concepts, but phrasing can be simple.",
+      'G7': "Grade 7 Native: Be balanced. The user should capture the main idea and some detail.",
+      'G8': "Grade 8 Native: Be balanced. The user must accurately capture key concepts and supporting details.",
+      'G9': "Grade 9 Native: Be moderately strict. Expect clear articulation of concepts and logical completeness.",
+      'G10': "Grade 10 Native: Be moderately strict. Expect thorough answers that address nuances of the question.",
+      'G11': "Grade 11 Native: Be strict. The response should be comprehensive, accurate, and well-reasoned.",
+      'G12': "Grade 12+ Native: Be extremely strict. The response must be highly nuanced, completely accurate, and demonstrate full mastery of the topic."
     }[proficiency];
 
     const prompt = `

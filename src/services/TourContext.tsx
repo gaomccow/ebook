@@ -116,6 +116,11 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, onViewChan
 
   // Check localStorage on initial launch
   useEffect(() => {
+    // Auto-clear for development
+    if (process.env.NODE_ENV === 'development') {
+      localStorage.removeItem('gamified_reader_tour_done');
+    }
+
     const tourCompleted = localStorage.getItem('gamified_reader_tour_done');
     if (tourCompleted !== 'true') {
       // Allow app layout to finish mounting before launching tour

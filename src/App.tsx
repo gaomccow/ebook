@@ -293,14 +293,14 @@ function AppContent() {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return localStorage.getItem('gamified_reader_onboarded') !== 'true';
   });
-  const [quizProficiency, setQuizProficiency] = useState<'easy' | 'medium' | 'strict'>(() => {
-    return (localStorage.getItem('gamified_reader_quiz_proficiency') as any) || 'medium';
+  const [quizProficiency, setQuizProficiency] = useState<'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10' | 'G11' | 'G12'>(() => {
+    return (localStorage.getItem('gamified_reader_quiz_proficiency') as any) || 'B1';
   });
   const [xpClaimMode, setXpClaimMode] = useState<'auto' | 'manual'>(() => {
     return (localStorage.getItem('gamified_reader_xp_mode') as any) || 'manual';
   });
 
-  const handleOnboardingComplete = (prefs: { quizProficiency: 'easy' | 'medium' | 'strict', xpClaimMode: 'auto' | 'manual' }) => {
+  const handleOnboardingComplete = (prefs: { quizProficiency: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10' | 'G11' | 'G12', xpClaimMode: 'auto' | 'manual' }) => {
     localStorage.setItem('gamified_reader_onboarded', 'true');
     localStorage.setItem('gamified_reader_quiz_proficiency', prefs.quizProficiency);
     localStorage.setItem('gamified_reader_xp_mode', prefs.xpClaimMode);
@@ -1589,7 +1589,6 @@ function AppContent() {
         )}
       </AnimatePresence>
 
-      {/* Settings Modal */}
       <SettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
@@ -1601,6 +1600,10 @@ function AppContent() {
         onSwitchRole={handleSwitchRole}
         language={language}
         onLogout={handleLogout}
+        onTriggerOnboarding={() => {
+          setShowSettingsModal(false);
+          setShowOnboarding(true);
+        }}
       />
 
       {/* Level Up celebratory popup modal */}

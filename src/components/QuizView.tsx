@@ -15,7 +15,7 @@ interface QuizViewProps {
   onBack: () => void;
   onSuccess: () => void;
   isDesktop: boolean;
-  quizProficiency?: 'easy' | 'medium' | 'strict';
+  quizProficiency?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10' | 'G11' | 'G12';
 }
 
 export const QuizView: React.FC<QuizViewProps> = ({
@@ -28,7 +28,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   onBack,
   onSuccess,
   isDesktop,
-  quizProficiency = 'medium'
+  quizProficiency = 'B1'
 }) => {
   const [showPassage, setShowPassage] = useState(false);
   const [loading, setLoading] = useState(true);

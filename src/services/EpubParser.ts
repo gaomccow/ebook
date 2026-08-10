@@ -258,8 +258,8 @@ export class EpubParser {
 
     const paragraphs: string[] = [];
     
-    // Process block-level tags, paragraphs, and images (supporting h1-h6 and div)
-    const textBlocks = body.querySelectorAll('p, blockquote, li, h1, h2, h3, h4, h5, h6, img, image, div');
+    // Process block-level tags, paragraphs, and images (supporting h1-h6, div, table, figure)
+    const textBlocks = body.querySelectorAll('p, blockquote, li, h1, h2, h3, h4, h5, h6, img, image, div, table, figure, figcaption');
     
     if (textBlocks.length > 0) {
       textBlocks.forEach(block => {
@@ -270,13 +270,22 @@ export class EpubParser {
             const filename = src.split('/').pop() || src;
             paragraphs.push(`[IMG:${filename}]`);
           }
+        } else if (tagName === 'table') {
+          const rows = Array.from(block.querySelectorAll('tr'));
+          const tableLines = rows.map(row => {
+            const cells = Array.from(row.querySelectorAll('td, th'));
+            return cells.map(c => c.textContent?.trim() || '').join(' | ');
+          });
+          if (tableLines.length > 0) {
+            paragraphs.push(tableLines.join('\n'));
+          }
         } else if (
           tagName === 'p' || tagName === 'blockquote' || tagName === 'li' || 
           tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || tagName === 'h4' || tagName === 'h5' || tagName === 'h6' ||
-          tagName === 'div'
+          tagName === 'div' || tagName === 'figure' || tagName === 'figcaption'
         ) {
-          // If it is a div, only process it if it does not contain other block tags to avoid duplicate text extraction
-          if (tagName === 'div' && block.querySelector('p, div, blockquote, li, h1, h2, h3, h4, h5, h6, img, image')) {
+          // If it is a div or figure, only process it if it does not contain other block tags to avoid duplicate text extraction
+          if ((tagName === 'div' || tagName === 'figure') && block.querySelector('p, div, blockquote, li, h1, h2, h3, h4, h5, h6, img, image, table')) {
             return;
           }
           const text = block.textContent?.trim();

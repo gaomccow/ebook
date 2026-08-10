@@ -5,15 +5,22 @@ import { useLanguage } from '../context/LanguageContext';
 
 interface OnboardingModalProps {
   isOpen: boolean;
-  onComplete: (preferences: { quizProficiency: 'easy' | 'medium' | 'strict', xpClaimMode: 'auto' | 'manual' }) => void;
+  onComplete: (preferences: { quizProficiency: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10' | 'G11' | 'G12', xpClaimMode: 'auto' | 'manual' }) => void;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onComplete }) => {
   const { currentLang } = useLanguage();
   const isVi = currentLang === 'vi';
 
-  const [proficiency, setProficiency] = useState<'easy' | 'medium' | 'strict'>('medium');
+  const [proficiencyMode, setProficiencyMode] = useState<'learner' | 'native'>('learner');
+  const [proficiency, setProficiency] = useState<'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10' | 'G11' | 'G12'>('B1');
   const [xpMode, setXpMode] = useState<'auto' | 'manual'>('manual');
+
+  // Set default proficiency when switching modes
+  const handleModeSwitch = (mode: 'learner' | 'native') => {
+    setProficiencyMode(mode);
+    setProficiency(mode === 'learner' ? 'B1' : 'G8');
+  };
 
   if (!isOpen) return null;
 
@@ -44,24 +51,62 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onComp
               <Brain className="w-4 h-4 text-duo-blue" />
               {isVi ? 'Độ Khó Của AI Chấm Điểm' : 'AI Grading Strictness'}
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['easy', 'medium', 'strict'] as const).map((lvl) => {
-                const isSelected = proficiency === lvl;
-                return (
-                  <button
-                    key={lvl}
-                    onClick={() => setProficiency(lvl)}
-                    className={`py-3 px-2 rounded-xl border-2 font-bold text-xs uppercase tracking-wider transition-all btn-3d
-                      ${isSelected 
-                        ? 'border-duo-blue bg-duo-blue/10 text-duo-blue shadow-[0_3px_0_0_#1899d6]' 
-                        : 'border-[var(--border-color)] bg-[var(--card-bg)] text-slate-400 hover:border-slate-300 shadow-none'}
-                    `}
-                  >
-                    {lvl === 'easy' ? (isVi ? 'Dễ (Gợi Ý)' : 'Easy (Ideas)') : lvl === 'medium' ? (isVi ? 'Vừa' : 'Medium') : (isVi ? 'Khó (Chi Tiết)' : 'Strict')}
-                  </button>
-                );
-              })}
+            <div className="flex bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] overflow-hidden mb-3">
+              <button
+                onClick={() => handleModeSwitch('learner')}
+                className={`flex-1 py-2 text-xs font-bold transition-all uppercase tracking-wider ${proficiencyMode === 'learner' ? 'bg-duo-blue text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              >
+                {isVi ? 'Người Học (CEFR)' : 'Language Learner'}
+              </button>
+              <button
+                onClick={() => handleModeSwitch('native')}
+                className={`flex-1 py-2 text-xs font-bold transition-all uppercase tracking-wider ${proficiencyMode === 'native' ? 'bg-duo-purple text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              >
+                {isVi ? 'Bản Ngữ (Lớp 5-12+)' : 'Native (Grade 5-12+)'}
+              </button>
             </div>
+            
+            {proficiencyMode === 'learner' ? (
+              <div className="grid grid-cols-3 gap-2">
+                {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const).map((lvl) => {
+                  const isSelected = proficiency === lvl;
+                  return (
+                    <button
+                      key={lvl}
+                      onClick={() => setProficiency(lvl)}
+                      className={`py-3 px-2 rounded-xl border-2 font-bold text-xs uppercase tracking-wider transition-all btn-3d
+                        ${isSelected 
+                          ? 'border-duo-blue bg-duo-blue/10 text-duo-blue shadow-[0_3px_0_0_#1899d6]' 
+                          : 'border-[var(--border-color)] bg-[var(--card-bg)] text-slate-400 hover:border-slate-300 shadow-none'}
+                      `}
+                    >
+                      {lvl}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {(['G5', 'G6', 'G7', 'G8', 'G9', 'G10', 'G11', 'G12'] as const).map((lvl) => {
+                  const isSelected = proficiency === lvl;
+                  const label = lvl.replace('G', 'Grade ') + (lvl === 'G12' ? '+' : '');
+                  const labelVi = lvl.replace('G', 'Lớp ') + (lvl === 'G12' ? '+' : '');
+                  return (
+                    <button
+                      key={lvl}
+                      onClick={() => setProficiency(lvl)}
+                      className={`py-3 px-1 rounded-xl border-2 font-bold text-xs uppercase tracking-wider transition-all btn-3d
+                        ${isSelected 
+                          ? 'border-duo-purple bg-duo-purple/10 text-duo-purple shadow-[0_3px_0_0_#9333ea]' 
+                          : 'border-[var(--border-color)] bg-[var(--card-bg)] text-slate-400 hover:border-slate-300 shadow-none'}
+                      `}
+                    >
+                      {isVi ? labelVi : label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <p className="text-xs text-slate-500 italic">
               {isVi ? 'Chọn cách AI sẽ đánh giá câu trả lời ngắn của bạn.' : 'Choose how the AI will evaluate your short answers.'}
             </p>
