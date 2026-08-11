@@ -74,10 +74,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onComp
                     <button
                       key={lvl}
                       onClick={() => setProficiency(lvl)}
-                      className={`py-3 px-2 rounded-xl border-2 font-bold text-xs uppercase tracking-wider transition-all btn-3d
-                        ${isSelected 
-                          ? 'border-duo-blue bg-duo-blue/10 text-duo-blue shadow-[0_3px_0_0_#1899d6]' 
-                          : 'border-[var(--border-color)] bg-[var(--card-bg)] text-slate-400 hover:border-slate-300 shadow-none'}
+                      className={`py-3 px-2 font-bold text-xs uppercase tracking-wider transition-all duo-card
+                        ${isSelected ? 'duo-card-selected' : ''}
                       `}
                     >
                       {lvl}
@@ -95,10 +93,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onComp
                     <button
                       key={lvl}
                       onClick={() => setProficiency(lvl)}
-                      className={`py-3 px-1 rounded-xl border-2 font-bold text-xs uppercase tracking-wider transition-all btn-3d
-                        ${isSelected 
-                          ? 'border-duo-purple bg-duo-purple/10 text-duo-purple shadow-[0_3px_0_0_#9333ea]' 
-                          : 'border-[var(--border-color)] bg-[var(--card-bg)] text-slate-400 hover:border-slate-300 shadow-none'}
+                      className={`py-3 px-1 font-bold text-xs uppercase tracking-wider transition-all duo-card
+                        ${isSelected ? 'duo-card-selected-purple' : ''}
                       `}
                     >
                       {isVi ? labelVi : label}
@@ -121,10 +117,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onComp
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setXpMode('manual')}
-                className={`p-3 rounded-xl border-2 font-bold text-sm transition-all text-left relative btn-3d
-                  ${xpMode === 'manual'
-                    ? 'border-duo-yellow bg-duo-yellow/10 text-duo-yellow-dark shadow-[0_3px_0_0_#e6b400]'
-                    : 'border-[var(--border-color)] bg-[var(--card-bg)] text-slate-400 shadow-none'}
+                className={`p-3 text-sm transition-all text-left relative duo-card
+                  ${xpMode === 'manual' ? 'duo-card-selected-yellow' : ''}
                 `}
               >
                 <div className="flex items-center justify-between mb-1">
@@ -138,10 +132,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onComp
               
               <button
                 onClick={() => setXpMode('auto')}
-                className={`p-3 rounded-xl border-2 font-bold text-sm transition-all text-left relative btn-3d
-                  ${xpMode === 'auto'
-                    ? 'border-duo-green bg-duo-green/10 text-duo-green-dark shadow-[0_3px_0_0_#46a302]'
-                    : 'border-[var(--border-color)] bg-[var(--card-bg)] text-slate-400 shadow-none'}
+                className={`p-3 text-sm transition-all text-left relative duo-card
+                  ${xpMode === 'auto' ? 'duo-card-correct' : ''}
                 `}
               >
                 <div className="flex items-center justify-between mb-1">

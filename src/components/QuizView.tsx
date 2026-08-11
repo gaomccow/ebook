@@ -556,7 +556,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         {isAnswered && isSelected && idx !== currentQuestion.correctAnswerIndex ? '✗' : ''}
                         {!isAnswered ? String.fromCharCode(65 + idx) : ''}
                       </div>
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
