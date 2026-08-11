@@ -522,37 +522,35 @@ export const QuizView: React.FC<QuizViewProps> = ({
               <div className="flex flex-col gap-4">
                 {currentQuestion.options?.map((option, idx) => {
                   const isSelected = selectedOptionIndex === idx;
-                  let cardStyle = 'border-2 border-[var(--border-color)] bg-[var(--card-bg)] shadow-[0_4px_0_0_var(--border-color)] text-[var(--text-color)]';
+                  let cardStyle = 'duo-card';
 
                   if (isSelected) {
-                    cardStyle = 'border-2 border-duo-blue bg-duo-blue/5 text-duo-blue-dark font-bold shadow-[0_4px_0_0_#1899d6] translate-y-0.5';
+                    cardStyle = 'duo-card duo-card-selected';
                   }
 
                   if (isAnswered) {
                     const isCorrectAnswer = idx === currentQuestion.correctAnswerIndex;
-                    if (isCorrectAnswer && isCorrect) {
-                      cardStyle = 'border-2 border-duo-green bg-duo-green/5 text-duo-green-dark font-extrabold shadow-[0_4px_0_0_#46a302] translate-y-0.5';
+                    if (isCorrectAnswer) {
+                      cardStyle = 'duo-card duo-card-correct';
                     } else if (isSelected && !isCorrectAnswer) {
-                      cardStyle = 'border-2 border-red-500 bg-red-50 text-red-700 font-bold shadow-[0_4px_0_0_#ef4444] translate-y-0.5';
+                      cardStyle = 'duo-card duo-card-incorrect';
                     } else {
-                      cardStyle = 'border-2 border-[var(--border-color)] bg-[var(--card-bg)] text-gray-400 opacity-60 pointer-events-none shadow-none';
+                      cardStyle = 'duo-card opacity-40 pointer-events-none';
                     }
                   }
 
                   return (
-                    <motion.button
+                    <button
                       key={idx}
-                      whileHover={!isAnswered ? { scale: 1.01 } : {}}
-                      whileTap={!isAnswered ? { scale: 0.99 } : {}}
                       onClick={() => handleSelectOption(idx)}
                       disabled={isAnswered}
-                      className={`w-full p-4 rounded-2xl text-left font-bold transition-all text-sm flex items-center justify-between ${cardStyle}`}
+                      className={`w-full p-4 text-left font-bold transition-all text-sm flex items-center justify-between ${cardStyle}`}
                     >
                       <span>{option}</span>
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-black
-                        ${isSelected && !isAnswered ? 'border-duo-blue text-duo-blue' : 'border-gray-200 text-gray-400'}
-                        ${isAnswered && idx === currentQuestion.correctAnswerIndex ? 'border-duo-green bg-duo-green text-white' : ''}
-                        ${isAnswered && isSelected && idx !== currentQuestion.correctAnswerIndex ? 'border-red-500 bg-red-500 text-white' : ''}
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-black transition-all
+                        ${isSelected && !isAnswered ? 'border-duo-blue bg-duo-blue text-white' : 'border-slate-200 dark:border-slate-700 text-gray-400'}
+                        ${isAnswered && idx === currentQuestion.correctAnswerIndex ? 'border-duo-green bg-duo-green text-white border-duo-green' : ''}
+                        ${isAnswered && isSelected && idx !== currentQuestion.correctAnswerIndex ? 'border-red-500 bg-red-500 text-white border-red-500' : ''}
                       `}>
                         {isAnswered && idx === currentQuestion.correctAnswerIndex ? '✓' : ''}
                         {isAnswered && isSelected && idx !== currentQuestion.correctAnswerIndex ? '✗' : ''}
@@ -638,12 +636,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
                               setMatchingSelections(prev => ({ ...prev, left: leftIdx }));
                             }
                           }}
-                          className={`p-3 rounded-2xl border-2 text-xs font-bold text-left transition-all relative ${
+                          className={`p-3 text-xs font-bold text-left transition-all relative duo-card ${
                             isSelectedLeft
-                              ? 'border-duo-blue bg-duo-blue/10 text-duo-blue'
+                              ? 'duo-card-selected'
                               : hasMatchedRight
-                              ? 'border-duo-green bg-duo-green/10 text-duo-green-dark'
-                              : 'border-[var(--border-color)] bg-[var(--card-bg)] hover:border-duo-blue/50'
+                              ? 'duo-card-correct'
+                              : ''
                           }`}
                         >
                           <span>{pair.left}</span>
@@ -676,12 +674,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
                               setMatchingSelections(prev => ({ ...prev, right: rightIdx }));
                             }
                           }}
-                          className={`p-3 rounded-2xl border-2 text-xs font-bold text-left transition-all relative ${
+                          className={`p-3 text-xs font-bold text-left transition-all relative duo-card ${
                             isSelectedRight
-                              ? 'border-duo-blue bg-duo-blue/10 text-duo-blue'
+                              ? 'duo-card-selected'
                               : matchedByLeft !== undefined
-                              ? 'border-duo-green bg-duo-green/10 text-duo-green-dark'
-                              : 'border-[var(--border-color)] bg-[var(--card-bg)] hover:border-duo-blue/50'
+                              ? 'duo-card-correct'
+                              : ''
                           }`}
                         >
                           <span>{rightText}</span>

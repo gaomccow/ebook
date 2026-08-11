@@ -65,7 +65,7 @@ body {
 /* 3D Button Utility */
 .btn-3d {
   position: relative;
-  transition: transform 0.1s ease, filter 0.1s ease;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
   user-select: none;
   cursor: pointer;
   font-weight: 700;
@@ -74,23 +74,8 @@ body {
 }
 
 .btn-3d:active {
-  transform: translateY(4px);
-}
-
-.btn-3d::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -4px;
-  top: 4px;
-  border-radius: inherit;
-  z-index: -1;
-  transition: transform 0.1s ease;
-}
-
-.btn-3d:active::after {
-  transform: translateY(-4px);
+  transform: translateY(4px) !important;
+  box-shadow: none !important;
 }
 
 /* 3D Green Button */
@@ -98,9 +83,7 @@ body {
   background-color: var(--color-duo-green);
   color: white;
   border: 2px solid var(--color-duo-green-dark);
-}
-.btn-3d-green::after {
-  background-color: var(--color-duo-green-dark);
+  box-shadow: 0 4px 0 var(--color-duo-green-dark);
 }
 .btn-3d-green:hover:not(:active) {
   background-color: var(--color-duo-green-hover);
@@ -111,9 +94,7 @@ body {
   background-color: var(--color-duo-blue);
   color: white;
   border: 2px solid var(--color-duo-blue-dark);
-}
-.btn-3d-blue::after {
-  background-color: var(--color-duo-blue-dark);
+  box-shadow: 0 4px 0 var(--color-duo-blue-dark);
 }
 .btn-3d-blue:hover:not(:active) {
   background-color: var(--color-duo-blue-hover);
@@ -124,9 +105,7 @@ body {
   background-color: var(--color-duo-yellow);
   color: #3c3c3c;
   border: 2px solid var(--color-duo-yellow-dark);
-}
-.btn-3d-yellow::after {
-  background-color: var(--color-duo-yellow-dark);
+  box-shadow: 0 4px 0 var(--color-duo-yellow-dark);
 }
 .btn-3d-yellow:hover:not(:active) {
   background-color: var(--color-duo-yellow-hover);
@@ -137,9 +116,7 @@ body {
   background-color: white;
   color: #afafaf;
   border: 2px solid var(--color-duo-gray);
-}
-.btn-3d-gray::after {
-  background-color: var(--color-duo-gray);
+  box-shadow: 0 4px 0 var(--color-duo-gray);
 }
 .btn-3d-gray:hover:not(:active) {
   background-color: var(--color-duo-gray-light);
@@ -816,5 +793,123 @@ body {
 }
 [data-theme='parchment'] .btn-3d-yellow:hover {
   background-color: #e6b88a !important;
+}
+
+/* ─── 3D Option Card Utility ────────────────────────────────────────────────── */
+.duo-card {
+  position: relative;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease, background-color 0.1s ease;
+  user-select: none;
+  cursor: pointer;
+  border-radius: 1rem; /* 16px */
+  border: 2px solid var(--color-duo-gray) !important;
+  box-shadow: 0 4px 0 var(--color-duo-gray) !important;
+  background-color: var(--color-duo-card-bg, #ffffff) !important;
+}
+
+.dark .duo-card,
+[data-theme='dark'] .duo-card,
+[data-theme='glass_dark'] .duo-card {
+  border-color: #374151 !important; /* gray-700 */
+  box-shadow: 0 4px 0 #1f2937 !important;
+  background-color: #1f2937 !important; /* gray-800 */
+}
+
+/* Hover state: slightly darker/lighter border */
+.duo-card:hover:not(:disabled) {
+  border-color: var(--color-duo-gray-dark) !important;
+}
+.dark .duo-card:hover:not(:disabled),
+[data-theme='dark'] .duo-card:hover:not(:disabled) {
+  border-color: #4b5563 !important; /* gray-600 */
+}
+
+/* Active press state */
+.duo-card:active:not(:disabled) {
+  transform: translateY(4px) !important;
+  box-shadow: 0 0 0 transparent !important;
+}
+
+/* Selected state: Blue */
+.duo-card-selected {
+  transform: translateY(2px) !important;
+  border-color: var(--color-duo-blue) !important;
+  box-shadow: 0 2px 0 var(--color-duo-blue-dark) !important;
+  background-color: rgba(28, 176, 246, 0.08) !important;
+  color: #1899d6 !important;
+  font-weight: 700;
+}
+.dark .duo-card-selected,
+[data-theme='dark'] .duo-card-selected {
+  background-color: rgba(28, 176, 246, 0.15) !important;
+  color: #24bffd !important;
+}
+
+/* Correct state: Green */
+.duo-card-correct {
+  transform: translateY(2px) !important;
+  border-color: var(--color-duo-green) !important;
+  box-shadow: 0 2px 0 var(--color-duo-green-dark) !important;
+  background-color: rgba(88, 204, 2, 0.08) !important;
+  color: #46a302 !important;
+  font-weight: 800;
+}
+.dark .duo-card-correct,
+[data-theme='dark'] .duo-card-correct {
+  background-color: rgba(88, 204, 2, 0.15) !important;
+  color: #61e002 !important;
+}
+
+/* Incorrect state: Red */
+.duo-card-incorrect {
+  transform: translateY(2px) !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 2px 0 #dc2626 !important;
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  color: #b91c1c !important;
+  font-weight: 700;
+}
+.dark .duo-card-incorrect,
+[data-theme='dark'] .duo-card-incorrect {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+}
+
+/* Disabled state: Muted gray */
+.duo-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Selected state: Purple */
+.duo-card-selected-purple {
+  transform: translateY(2px) !important;
+  border-color: var(--color-duo-purple) !important;
+  box-shadow: 0 2px 0 var(--color-duo-purple-dark) !important;
+  background-color: rgba(170, 59, 255, 0.08) !important;
+  color: var(--color-duo-purple) !important;
+  font-weight: 700;
+}
+.dark .duo-card-selected-purple,
+[data-theme='dark'] .duo-card-selected-purple {
+  background-color: rgba(170, 59, 255, 0.15) !important;
+  color: #c084fc !important;
+}
+
+/* Selected state: Yellow */
+.duo-card-selected-yellow {
+  transform: translateY(2px) !important;
+  border-color: var(--color-duo-yellow-dark) !important;
+  box-shadow: 0 2px 0 var(--color-duo-yellow-dark) !important;
+  background-color: rgba(255, 200, 0, 0.08) !important;
+  color: var(--color-duo-yellow-dark) !important;
+  font-weight: 700;
+}
+.dark .duo-card-selected-yellow,
+[data-theme='dark'] .duo-card-selected-yellow {
+  background-color: rgba(255, 200, 0, 0.15) !important;
+  color: #fcd34d !important;
 }
 
