@@ -47,9 +47,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [textInput, setTextInput] = useState('');
   const [isSelfGradingMode, setIsSelfGradingMode] = useState(false);
   const [gapAnswers, setGapAnswers] = useState<string[]>([]);
-  const [matchingSelections, setMatchingSelections] = useState<{ left: number | null; right: number | null }>({ left: null, right: null });
-  const [userMatches, setUserMatches] = useState<Record<number, number>>({});
-  const [shuffledRights, setShuffledRights] = useState<string[]>([]);
 
   // TTS state
   const [isPlayingTTS, setIsPlayingTTS] = useState(false);
@@ -116,11 +113,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
     if (question.type === 'fill_in_the_blank') {
       const count = question.blanks?.length || 1;
       setGapAnswers(new Array(count).fill(''));
-    } else if (question.type === 'matching' && question.matchingPairs) {
-      const rights = question.matchingPairs.map(p => p.right);
-      setShuffledRights([...rights].sort(() => Math.random() - 0.5));
-      setUserMatches({});
-      setMatchingSelections({ left: null, right: null });
     }
   }, [currentQuestionIndex, quizData]);
 
@@ -231,18 +223,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
       setIsCorrect(isCorrectAnswer);
       setIsAnswered(true);
       logAnswer(isCorrectAnswer, gapAnswers.join(' | '));
-    } else if (question.type === 'matching') {
-      if (isAnswered || !question.matchingPairs) return;
-      let isCorrectAnswer = true;
-      question.matchingPairs.forEach((pair, leftIdx) => {
-        const matchedRightText = shuffledRights[userMatches[leftIdx]];
-        if (matchedRightText !== pair.right) {
-          isCorrectAnswer = false;
-        }
-      });
-      setIsCorrect(isCorrectAnswer);
-      setIsAnswered(true);
-      logAnswer(isCorrectAnswer, 'Matching paired');
     } else {
       // For long_answer and summary: call evaluateResponse API
       if (!textInput.trim() || isAnswered) return;
@@ -621,91 +601,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
               </div>
             )}
 
-            {currentQuestion.type === 'matching' && currentQuestion.matchingPairs && (
-              <div className="flex flex-col gap-4">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Tap a left concept, then tap its matching right definition:
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Left Column */}
-                  <div className="flex flex-col gap-2.5">
-                    {currentQuestion.matchingPairs.map((pair, leftIdx) => {
-                      const isSelectedLeft = matchingSelections.left === leftIdx;
-                      const hasMatchedRight = userMatches[leftIdx] !== undefined;
-
-                      return (
-                        <button
-                          key={`left-${leftIdx}`}
-                          disabled={isAnswered}
-                          onClick={() => {
-                            if (matchingSelections.right !== null) {
-                              // Pair with selected right
-                              setUserMatches(prev => ({ ...prev, [leftIdx]: matchingSelections.right! }));
-                              setMatchingSelections({ left: null, right: null });
-                            } else {
-                              setMatchingSelections(prev => ({ ...prev, left: leftIdx }));
-                            }
-                          }}
-                          className={`p-3 text-xs font-bold text-left transition-all relative duo-card ${
-                            isSelectedLeft
-                              ? 'duo-card-selected'
-                              : hasMatchedRight
-                              ? 'duo-card-correct'
-                              : ''
-                          }`}
-                        >
-                          <span>{pair.left}</span>
-                          {hasMatchedRight && (
-                            <span className="absolute top-2 right-2 text-[10px] bg-duo-green text-white px-1.5 py-0.5 rounded-full font-mono">
-                              #{userMatches[leftIdx] + 1}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Right Column */}
-                  <div className="flex flex-col gap-2.5">
-                    {shuffledRights.map((rightText, rightIdx) => {
-                      const isSelectedRight = matchingSelections.right === rightIdx;
-                      const matchedByLeft = Object.keys(userMatches).find(k => userMatches[Number(k)] === rightIdx);
-
-                      return (
-                        <button
-                          key={`right-${rightIdx}`}
-                          disabled={isAnswered}
-                          onClick={() => {
-                            if (matchingSelections.left !== null) {
-                              // Pair with selected left
-                              setUserMatches(prev => ({ ...prev, [matchingSelections.left!]: rightIdx }));
-                              setMatchingSelections({ left: null, right: null });
-                            } else {
-                              setMatchingSelections(prev => ({ ...prev, right: rightIdx }));
-                            }
-                          }}
-                          className={`p-3 text-xs font-bold text-left transition-all relative duo-card ${
-                            isSelectedRight
-                              ? 'duo-card-selected'
-                              : matchedByLeft !== undefined
-                              ? 'duo-card-correct'
-                              : ''
-                          }`}
-                        >
-                          <span>{rightText}</span>
-                          {matchedByLeft !== undefined && (
-                            <span className="absolute top-2 right-2 text-[10px] bg-duo-green text-white px-1.5 py-0.5 rounded-full font-mono">
-                              #{rightIdx + 1}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {(currentQuestion.type === 'long_answer' || currentQuestion.type === 'summary' || currentQuestion.type === 'short_answer') && (
               <div className="flex flex-col gap-4">
                 <textarea
@@ -843,8 +738,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
                           ? selectedOptionIndex === null 
                           : currentQuestion.type === 'fill_in_the_blank'
                           ? gapAnswers.some(a => !a.trim())
-                          : currentQuestion.type === 'matching'
-                          ? Object.keys(userMatches).length < (currentQuestion.matchingPairs?.length || 1)
                           : !textInput.trim()
                       }
                       onClick={handleCheckAnswer}
@@ -853,7 +746,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         ${(
                             currentQuestion.type === 'multiple_choice' ? selectedOptionIndex === null :
                             currentQuestion.type === 'fill_in_the_blank' ? gapAnswers.some(a => !a.trim()) :
-                            currentQuestion.type === 'matching' ? Object.keys(userMatches).length < (currentQuestion.matchingPairs?.length || 1) :
                             !textInput.trim()
                           )
                           ? 'bg-duo-gray text-gray-400 border-2 border-duo-gray shadow-none cursor-not-allowed'
@@ -861,7 +753,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         }
                       `}
                     >
-                      {currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'short_answer' || currentQuestion.type === 'fill_in_the_blank' || currentQuestion.type === 'matching'
+                      {currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'short_answer' || currentQuestion.type === 'fill_in_the_blank'
                         ? 'Check Answer'
                         : 'Submit Response'
                       }

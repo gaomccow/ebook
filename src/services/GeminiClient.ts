@@ -43,14 +43,14 @@ export class GeminiClient {
   private static async fetchGroq(apiKey: string, body: any): Promise<Response> {
     this.checkRateLimit(apiKey);
     
-    // Model fallback sequence in case specific Groq models are deprecated or restricted
+    // Model fallback sequence using currently supported Groq API models
     const fallbackModels = [
       body.model || 'llama-3.3-70b-versatile',
       'llama-3.1-70b-versatile',
+      'llama-3.1-8b-instant',
       'llama3-70b-8192',
       'llama-3.3-70b-specdec',
-      'llama3-8b-8192',
-      'gemma2-9b-it'
+      'mixtral-8x7b-32768'
     ];
     // Deduplicate candidate list while preserving initial requested model order
     const modelsToTry = Array.from(new Set(fallbackModels));
@@ -347,9 +347,9 @@ ${langInstruction}
 ${levelInstruction}
 
 The quiz must contain 4 distinct questions using different question formats tailored to reading level ${readingLevel}:
-1. "multiple_choice": A test question with exactly 4 options suited for level ${readingLevel}.
+1. "multiple_choice": A detail-oriented test question with exactly 4 options suited for level ${readingLevel}.
 2. "fill_in_the_blank": A gap fill question testing key terms at level ${readingLevel}. Provide "sentenceWithBlanks" containing "___" for missing terms, and "blanks" array containing the exact missing words.
-3. "matching": A connect-the-boxes question. Provide "matchingPairs" array of 3-4 objects, each with { "left": "Term/Concept", "right": "Definition/Match" }.
+3. "multiple_choice" (True/False): A True/False statement checking comprehension. Provide "options" array with exactly 2 options (e.g. ["True", "False"] or target language equivalent like ["Đúng", "Sai"]) and "correctAnswerIndex" (0 or 1).
 4. "short_answer" or "summary": A reflection question tailored to level ${readingLevel} with acceptedAnswers or idealAnswer.
 
 Source Text:
