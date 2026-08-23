@@ -399,11 +399,24 @@ export const PathView: React.FC<PathViewProps> = ({
 
       {/* Main Path Area */}
       <main className="flex-1 flex flex-col items-center max-w-lg mx-auto w-full px-3 mt-4">
-        {/* Playful Unit Card */}
-        <div className="path-header-card w-full bg-duo-blue rounded-2xl border-4 border-duo-blue-dark p-4 text-white mb-4 shadow-[0_5px_0_0_#1899d6]">
-          <span className="text-[10px] font-bold tracking-widest text-duo-blue-dark bg-white/20 px-2 py-0.5 rounded-full uppercase">Unit 1</span>
-          <h2 className={`font-black mt-1.5 leading-tight flex items-center gap-1.5 ${isSidebar ? 'text-lg' : 'text-2xl'}`}>
-            <BookOpen className="w-5 h-5 shrink-0 text-white fill-white/10" />
+        {/* Playful Duolingo-style Unit Card */}
+        <div className="path-header-card w-full bg-duo-blue rounded-2xl border-4 border-duo-blue-dark p-4 text-white mb-4 shadow-[0_5px_0_0_#1899d6] flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black tracking-widest text-duo-blue-dark bg-white px-2.5 py-0.5 rounded-full uppercase shadow-sm">
+              Unit 1
+            </span>
+            {!isDefaultBook && (
+              <button
+                onClick={onRestoreDefault}
+                className="px-2.5 py-0.5 bg-white/20 hover:bg-white/30 text-white font-extrabold text-[10px] tracking-wider uppercase rounded-full transition-colors"
+              >
+                Reset Default
+              </button>
+            )}
+          </div>
+          
+          <h2 className={`font-black mt-2 leading-tight flex items-center gap-2 ${isSidebar ? 'text-lg' : 'text-2xl'}`}>
+            <BookOpen className="w-6 h-6 shrink-0 text-white fill-white/10" />
             {activeBookTitle}
           </h2>
           {!isSidebar && (
@@ -414,25 +427,23 @@ export const PathView: React.FC<PathViewProps> = ({
               }
             </p>
           )}
-          {!isDefaultBook && (
-            <button
-              onClick={onRestoreDefault}
-              className="mt-3 px-3 py-1 bg-white text-duo-blue-dark font-extrabold text-[10px] tracking-wider uppercase rounded-lg hover:bg-slate-100 transition-colors border border-duo-blue shadow-[0_2px_0_0_#1cb0f6]"
-            >
-              Reset Guide
-            </button>
-          )}
         </div>
 
-        {/* EPUB Upload Panel */}
-        <div className="w-full bg-[var(--card-bg)] border-4 border-[var(--border-color)] rounded-2xl p-4 mb-6 shadow-sm">
-          {!isSidebar && (
-            <p className="text-[10px] text-gray-400 font-bold mb-3">
-              Upload your own book in `.epub` format to parse it client-side.
-            </p>
-          )}
+        {/* Streamlined Compact EPUB Upload Trigger Row */}
+        <div className="w-full duo-card p-3 mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-duo-blue/10 flex items-center justify-center shrink-0 text-duo-blue">
+              <Upload className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-black text-[var(--text-color)] truncate">
+                {isParsing ? 'Parsing EPUB...' : 'Upload Custom Book'}
+              </span>
+              <span className="text-[9px] text-gray-400 font-bold truncate">.EPUB format parsed client-side</span>
+            </div>
+          </div>
 
-          <label className="w-full flex flex-col items-center justify-center border-4 border-dashed border-duo-gray hover:border-duo-blue/40 rounded-xl p-3 cursor-pointer transition-colors relative">
+          <label className="btn-3d btn-3d-blue px-3 py-1.5 rounded-xl text-[10px] tracking-wider shrink-0 cursor-pointer flex items-center gap-1">
             <input 
               type="file" 
               accept=".epub,application/epub+zip,application/zip,application/octet-stream" 
@@ -441,30 +452,19 @@ export const PathView: React.FC<PathViewProps> = ({
               disabled={isParsing}
             />
             {isParsing ? (
-              <div className="flex flex-col items-center gap-1 py-1">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
-                >
-                  <RefreshCw className="w-6 h-6 text-duo-blue" />
-                </motion.div>
-                <span className="text-[9px] font-black text-duo-blue-dark uppercase">Parsing...</span>
-              </div>
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <div className="flex flex-col items-center gap-1 py-0.5">
-                <Upload className="w-6 h-6 text-gray-400" />
-                <span className="text-[9px] font-black text-gray-500 uppercase">Select EPUB</span>
-              </div>
+              <span>Import</span>
             )}
           </label>
-
-          {uploadError && (
-            <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-red-500 bg-red-50 p-2 rounded-lg border border-red-100">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>{uploadError}</span>
-            </div>
-          )}
         </div>
+
+        {uploadError && (
+          <div className="w-full mb-4 flex items-center gap-1.5 text-[10px] font-bold text-red-500 bg-red-50 p-2.5 rounded-xl border border-red-200">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{uploadError}</span>
+          </div>
+        )}
 
       {toc && toc.length > 0 && isSidebar && (
         <div className="sticky top-0 z-50 w-full px-4 pt-4 pb-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md mb-4 flex gap-2">
