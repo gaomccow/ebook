@@ -43,14 +43,11 @@ export class GeminiClient {
   private static async fetchGroq(apiKey: string, body: any): Promise<Response> {
     this.checkRateLimit(apiKey);
     
-    // Model fallback sequence using currently supported Groq API models
+    // Active, supported Groq production models
     const fallbackModels = [
       body.model || 'llama-3.3-70b-versatile',
-      'llama-3.1-70b-versatile',
       'llama-3.1-8b-instant',
-      'llama3-70b-8192',
-      'llama-3.3-70b-specdec',
-      'mixtral-8x7b-32768'
+      'llama-3.3-70b-specdec'
     ];
     // Deduplicate candidate list while preserving initial requested model order
     const modelsToTry = Array.from(new Set(fallbackModels));
@@ -77,14 +74,22 @@ export class GeminiClient {
         const cloned = res.clone();
         const errText = await cloned.text();
 
-        // If error indicates model non-existence or access restrictions, fall back to next model candidate
-        if (res.status === 404 || res.status === 400 || errText.includes('does not exist') || errText.includes('access to it')) {
+        // Only fall back if the error specifically relates to model non-existence or deprecation
+        const lowerErr = errText.toLowerCase();
+        const isModelError = 
+          res.status === 404 || 
+          lowerErr.includes('does not exist') || 
+          lowerErr.includes('access to it') || 
+          lowerErr.includes('decommissioned') ||
+          (res.status === 400 && lowerErr.includes('model'));
+
+        if (isModelError) {
           lastResponse = res;
           logger.warn(`Groq model ${modelCandidate} unavailable (${res.status}), trying fallback...`);
           continue;
         }
 
-        // For non-model authentication/quota errors, return immediately to display proper key/auth message
+        // For authentication, bad parameter, or rate limit errors, return immediately to show exact issue
         return res;
       } catch (e: any) {
         logger.error('Groq fetch error', e);
@@ -1068,7 +1073,7 @@ Output language for descriptions and reasons: ${filters.language || 'English'}.
       const response = await this.fetchGroq(apiKey, {
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: 'Ping test' }],
-        max_tokens: 5
+        max_completion_tokens: 5
       });
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
