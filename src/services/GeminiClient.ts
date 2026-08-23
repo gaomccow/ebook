@@ -43,10 +43,11 @@ export class GeminiClient {
   private static async fetchGroq(apiKey: string, body: any): Promise<Response> {
     this.checkRateLimit(apiKey);
     
-    // Active, supported Groq production models strictly
+    // Official Groq production models (post-Aug 2026 deprecation)
     const fallbackModels = [
-      body.model || 'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant'
+      body.model || 'openai/gpt-oss-120b',
+      'openai/gpt-oss-20b',
+      'qwen/qwen3.6-27b'
     ];
     // Deduplicate candidate list while preserving initial requested model order
     const modelsToTry = Array.from(new Set(fallbackModels));
@@ -163,7 +164,7 @@ Example format:
     } else {
       // Groq integration with fallback
       const response = await this.fetchGroq(apiKey, {
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [
           {
             role: 'system',
@@ -264,7 +265,7 @@ Respond ONLY with a JSON object exactly like this:
       return JSON.parse(textResponse);
     } else {
       const response = await this.fetchGroq(apiKey, {
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: 'You are a dictionary that outputs only JSON.' },
@@ -461,7 +462,7 @@ ${trimmedText}
 All questions must have "type" (one of the 4 types), "question" (string), and "explanation" (string).`;
       
       const response = await this.fetchGroq(apiKey, {
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },
@@ -520,7 +521,7 @@ Give a short, helpful hint (1-2 sentences max) that nudges them toward the right
     }
 
     const response = await this.fetchGroq(apiKey, {
-      model: 'llama-3.1-8b-instant',
+      model: 'openai/gpt-oss-20b',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.4,
       max_tokens: 120
@@ -607,7 +608,7 @@ For each recommended book, provide:
       const systemPrompt = `You are a book recommendation assistant. You must output a JSON object containing a "recommendations" array of exactly 3 book recommendations. Each recommendation must have: "title" (string), "author" (string), "tag" (string, single-word tag), "description" (string), and "reason" (string).`;
       
       const response = await this.fetchGroq(apiKey, {
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },
@@ -760,7 +761,7 @@ ${concept}
       return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No explanation generated.';
     } else {
       const response = await this.fetchGroq(apiKey, {
-        model: 'llama-3.1-8b-instant', // cheapest and fastest Groq model
+        model: 'openai/gpt-oss-20b', // fast Groq model
         messages: [
           { role: 'user', content: prompt }
         ]
@@ -868,7 +869,7 @@ Provide constructive feedback explaining what they did well, what was missing co
       const systemPrompt = `You are an AI grader. You must output a JSON object containing: "correct" (boolean) and "feedback" (string) explaining your grading. Guidelines: evaluate the student's response based on the strictness level and criteria provided.`;
 
       const response = await this.fetchGroq(apiKey, {
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },
@@ -938,7 +939,7 @@ Questions should help students understand the words in context, explore meaning,
       return parsed.questions || [];
     } else {
       const response = await this.fetchGroq(apiKey, {
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: 'You are an expert teacher who generates discussion questions. Respond only with JSON.' },
@@ -1024,7 +1025,7 @@ Output language for descriptions and reasons: ${filters.language || 'English'}.
     } else {
       const systemPrompt = `You are a book recommendation assistant. Return a JSON object with "thinkingTrace" (array of 3 strings) and "recommendations" (array of 3 objects with title, author, tag, description, reason).`;
       const response = await this.fetchGroq(apiKey, {
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },
@@ -1070,7 +1071,7 @@ Output language for descriptions and reasons: ${filters.language || 'English'}.
       return true;
     } else {
       const response = await this.fetchGroq(apiKey, {
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [{ role: 'user', content: 'Ping test' }],
         max_completion_tokens: 5
       });

@@ -223,10 +223,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 >
                   <span className="flex items-center gap-1.5">
                     <Cpu className="w-4 h-4" />
-                    Groq (Llama 3)
+                    Groq (GPT-OSS / Qwen)
                   </span>
                   <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400">
-                    {isVi ? 'Tốc độ cao (Llama 3.3 70B)' : 'Ultra fast (Llama 3.3 70B)'}
+                    {isVi ? 'Tốc độ cao (GPT-OSS 120B / Qwen)' : 'Ultra fast (GPT-OSS 120B / Qwen)'}
                   </span>
                 </button>
               </div>
