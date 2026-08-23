@@ -94,7 +94,7 @@ const SHOP_ITEMS: ShopItem[] = [
   { id: 't_glass', name: 'Frosted Glassmorphism', type: 'theme', cost: 10000, description: 'Modern translucent panels, subtle blurs, and a glowing backdrop.', value: 'glass_light' },
   { id: 't_illustrated', name: 'Illustrated Retro', type: 'theme', cost: 100, description: 'Warm beige backgrounds with flat, chunky mid-century vector illustrations.', value: 'illustrated' },
   { id: 't_clay', name: 'Claymorphism', type: 'theme', cost: 15000, description: 'Playful 3D clay-like cards with soft inner shadows and colorful gradients.', value: 'claymorphism' },
-  { id: 't_parchment', name: 'Parchment', type: 'theme', cost: 0, description: 'Warm, textured sepia tones reminiscent of an old library book.', value: 'parchment' },
+  { id: 't_shader', name: 'Shader Digital', type: 'theme', cost: 0, description: 'Cybernetic mesh theme with glowing cyan & violet accents.', value: 'shader' },
   { id: 'f_shield', name: 'Distraction Shield', type: 'feature', cost: 500, description: 'Auto-hides header bar when scrolling through chapters.', value: 'distraction_shield' }
 ];
 
@@ -557,7 +557,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
               return (
                 <div 
                   key={section.id} 
-                  className="flex flex-col gap-3.5 bg-white dark:bg-slate-900 border-3 border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-[0_4px_0_0_#e5e5e5] dark:shadow-[0_4px_0_0_#1e2937] relative overflow-hidden transition-all"
+                  className="flex flex-col gap-3.5 bg-[var(--card-bg)]/85 backdrop-blur-md border-3 border-[var(--border-color)] text-[var(--text-color)] rounded-3xl p-5 shadow-lg relative overflow-hidden transition-all"
                 >
                   {/* Section Title Header */}
                   <div className="flex items-center justify-between border-b-2 border-slate-100 dark:border-slate-800 pb-2.5">
@@ -882,7 +882,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                             className={`px-4 py-2 text-xs font-black uppercase rounded-2xl btn-3d
                               ${isActive 
                                 ? 'bg-duo-purple border-duo-purple-dark text-white shadow-[0_3px_0_0_#8c25e0]'
-                                : 'bg-white border-duo-gray text-gray-500 shadow-[0_3px_0_0_#e5e5e5]'
+                                : 'bg-[var(--card-bg)]/80 border-[var(--border-color)] text-[var(--text-color)] shadow-sm'
                               }
                             `}
                           >
@@ -963,7 +963,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                           className={`px-4 py-2 text-xs font-black uppercase rounded-2xl btn-3d
                             ${isActive 
                               ? 'bg-duo-blue border-duo-blue-dark text-white shadow-[0_3px_0_0_#1899d6]'
-                              : 'bg-white border-duo-gray text-gray-500 shadow-[0_3px_0_0_#e5e5e5]'
+                              : 'bg-[var(--card-bg)]/80 border-[var(--border-color)] text-[var(--text-color)] shadow-sm'
                             }
                           `}
                         >

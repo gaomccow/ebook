@@ -89,7 +89,7 @@ const STORAGE_KEY = 'gamified_reader_unified_state_v2';
 const getTodayString = () => new Date().toISOString().split('T')[0];
 const DEFAULT_USER: UserStats = {
   xp: 0, lifetimeXP: 0, spentXP: 0, level: 1, streak: 0, lastReadDate: null,
-  unlockedThemes: ['default', 'dark', 'glass_light', 'glass_dark', 'parchment'],
+  unlockedThemes: ['default', 'dark', 'glass_light', 'glass_dark', 'shader', 'parchment', 'illustrated'],
   unlockedFeatures: [], unlockedFonts: ['font_inter', 'font_opendyslexic'],
   currentTheme: 'default', currentFont: 'font_inter', currentTextSize: 'lg',
   completedSections: [],

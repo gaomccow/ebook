@@ -450,90 +450,108 @@ body {
 }
 
 
-/* FREE DARK MODE (Highly Readable Slate Dark Theme) */
+/* OVERMIND DARK MODE (Deep Obsidian & Cyan Accents) */
 [data-theme='dark'] {
-  --bg-color: #0b0f19;
-  --text-color: #f1f5f9;
+  --bg-color: #080d16;
+  --text-color: #f8fafc;
   --accent-color: #38bdf8;
-  --card-bg: #111827;
-  --border-color: #1f2937;
+  --card-bg: rgba(15, 23, 42, 0.85);
+  --border-color: #1e293b;
   --font-main: 'Outfit', sans-serif;
 }
 [data-theme='dark'] body {
-  background-color: #0b0f19;
+  background-color: #080d16;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.08) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+[data-theme='dark'] [class*="bg-[var(--card-bg)]"],
+[data-theme='dark'] .duo-card {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
 }
 [data-theme='dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
-  background-color: #1f2937 !important;
-  color: #f1f5f9 !important;
-  border: 2px solid #374151 !important;
-  box-shadow: 0 4px 0 0 #111827 !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 2px solid #334155 !important;
+  box-shadow: 0 4px 0 0 #0f172a !important;
 }
 [data-theme='dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow)::after {
-  background-color: #111827 !important;
+  background-color: #0f172a !important;
 }
 [data-theme='dark'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):active {
   transform: translateY(4px) !important;
 }
 
-/* ILLUSTRATED RETRO (Mid-Century Vector) */
+/* MODERN POP ILLUSTRATED RETRO (Vibrant Retro Pop Aesthetic) */
 [data-theme='illustrated'] {
-  --bg-color: transparent;
-  --text-color: #1e201b; /* Dark olive/black */
-  --accent-color: #e44d2e; /* Tomato red */
-  --card-bg: #fdfaf6;
-  --border-color: #1e201b;
+  --bg-color: #fffdf7;
+  --text-color: #1e1b4b;
+  --accent-color: #f59e0b;
+  --card-bg: #ffffff;
+  --border-color: #1e1b4b;
   --font-main: 'Space Grotesk', 'Outfit', sans-serif;
 }
 [data-theme='illustrated'] body {
-  background-color: #eadecd; /* Warm beige */
+  background-color: #fffdf7;
   background-image: 
-    radial-gradient(#e44d2e 1px, transparent 1px),
-    radial-gradient(#d3783a 1px, transparent 1px);
-  background-size: 60px 60px;
-  background-position: 0 0, 30px 30px;
+    radial-gradient(#f59e0b 1.5px, transparent 1.5px),
+    radial-gradient(#6366f1 1.5px, transparent 1.5px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
   background-attachment: fixed;
 }
 [data-theme='illustrated'] .path-header-card,
-[data-theme='illustrated'] [class*="bg-[var(--card-bg)]"] {
-  border: 3px solid #1e201b !important;
-  box-shadow: 6px 6px 0px #1e201b !important;
-  border-radius: 12px !important;
+[data-theme='illustrated'] [class*="bg-[var(--card-bg)]"],
+[data-theme='illustrated'] .duo-card {
+  background-color: #ffffff !important;
+  border: 3px solid #1e1b4b !important;
+  box-shadow: 5px 5px 0px 0px #1e1b4b !important;
+  border-radius: 20px !important;
 }
 [data-theme='illustrated'] .path-node {
-  border-radius: 8px !important;
+  border-radius: 12px !important;
 }
 [data-theme='illustrated'] h1,
 [data-theme='illustrated'] h2,
 [data-theme='illustrated'] h3 {
-  color: #1e201b !important;
+  color: #1e1b4b !important;
   font-weight: 800 !important;
-  text-transform: uppercase;
 }
 [data-theme='illustrated'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):not([class*="bg-duo-"]) {
-  background-color: #fdfaf6 !important;
-  color: #e44d2e !important;
-  border: 3px solid #1e201b !important;
-  box-shadow: 4px 4px 0 0 #1e201b !important;
-  border-radius: 8px !important;
+  background-color: #ffffff !important;
+  color: #1e1b4b !important;
+  border: 3px solid #1e1b4b !important;
+  box-shadow: 4px 4px 0 0 #1e1b4b !important;
+  border-radius: 14px !important;
   font-weight: 800 !important;
 }
 [data-theme='illustrated'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):not([class*="bg-duo-"])::after {
   display: none !important;
 }
 [data-theme='illustrated'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):not([class*="bg-duo-"]):hover {
-  background-color: #eadecd !important;
+  background-color: #fef3c7 !important;
 }
 [data-theme='illustrated'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow):not([class*="bg-duo-"]):active {
   transform: translate(4px, 4px) !important;
-  box-shadow: 0 0 0 0 #1e201b !important;
+  box-shadow: 0 0 0 0 #1e1b4b !important;
 }
 
 [data-theme='illustrated'] .btn-3d[class*="bg-duo-"],
 [data-theme='illustrated'] .btn-3d-green,
 [data-theme='illustrated'] .btn-3d-blue,
 [data-theme='illustrated'] .btn-3d-yellow {
-  border: 3px solid #1e201b !important;
-  box-shadow: 4px 4px 0 0 #1e201b !important;
+  border: 3px solid #1e1b4b !important;
+  box-shadow: 4px 4px 0 0 #1e1b4b !important;
+}
+[data-theme='illustrated'] .btn-3d[class*="bg-duo-"]:active,
+[data-theme='illustrated'] .btn-3d-green:active,
+[data-theme='illustrated'] .btn-3d-blue:active,
+[data-theme='illustrated'] .btn-3d-yellow:active {
+  transform: translate(4px, 4px) !important;
+  box-shadow: 0 0 0 0 #1e1b4b !important;
 }
 [data-theme='illustrated'] .btn-3d[class*="bg-duo-"]:active,
 [data-theme='illustrated'] .btn-3d-green:active,
@@ -712,66 +730,57 @@ body {
   color: var(--text-color) !important;
 }
 
-/* PARCHMENT THEME (Vintage Book / Sepia Style) */
+/* SHADER DIGITAL THEME (Cybernetic Grid & Neon Accents - Shader on Mobbin) */
+[data-theme='shader'],
 [data-theme='parchment'] {
-  --bg-color: #ebdcb9; /* Warm vintage backdrop */
-  --text-color: #2d2013; /* Espresso dark brown text */
-  --accent-color: #8c5e3c; /* Antique leather brown */
-  --card-bg: #f4ebd0; /* Clean parchment paper card */
-  --border-color: #d1c29d; /* Soft sepia border */
-  --font-main: 'EB Garamond', 'EB_Garamond', Georgia, serif;
+  --bg-color: #030712;
+  --text-color: #f8fafc;
+  --accent-color: #06b6d4; /* Electric cyan */
+  --card-bg: rgba(15, 23, 42, 0.8);
+  --border-color: rgba(6, 182, 212, 0.35);
+  --font-main: 'JetBrains Mono', 'Space Grotesk', monospace, sans-serif;
 }
 
+[data-theme='shader'] body,
 [data-theme='parchment'] body {
-  background-color: var(--bg-color);
-  background-image: radial-gradient(circle at center, rgba(255,255,255,0.4) 0%, rgba(140, 94, 60, 0.08) 100%) !important;
+  background-color: #030712;
+  background-image: 
+    linear-gradient(rgba(6, 182, 212, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.06) 1px, transparent 1px),
+    radial-gradient(at 50% 0%, rgba(168, 85, 247, 0.25) 0px, transparent 70%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
+  background-attachment: fixed;
 }
 
-/* Make cards look like authentic clean book pages resting on the background */
+[data-theme='shader'] [class*="bg-[var(--card-bg)]"],
+[data-theme='shader'] .duo-card,
 [data-theme='parchment'] [class*="bg-[var(--card-bg)]"],
-[data-theme='parchment'] .path-header-card {
-  background-color: var(--card-bg) !important;
-  border: 1px solid rgba(140, 94, 60, 0.1) !important;
-  box-shadow: 12px 16px 32px rgba(45, 32, 19, 0.06), inset 4px 4px 12px 0px rgba(255, 255, 255, 0.6), inset -6px -6px 16px 0px rgba(140, 94, 60, 0.05) !important;
-  border-radius: 24px !important;
+[data-theme='parchment'] .duo-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 27, 75, 0.5) 100%) !important;
+  border: 1px solid rgba(6, 182, 212, 0.35) !important;
+  box-shadow: 0 0 24px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  border-radius: 20px !important;
 }
 
-/* Apply beautiful serif to headings under parchment */
+[data-theme='shader'] h1,
+[data-theme='shader'] h2,
+[data-theme='shader'] h3,
 [data-theme='parchment'] h1,
 [data-theme='parchment'] h2,
-[data-theme='parchment'] h3,
-[data-theme='parchment'] .font-black {
-  font-family: 'EB Garamond', Georgia, serif !important;
-  font-weight: 700 !important;
-  color: var(--text-color) !important;
+[data-theme='parchment'] h3 {
+  color: #f8fafc !important;
+  font-family: 'Space Grotesk', sans-serif !important;
 }
 
-/* Outline 3D Button style for Parchment (antique typography look) */
-[data-theme='parchment'] .btn-3d {
-  background-color: #fcf9f2 !important;
-  color: #2d2013 !important;
-  border: 2px solid #2d2013 !important;
-  box-shadow: 3px 3px 0px #2d2013 !important;
-  border-radius: 6px !important;
-  font-family: 'EB Garamond', Georgia, serif !important;
-  font-weight: 700 !important;
-  text-transform: none !important;
-  transition: all 0.15s ease-in-out !important;
-}
-
-[data-theme='parchment'] .btn-3d::after {
-  display: none !important; /* Disable standard Duolingo 3D shadow */
-}
-
-[data-theme='parchment'] .btn-3d:hover {
-  background-color: #ebdcb9 !important;
-  box-shadow: 4px 4px 0px #2d2013 !important;
-  transform: translate(-1px, -1px) !important;
-}
-
-[data-theme='parchment'] .btn-3d:active {
-  box-shadow: 0px 0px 0px #2d2013 !important;
-  transform: translate(3px, 3px) !important;
+[data-theme='shader'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow),
+[data-theme='parchment'] .btn-3d:not(.btn-3d-green):not(.btn-3d-blue):not(.btn-3d-yellow) {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%) !important;
+  color: #06b6d4 !important;
+  border: 1px solid rgba(6, 182, 212, 0.4) !important;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.2) !important;
+  border-radius: 12px !important;
+  text-transform: uppercase !important;
+  font-weight: 800 !important;
 }
 
 /* Green (Success) Button Override */

@@ -646,14 +646,42 @@ For each recommended book, provide:
       const explanationText = q.explanation || 'Refer back to the text.';
 
       if (type === 'multiple_choice') {
-        const cleanOptions = Array.isArray(q.options) 
-          ? q.options.slice(0, 4)
-          : ['Option A', 'Option B', 'Option C', 'Option D'];
+        let rawOptions = Array.isArray(q.options) ? q.options.map((o: any) => String(o).trim()) : [];
         
-        while (cleanOptions.length < 4) {
-          cleanOptions.push(`Option ${String.fromCharCode(65 + cleanOptions.length)}`);
+        // Detect if this is a True/False or 2-option question
+        const isTrueFalse = rawOptions.length === 2 || 
+          rawOptions.some((o: string) => /^(true|false|yes|no|đúng|sai|đ|s)$/i.test(o)) ||
+          /true\/false|true or false|yes\/no|đúng\/sai/i.test(questionText);
+
+        if (isTrueFalse) {
+          let cleanOptions = rawOptions.slice(0, 2);
+          if (cleanOptions.length === 0) {
+            cleanOptions = ['True', 'False'];
+          } else if (cleanOptions.length === 1) {
+            cleanOptions.push(cleanOptions[0].toLowerCase().includes('true') ? 'False' : 'True');
+          }
+          let correctIndex = Math.floor(Number(q.correctAnswerIndex));
+          if (isNaN(correctIndex) || correctIndex < 0 || correctIndex > 1) {
+            correctIndex = 0;
+          }
+          return {
+            type,
+            question: questionText,
+            options: cleanOptions,
+            correctAnswerIndex: correctIndex,
+            explanation: explanationText
+          };
         }
 
+        // Standard 4-option multiple choice
+        const cleanOptions = rawOptions.slice(0, 4);
+        if (cleanOptions.length === 0) {
+          cleanOptions.push('Option A', 'Option B', 'Option C', 'Option D');
+        } else {
+          while (cleanOptions.length < 4) {
+            cleanOptions.push(`Option ${String.fromCharCode(65 + cleanOptions.length)}`);
+          }
+        }
         let correctIndex = Math.floor(Number(q.correctAnswerIndex));
         if (isNaN(correctIndex) || correctIndex < 0 || correctIndex > 3) {
           correctIndex = 0;
