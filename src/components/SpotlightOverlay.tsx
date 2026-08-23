@@ -168,16 +168,16 @@ export const SpotlightOverlay: React.FC = () => {
             top: tooltipPos.top,
             left: tooltipPos.left,
           }}
-          className="w-80 bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-2xl border-4 border-indigo-500/20 pointer-events-auto z-[102] flex flex-col gap-3 text-left text-[var(--text-color)]"
+          className="w-84 bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-[0_12px_30px_rgba(0,0,0,0.18)] border-4 border-duo-blue/40 dark:border-duo-blue/60 pointer-events-auto z-[102] flex flex-col gap-3.5 text-left text-slate-800 dark:text-slate-100"
         >
           {/* Header info */}
-          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2.5 opacity-80">
-            <span className="text-[10px] bg-indigo-500/25 border border-indigo-500/50 text-indigo-300 px-2 py-0.5 rounded-full font-extrabold font-mono tracking-wider">
+          <div className="flex items-center justify-between border-b-2 border-slate-100 dark:border-slate-800 pb-3">
+            <span className="text-[10px] bg-duo-yellow text-slate-900 px-2.5 py-0.5 rounded-full font-black tracking-wider border border-duo-yellow-dark shadow-xs">
               STEP {activeStepIndex + 1} OF {steps.length}
             </span>
             <button
               onClick={skipTour}
-              className="p-1 hover:bg-slate-200/10 rounded-full text-[var(--text-color)] opacity-60 hover:opacity-100 transition-colors"
+              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
               title="Skip Tour"
             >
               <X className="w-4 h-4" />
@@ -185,11 +185,11 @@ export const SpotlightOverlay: React.FC = () => {
           </div>
 
           {/* Title and Instruction Body */}
-          <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-black text-inherit uppercase tracking-wider">
+          <div className="flex flex-col gap-1.5">
+            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
               {currentStep.title}
             </h3>
-            <p className="text-xs text-inherit opacity-85 leading-relaxed font-medium">
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-semibold">
               {currentStep.description}
             </p>
           </div>
@@ -197,14 +197,14 @@ export const SpotlightOverlay: React.FC = () => {
           {/* Navigation Controls Footer */}
           <div className="flex items-center justify-between pt-2">
             {/* Step Dots Indicator */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {steps.map((_, idx) => (
                 <span
                   key={idx}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                  className={`h-2 rounded-full transition-all duration-300 ${
                     idx === activeStepIndex 
-                      ? 'w-4 bg-indigo-500' 
-                      : 'w-1.5 bg-slate-400/40'
+                      ? 'w-5 bg-duo-blue shadow-xs' 
+                      : 'w-2 bg-slate-200 dark:bg-slate-700'
                   }`}
                 />
               ))}
@@ -214,7 +214,7 @@ export const SpotlightOverlay: React.FC = () => {
               {activeStepIndex > 0 && (
                 <button
                   onClick={prevStep}
-                  className="p-1.5 border border-[var(--border-color)] text-inherit rounded-xl hover:bg-slate-200/10 cursor-pointer transition-all flex items-center justify-center"
+                  className="btn-3d btn-3d-gray px-2.5 py-1 text-xs rounded-xl flex items-center justify-center"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -223,14 +223,14 @@ export const SpotlightOverlay: React.FC = () => {
               {activeStepIndex < steps.length - 1 ? (
                 <button
                   onClick={nextStep}
-                  className="px-4 py-1.5 bg-indigo-600 border border-indigo-500 text-white text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-indigo-500 cursor-pointer shadow-md shadow-indigo-600/20 transition-all flex items-center gap-1"
+                  className="btn-3d btn-3d-blue px-4 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-xl text-white flex items-center gap-1"
                 >
                   Next <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               ) : (
                 <button
                   onClick={skipTour}
-                  className="px-4 py-1.5 bg-emerald-600 border border-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-emerald-500 cursor-pointer shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1"
+                  className="btn-3d btn-3d-green px-4 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-xl text-white flex items-center gap-1"
                 >
                   Finish <Check className="w-3.5 h-3.5" />
                 </button>

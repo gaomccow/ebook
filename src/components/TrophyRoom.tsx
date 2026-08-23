@@ -557,11 +557,10 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
               return (
                 <div 
                   key={section.id} 
-                  className="flex flex-col gap-3 bg-[#fbf5ee] dark:bg-[#1a110b] border-4 border-[#8b5a2b] dark:border-[#523319] rounded-3xl p-5 shadow-lg relative overflow-hidden"
+                  className="flex flex-col gap-3.5 bg-white dark:bg-slate-900 border-3 border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-[0_4px_0_0_#e5e5e5] dark:shadow-[0_4px_0_0_#1e2937] relative overflow-hidden transition-all"
                 >
-                  <div className="absolute inset-0 bg-[radial-gradient(#8b5a2b_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.03] pointer-events-none" />
                   {/* Section Title Header */}
-                  <div className="flex items-center justify-between border-b border-[var(--border-color)]/20 pb-2">
+                  <div className="flex items-center justify-between border-b-2 border-slate-100 dark:border-slate-800 pb-2.5">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <Folder className={`w-4 h-4 shrink-0 ${isUncategorized ? 'text-gray-400' : 'text-duo-orange'}`} />
                       {isEditing ? (
@@ -580,7 +579,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                                 }
                               }
                             }}
-                            className="px-2 py-1 rounded-lg border-2 border-[var(--border-color)] font-bold text-xs focus:outline-none bg-[var(--card-bg)] text-[var(--text-color)]"
+                            className="px-2 py-1 rounded-lg border-2 border-slate-200 dark:border-slate-700 font-bold text-xs focus:outline-none bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
                           />
                           <button onClick={() => {
                             if (editingSectionName.trim() && onRenameLibrarySection) {
@@ -595,7 +594,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                           </button>
                         </div>
                       ) : (
-                        <span className="font-black text-xs uppercase tracking-wider text-[var(--text-color)]/90 truncate">
+                        <span className="font-black text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100 truncate">
                           {section.name} ({books.length})
                         </span>
                       )}
@@ -629,7 +628,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
 
                   {/* Virtual Bookshelf containing standing spines */}
                   {books.length === 0 ? (
-                    <div className="text-center py-8 text-[10px] font-bold text-gray-400 uppercase tracking-wide border-2 border-dashed border-[var(--border-color)]/30 rounded-2xl bg-slate-500/5 my-4">
+                    <div className="text-center py-8 text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-800/40 my-3">
                       Empty Shelf
                     </div>
                   ) : (
@@ -722,9 +721,9 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                       })}
                     </div>
                   )}
-                  {/* Wooden Shelf Plank at the bottom */}
-                  <div className="h-5 bg-[#b57c4a] dark:bg-[#6e4325] rounded-xl border-b-6 border-[#704825] dark:border-[#422511] -mx-5 -mb-5 shadow-[inset_0_2px_4px_rgba(255,255,255,0.2)] flex items-center justify-center relative z-10">
-                    <div className="w-1/3 h-1 bg-white/10 rounded-full" />
+                  {/* Playful Duolingo Shelf Accent Plank at the bottom */}
+                  <div className="h-4 bg-amber-400 dark:bg-amber-600 rounded-xl border-b-4 border-amber-600 dark:border-amber-800 -mx-5 -mb-5 flex items-center justify-center relative z-10 shadow-xs">
+                    <div className="w-1/3 h-1 bg-white/20 rounded-full" />
                   </div>
                 </div>
               );
