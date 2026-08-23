@@ -43,11 +43,10 @@ export class GeminiClient {
   private static async fetchGroq(apiKey: string, body: any): Promise<Response> {
     this.checkRateLimit(apiKey);
     
-    // Active, supported Groq production models
+    // Active, supported Groq production models strictly
     const fallbackModels = [
       body.model || 'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'llama-3.3-70b-specdec'
+      'llama-3.1-8b-instant'
     ];
     // Deduplicate candidate list while preserving initial requested model order
     const modelsToTry = Array.from(new Set(fallbackModels));
@@ -1077,7 +1076,10 @@ Output language for descriptions and reasons: ${filters.language || 'English'}.
       });
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
-        const msg = errJson.error?.message || `Groq API error (${response.status})`;
+        let msg = errJson.error?.message || `Groq API error (${response.status})`;
+        if (msg.includes('does not exist') || msg.includes('access to it')) {
+          msg = `${msg}. Please verify your Groq API key at https://console.groq.com/keys`;
+        }
         throw new Error(msg);
       }
       return true;
