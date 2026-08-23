@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, AlertTriangle, HelpCircle, Loader2, X, BookOpen
 import { GeminiClient } from '../services/GeminiClient';
 import type { QuizData, QuizQuestion } from '../services/GeminiClient';
 import { ClassroomService } from '../services/ClassroomService';
+import { useLanguage } from '../context/LanguageContext';
 
 interface QuizViewProps {
   apiKey: string;
@@ -30,6 +31,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   isDesktop,
   quizProficiency = 'B1'
 }) => {
+  const { currentLang } = useLanguage();
   const [showPassage, setShowPassage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +78,15 @@ export const QuizView: React.FC<QuizViewProps> = ({
             format = classData.quizFormat;
           }
         }
-        const data = await GeminiClient.generateQuiz(aiProvider, apiKey, sectionTitle, sectionContent, format);
+        const data = await GeminiClient.generateQuiz(
+          aiProvider, 
+          apiKey, 
+          sectionTitle, 
+          sectionContent, 
+          format,
+          currentLang,
+          quizProficiency
+        );
         if (active) {
           setQuizData(data);
           setLoading(false);

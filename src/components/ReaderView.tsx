@@ -674,12 +674,12 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       const element = containerRef.current;
       const { scrollTop, scrollHeight, clientHeight } = element;
       
-      if (scrollHeight - scrollTop - clientHeight < 50) {
+      if (scrollHeight - scrollTop - clientHeight < 120) {
         if (!isNearBottom) {
           setIsNearBottom(true);
         }
       } else {
-        if (isNearBottom) {
+        if (isNearBottom && (scrollHeight - scrollTop - clientHeight > 160)) {
           setIsNearBottom(false);
         }
       }
@@ -1164,7 +1164,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 
                 <button
                   onClick={() => onComplete(section.wordCount)}
-                  className="w-full py-4 rounded-2xl btn-3d btn-3d-green text-lg font-bold tracking-wide shadow-[0_4px_0_0_#46a302] hover:shadow-[0_4px_0_0_#46a302] max-w-xs"
+                  className="w-full py-4 rounded-2xl btn-3d btn-3d-green text-lg font-bold tracking-wide shadow-[0_4px_0_0_#46a302] hover:shadow-[0_4px_0_0_#46a302] max-w-xs cursor-pointer"
                 >
                   {hasVerificationActive 
                     ? (language === 'vi' ? "Bắt đầu bài kiểm tra AI" : "Start AI Quiz") 
@@ -1173,14 +1173,22 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 </button>
               </motion.div>
             ) : (
-              <div className="w-full text-center opacity-50 font-bold py-4">
-                <p className="text-xs uppercase tracking-widest animate-pulse">
+              <div 
+                onClick={() => {
+                  if (containerRef.current) {
+                    containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
+                    setIsNearBottom(true);
+                  }
+                }}
+                className="w-full text-center opacity-75 hover:opacity-100 font-bold py-6 cursor-pointer transition-opacity bg-slate-500/5 hover:bg-slate-500/10 rounded-2xl border-2 border-dashed border-[var(--border-color)]/30"
+              >
+                <p className="text-xs uppercase tracking-widest animate-pulse font-black">
                   {currentTheme === 'retro' 
                     ? 'SYS:SCROLL_DOWN_TO_COMPLETE' 
-                    : (language === 'vi' ? 'Cuộn xuống hoặc nhấn Space để hoàn thành' : 'Scroll or press Space to complete section')
+                    : (language === 'vi' ? 'Nhấn vào đây hoặc cuộn xuống để hoàn thành' : 'Click here or scroll down to complete section')
                   }
                 </p>
-                <span className="inline-block mt-2 text-xl">👇</span>
+                <span className="inline-block mt-2 text-xl animate-bounce">👇</span>
               </div>
             )}
           </div>

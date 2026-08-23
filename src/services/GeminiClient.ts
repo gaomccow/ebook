@@ -42,22 +42,60 @@ export class GeminiClient {
 
   private static async fetchGroq(apiKey: string, body: any): Promise<Response> {
     this.checkRateLimit(apiKey);
-    try {
-      return await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify(body)
-      });
-    } catch (e: any) {
-      logger.error('Groq fetch error', e);
-      if (e.message?.includes('Failed to fetch')) {
-        throw new Error('Network error or CORS blocked. Note: Groq blocks direct browser API calls. Please use Google Gemini instead.');
+    
+    // Model fallback sequence in case specific Groq models are deprecated or restricted
+    const fallbackModels = [
+      body.model || 'llama-3.3-70b-versatile',
+      'llama-3.1-70b-versatile',
+      'llama3-70b-8192',
+      'llama-3.3-70b-specdec',
+      'llama3-8b-8192',
+      'gemma2-9b-it'
+    ];
+    // Deduplicate candidate list while preserving initial requested model order
+    const modelsToTry = Array.from(new Set(fallbackModels));
+
+    let lastResponse: Response | null = null;
+
+    for (const modelCandidate of modelsToTry) {
+      const candidateBody = { ...body, model: modelCandidate };
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(candidateBody)
+        });
+
+        if (res.ok) {
+          return res;
+        }
+
+        // Clone response to inspect error without consuming original response stream
+        const cloned = res.clone();
+        const errText = await cloned.text();
+
+        // If error indicates model non-existence or access restrictions, fall back to next model candidate
+        if (res.status === 404 || res.status === 400 || errText.includes('does not exist') || errText.includes('access to it')) {
+          lastResponse = res;
+          logger.warn(`Groq model ${modelCandidate} unavailable (${res.status}), trying fallback...`);
+          continue;
+        }
+
+        // For non-model authentication/quota errors, return immediately to display proper key/auth message
+        return res;
+      } catch (e: any) {
+        logger.error('Groq fetch error', e);
+        if (e.message?.includes('Failed to fetch')) {
+          throw new Error('Network error or CORS blocked. Note: Groq blocks direct browser API calls. Please use Google Gemini instead.');
+        }
+        throw e;
       }
-      throw e;
     }
+
+    return lastResponse!;
   }
 
 
@@ -119,30 +157,22 @@ Example format:
       return JSON.parse(cleanText);
 
     } else {
-      // Groq integration
-      const url = 'https://api.groq.com/openai/v1/chat/completions';
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            {
-              role: 'system',
-              content: 'You output only valid JSON arrays.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.3,
-          max_completion_tokens: 1024,
-          response_format: { type: 'json_object' } // Wait, Groq response_format 'json_object' requires returning an object. Let's wrap the array in an object for Groq.
-        })
+      // Groq integration with fallback
+      const response = await this.fetchGroq(apiKey, {
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: 'You output only valid JSON arrays.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_completion_tokens: 1024,
+        response_format: { type: 'json_object' }
       });
 
       if (!response.ok) {
@@ -263,17 +293,48 @@ Respond ONLY with a JSON object exactly like this:
     title: string,
     text: string,
     quizFormat: 'binary' | 'mixed' = 'mixed',
-    targetLanguage: string = 'en'
+    targetLanguage: string = 'en',
+    readingLevel: string = 'B1'
   ): Promise<QuizData> {
     const trimmedText = text.length > 5000 ? text.substring(0, 5000) + '...' : text;
     const langInstruction = targetLanguage && targetLanguage !== 'en' 
       ? `Output the questions, options, blanks, matching pairs, and explanations in target language code: ${targetLanguage}.`
       : `Output questions and explanations in English.`;
 
+    const levelGuideMap: Record<string, string> = {
+      'Pre-A1': 'Pre-A1 Beginner: Use extremely simple words, 3-5 word sentences, and direct picture/basic vocabulary recall.',
+      'A1': 'A1 Elementary: Use simple sentences, basic everyday vocabulary, and direct explicit facts.',
+      'A1+': 'A1+ High Beginner: Use simple story structures and accessible, common vocabulary.',
+      'A2': 'A2 Waystage: Use familiar routine vocabulary, straightforward narrative facts, and basic concepts.',
+      'A2+': 'A2+ High Elementary: Use simple non-fiction concepts and clear connected sentence structures.',
+      'B1': 'B1 Intermediate: Standard reading level with moderate vocabulary, main ideas, and clear explicit points.',
+      'B1+': 'B1+ High Intermediate: Inferential questions, complex arguments, and structured vocabulary.',
+      'B2': 'B2 Upper Intermediate: Technical nuances, analytical reasoning, and sophisticated vocabulary.',
+      'B2+': 'B2+ High Upper-Intermediate: Dense text analysis, implied meanings, and deep critical evaluation.',
+      'C1': 'C1 Advanced: Academic literature level, demanding vocabulary, and complex conceptual analysis.',
+      'C1+': 'C1+ High Advanced: Technical treatises, subtle rhetoric, and deep analytical synthesis.',
+      'C2': 'C2 Mastery: Native-level fluency, classic literature, and intricate nuanced comprehension.',
+      'C2+': 'C2+ Native Academic: Specialized scholarly research level with highly dense academic analysis.',
+      'G5': 'Grade 5 Native: Elementary reading level with clear vocabulary and basic main ideas.',
+      'G6': 'Grade 6 Native: Middle school reading level with basic inference.',
+      'G7': 'Grade 7 Native: Middle school reading with structured analytical comprehension.',
+      'G8': 'Grade 8 Native: Advanced middle school reading with detailed text analysis.',
+      'G9': 'Grade 9 Native: High school freshman literature and non-fiction analysis.',
+      'G10': 'Grade 10 Native: High school sophomore critical and analytical reading.',
+      'G11': 'Grade 11 Native: High school junior advanced reasoning and rhetoric.',
+      'G12': 'Grade 12+ Native: College preparatory academic reading and rhetoric.'
+    };
+
+    const levelInfo = levelGuideMap[readingLevel] || `Proficiency Level ${readingLevel}`;
+    const levelInstruction = `Target CEFR / Grade Reading Level: "${readingLevel}" (${levelInfo}). Tailor all question phrasing, vocabulary choices, option complexity, and explanation depth specifically to suit a reader at this "${readingLevel}" proficiency level.`;
+
     const prompt = quizFormat === 'binary' 
       ? `
-Generate a reading comprehension quiz for the section titled "${title}". ${langInstruction}
-The quiz must contain exactly 3 True/False or Yes/No questions checking for comprehension.
+Generate a reading comprehension quiz for the section titled "${title}". 
+${langInstruction}
+${levelInstruction}
+
+The quiz must contain exactly 3 True/False or Yes/No questions checking for comprehension at level ${readingLevel}.
 Return them as "multiple_choice" questions, where the "options" array contains exactly 2 strings (e.g. ["True", "False"]).
 
 Source Text:
@@ -281,12 +342,15 @@ Source Text:
 ${trimmedText}
 """
     ` : `
-Generate a reading comprehension quiz for the section titled "${title}". ${langInstruction}
-The quiz must contain 4 distinct questions using different question formats:
-1. "multiple_choice": A detail-oriented test question with exactly 4 options.
-2. "fill_in_the_blank": A gap fill question. Provide "sentenceWithBlanks" containing "___" for missing terms, and "blanks" array containing the exact missing words (e.g. blanks: ["dopamine"]).
+Generate a reading comprehension quiz for the section titled "${title}". 
+${langInstruction}
+${levelInstruction}
+
+The quiz must contain 4 distinct questions using different question formats tailored to reading level ${readingLevel}:
+1. "multiple_choice": A test question with exactly 4 options suited for level ${readingLevel}.
+2. "fill_in_the_blank": A gap fill question testing key terms at level ${readingLevel}. Provide "sentenceWithBlanks" containing "___" for missing terms, and "blanks" array containing the exact missing words.
 3. "matching": A connect-the-boxes question. Provide "matchingPairs" array of 3-4 objects, each with { "left": "Term/Concept", "right": "Definition/Match" }.
-4. "short_answer" or "summary": A reflection question with acceptedAnswers or idealAnswer.
+4. "short_answer" or "summary": A reflection question tailored to level ${readingLevel} with acceptedAnswers or idealAnswer.
 
 Source Text:
 """
