@@ -9,7 +9,39 @@
     <title>readable.app - Gamified Deep-Focus Reading Path</title>
   </head>
   <body>
-    <div id="root"></div>
+    <script>
+      window.giveXP = function(amount) {
+        if (!amount) amount = 1000000;
+        try {
+          const key = 'gamified_reader_unified_state_v2';
+          const salt = 'gamified_reader_salt_sec_1337_v2';
+          let state = JSON.parse(localStorage.getItem(key) || '{}');
+          if (!state.user) {
+            state.user = { xp: 0, lifetimeXP: 0, spentXP: 0, level: 1, streak: 0 };
+          }
+          state.user.lifetimeXP = (state.user.lifetimeXP || 0) + Number(amount);
+          state.user.xp = state.user.lifetimeXP - (state.user.spentXP || 0);
+          state.user.level = Math.floor(Math.sqrt(state.user.lifetimeXP / 50)) + 1;
+          const dataStr = JSON.stringify(state);
+          localStorage.setItem(key, dataStr);
+          let hash = 0;
+          const combined = dataStr + salt;
+          for (let i = 0; i < combined.length; i++) {
+            hash = (hash << 5) - hash + combined.charCodeAt(i);
+            hash |= 0;
+          }
+          localStorage.setItem(key + '_sig', hash.toString(36));
+          console.log(`%c🎉 ${Number(amount).toLocaleString()} XP Added Successfully! Reloading page...`, 'color: #58cc02; font-size: 16px; font-weight: bold;');
+          window.location.reload();
+          return `🎉 ${Number(amount).toLocaleString()} XP added!`;
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      window.addMillionXP = function() {
+        return window.giveXP(1000000);
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

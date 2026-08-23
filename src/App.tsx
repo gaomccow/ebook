@@ -283,8 +283,23 @@ function AppContent() {
   useEffect(() => {
     const handleOpenFlashcards = () => setShowFlashcardModal(true);
     window.addEventListener('open-flashcards', handleOpenFlashcards);
+
+    // Global Dev Helper Cheat Commands
+    (window as any).addMillionXP = () => {
+      progressionManager.addXP(1000000);
+      setStats(progressionManager.getStats());
+      console.log('%c🎉 1,000,000 XP Awarded!', 'color: #58cc02; font-size: 16px; font-weight: bold;');
+      return '🎉 1,000,000 XP awarded!';
+    };
+    (window as any).giveXP = (amount: number = 1000000) => {
+      progressionManager.addXP(amount);
+      setStats(progressionManager.getStats());
+      console.log(`%c🎉 ${amount.toLocaleString()} XP Awarded!`, 'color: #58cc02; font-size: 16px; font-weight: bold;');
+      return `🎉 ${amount.toLocaleString()} XP awarded!`;
+    };
+
     return () => window.removeEventListener('open-flashcards', handleOpenFlashcards);
-  }, []);
+  }, [progressionManager]);
   const [searchTarget, setSearchTarget] = useState<number | null>(null);
 
   const [showDock, setShowDock] = useState(true);

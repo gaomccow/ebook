@@ -584,10 +584,11 @@ export class ProgressionManager {
     }
   }
 
-  private addXP(xpToAdd: number): void {
+  public addXP(xpToAdd: number): void {
     this.state.user.lifetimeXP += xpToAdd;
     this.state.user.xp = this.state.user.lifetimeXP - this.state.user.spentXP;
     this.state.user.level = ProgressionManager.calculateLevel(this.state.user.lifetimeXP);
+    this.saveState();
   }
 
   // --- Helper Methods ---
