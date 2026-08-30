@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import React, { useEffect, useRef, useState, useLayoutEffect, useMemo } from 'react';
 import { GeminiClient } from '../services/GeminiClient';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -170,6 +170,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const [diagramPosition, setDiagramPosition] = useState<'left' | 'right'>('left');
   const [isAutoSyncActive, setIsAutoSyncActive] = useState<boolean>(true);
   const [activeFigure, setActiveFigure] = useState<string | null>(null);
+  const [isReadingScrolling, setIsReadingScrolling] = useState<boolean>(false);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-switch to split mode if chapter has diagram images on desktop
   useEffect(() => {
@@ -178,9 +180,28 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     }
   }, [section.id, hasDiagramImages, isDesktop]);
 
-  // Context-Aware Figure Chip Parser
+  // Discover all figures present in the current chapter
+  const discoveredFigures = useMemo(() => {
+    const figRegex = /\b(?:FIG|Fig|Figure|Sơ đồ|Diagram)\.?\s*(\d+[a-z]?)\b|\((?:FIG|Fig|Figure|Sơ đồ|Diagram)\.?\s*(\d+[a-z]?)\)/gi;
+    const found = new Set<string>();
+    for (const p of paragraphs) {
+      let m: RegExpExecArray | null;
+      while ((m = figRegex.exec(p)) !== null) {
+        const num = m[1] || m[2];
+        if (num) found.add(`FIG. ${num.toUpperCase()}`);
+      }
+    }
+    const list = Array.from(found).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, '') || '0', 10);
+      const numB = parseInt(b.replace(/\D/g, '') || '0', 10);
+      return numA - numB;
+    });
+    return list.length > 0 ? list : ['FIG. 1', 'FIG. 2'];
+  }, [paragraphs]);
+
+  // Context-Aware Figure Chip Parser supporting ANY figure number & format
   const renderTextWithFigureChips = (rawText: string) => {
-    const figRegex = /(\b(?:FIG|Fig|Figure|Sơ đồ)\.?\s*\d+\b|\(FIG\.\s*\d+\)|\(Fig\.\s*\d+\))/gi;
+    const figRegex = /(\b(?:FIG|Fig|Figure|Sơ đồ|Diagram)\.?\s*\d+[a-z]?\b|\((?:FIG|Fig|Figure|Sơ đồ|Diagram)\.?\s*\d+[a-z]?\))/gi;
     const parts = rawText.split(figRegex);
 
     if (parts.length <= 1) {
@@ -190,8 +211,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     return parts.map((part, pIdx) => {
       if (figRegex.test(part)) {
         figRegex.lastIndex = 0;
-        const normalized = part.replace(/[()]/g, '').trim().toUpperCase();
-        const isActive = activeFigure?.toUpperCase() === normalized;
+        const normalized = part.replace(/[()]/g, '').trim().toUpperCase().replace(/^(?:FIGURE|FIG|FIG\.|FIG\s*|SƠ ĐỒ|DIAGRAM)\.?\s*/i, 'FIG. ');
+        const isActive = activeFigure?.toUpperCase().replace(/\s+/g, '') === normalized.replace(/\s+/g, '');
 
         return (
           <button
@@ -751,6 +772,32 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       if (!containerRef.current) return;
       const element = containerRef.current;
       const { scrollTop, scrollHeight, clientHeight } = element;
+
+      // Track active scrolling for diagram half-transparency
+      setIsReadingScrolling(true);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsReadingScrolling(false);
+      }, 650);
+
+      // Context-aware active paragraph detection while scrolling
+      if (isAutoSyncActive && containerRef.current) {
+        const pElements = containerRef.current.querySelectorAll('[data-para-index]');
+        const viewportTop = containerRef.current.getBoundingClientRect().top + 120;
+        
+        for (let i = 0; i < pElements.length; i++) {
+          const rect = pElements[i].getBoundingClientRect();
+          if (rect.top <= viewportTop && rect.bottom >= viewportTop) {
+            const text = pElements[i].textContent || '';
+            const match = text.match(/\b(FIG|Fig|Figure)\.?\s*(\d+)\b/i);
+            if (match) {
+              const figKey = `FIG. ${match[2]}`;
+              setActiveFigure(figKey);
+            }
+            break;
+          }
+        }
+      }
       
       if (scrollHeight - scrollTop - clientHeight < 120) {
         if (!isNearBottom) {
@@ -1030,6 +1077,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 filename={primaryImageFilename}
                 title={section.title}
                 activeFigure={activeFigure}
+                discoveredFigures={discoveredFigures}
                 onFigureSelect={(fig) => setActiveFigure(fig)}
                 isAutoSyncActive={isAutoSyncActive}
                 onToggleAutoSync={() => setIsAutoSyncActive(prev => !prev)}
@@ -1352,7 +1400,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         </div>
       </main>
 
-      {/* Floating Picture-in-Picture (PiP) Window */}
+      {/* Floating Picture-in-Picture (PiP) Window with Resizing & Scroll Transparency */}
       <AnimatePresence>
         {diagramViewMode === 'pip' && hasDiagramImages && (
           <motion.div
@@ -1361,13 +1409,26 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed z-50 bottom-8 right-8 w-[380px] md:w-[440px] max-w-[92vw] shadow-2xl rounded-3xl overflow-hidden border-2 border-blue-500/60 bg-black/40 backdrop-blur-xl"
+            className={`
+              fixed z-50 bottom-8 right-8 
+              min-w-[300px] min-h-[320px] max-w-[95vw] max-h-[90vh]
+              shadow-2xl rounded-3xl border-2 border-blue-500/70 bg-[var(--card-bg)]/90 backdrop-blur-xl
+              transition-opacity duration-300 group/pip select-none
+              ${isReadingScrolling ? 'opacity-40 hover:opacity-100 backdrop-blur-xs' : 'opacity-100'}
+            `}
+            style={{
+              width: '430px',
+              height: '480px',
+              resize: 'both',
+              overflow: 'hidden'
+            }}
           >
             <SmartDiagramViewer
               imageSrc={primaryImageDataUrl}
               filename={primaryImageFilename}
               title={section.title}
               activeFigure={activeFigure}
+              discoveredFigures={discoveredFigures}
               onFigureSelect={(fig) => setActiveFigure(fig)}
               isAutoSyncActive={isAutoSyncActive}
               onToggleAutoSync={() => setIsAutoSyncActive(prev => !prev)}
@@ -1379,7 +1440,15 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
               sectionTitle={section.title}
               isFloatingPiP={true}
               onTogglePiP={() => setDiagramViewMode('split')}
+              className="h-full w-full rounded-none border-none shadow-none"
             />
+
+            {/* Resize Corner Handle Grip */}
+            <div className="absolute bottom-1 right-1 pointer-events-none opacity-40 group-hover/pip:opacity-100 transition-opacity text-[var(--text-color)]">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 2L2 10M10 6L6 10M10 10L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
