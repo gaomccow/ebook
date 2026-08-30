@@ -819,15 +819,27 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       setScrollProgress(Math.min(100, Math.max(0, progress)));
     };
 
+    const handleWheelActivity = () => {
+      setIsReadingScrolling(true);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsReadingScrolling(false);
+      }, 700);
+    };
+
     const container = containerRef.current;
     if (container) {
       container.addEventListener('scroll', handleScroll, { passive: true });
+      container.addEventListener('wheel', handleWheelActivity, { passive: true });
+      container.addEventListener('touchmove', handleWheelActivity, { passive: true });
       handleScroll();
     }
 
     return () => {
       if (container) {
         container.removeEventListener('scroll', handleScroll);
+        container.removeEventListener('wheel', handleWheelActivity);
+        container.removeEventListener('touchmove', handleWheelActivity);
       }
     };
   }, [content, hasDistractionShield, isNearBottom]); // Re-bind on isNearBottom change for precise tracking
@@ -1071,7 +1083,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         `}>
           {/* Sticky Smart Diagram (when in split mode) */}
           {diagramViewMode === 'split' && hasDiagramImages && (
-            <div className={`lg:col-span-5 ${diagramPosition === 'right' ? 'lg:order-2' : 'lg:order-1'} sticky top-4 z-20`}>
+            <div className={`lg:col-span-5 ${diagramPosition === 'right' ? 'lg:order-2' : 'lg:order-1'} sticky top-4 z-20 transition-opacity duration-300 ${isReadingScrolling ? 'opacity-50 hover:opacity-100' : 'opacity-100'}`}>
               <SmartDiagramViewer
                 imageSrc={primaryImageDataUrl}
                 filename={primaryImageFilename}
@@ -1407,15 +1419,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             drag
             dragMomentum={false}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            animate={{ opacity: isReadingScrolling ? 0.35 : 1.0, scale: 1, y: 0 }}
+            whileHover={{ opacity: 1.0 }}
+            transition={{ opacity: { duration: 0.25 } }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`
-              fixed z-50 bottom-8 right-8 
-              min-w-[300px] min-h-[320px] max-w-[95vw] max-h-[90vh]
-              shadow-2xl rounded-3xl border-2 border-blue-500/70 bg-[var(--card-bg)]/90 backdrop-blur-xl
-              transition-opacity duration-300 group/pip select-none
-              ${isReadingScrolling ? 'opacity-40 hover:opacity-100 backdrop-blur-xs' : 'opacity-100'}
-            `}
+            className="fixed z-50 bottom-8 right-8 min-w-[300px] min-h-[320px] max-w-[95vw] max-h-[90vh] shadow-2xl rounded-3xl border-2 border-blue-500/70 bg-[var(--card-bg)]/90 backdrop-blur-xl group/pip select-none"
             style={{
               width: '430px',
               height: '480px',
