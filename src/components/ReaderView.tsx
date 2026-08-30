@@ -2,7 +2,12 @@ import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { GeminiClient } from '../services/GeminiClient';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, X, Sparkles, Bookmark, BookmarkCheck, Volume2, Map, Pin, ZoomIn } from 'lucide-react';
+import { 
+  ArrowLeft, CheckCircle, Highlighter, Eye, EyeOff, Keyboard, Shield, Cpu, Activity, Clock, 
+  X, Sparkles, Bookmark, BookmarkCheck, Volume2, Map, Pin, ZoomIn, Crosshair, 
+  SplitSquareHorizontal, ExternalLink
+} from 'lucide-react';
+import { SmartDiagramViewer } from './SmartDiagramViewer';
 import type { SectionNode } from './PathView';
 import type { Language } from '../utils/translations';
 import { allFontItems } from '../utils/fonts';
@@ -149,6 +154,79 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   });
 
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
+
+  // --- Smart Diagram & Side-by-Side Dual-Pane States ---
+  const paragraphs = content.split('\n\n').filter(p => p.trim() !== '');
+
+  const chapterImageTags = paragraphs
+    .filter(p => p.startsWith('[IMG:') && p.endsWith(']'))
+    .map(p => p.substring(5, p.length - 1));
+
+  const hasDiagramImages = chapterImageTags.length > 0 && images && !!images[chapterImageTags[0]];
+  const primaryImageFilename = hasDiagramImages ? chapterImageTags[0] : '';
+  const primaryImageDataUrl = primaryImageFilename && images ? images[primaryImageFilename] : '';
+
+  const [diagramViewMode, setDiagramViewMode] = useState<'split' | 'single' | 'pip' | 'minimized'>('split');
+  const [diagramPosition, setDiagramPosition] = useState<'left' | 'right'>('left');
+  const [isAutoSyncActive, setIsAutoSyncActive] = useState<boolean>(true);
+  const [activeFigure, setActiveFigure] = useState<string | null>(null);
+
+  // Auto-switch to split mode if chapter has diagram images on desktop
+  useEffect(() => {
+    if (isDesktop && hasDiagramImages) {
+      setDiagramViewMode('split');
+    }
+  }, [section.id, hasDiagramImages, isDesktop]);
+
+  // Context-Aware Figure Chip Parser
+  const renderTextWithFigureChips = (rawText: string) => {
+    const figRegex = /(\b(?:FIG|Fig|Figure|Sơ đồ)\.?\s*\d+\b|\(FIG\.\s*\d+\)|\(Fig\.\s*\d+\))/gi;
+    const parts = rawText.split(figRegex);
+
+    if (parts.length <= 1) {
+      return rawText;
+    }
+
+    return parts.map((part, pIdx) => {
+      if (figRegex.test(part)) {
+        figRegex.lastIndex = 0;
+        const normalized = part.replace(/[()]/g, '').trim().toUpperCase();
+        const isActive = activeFigure?.toUpperCase() === normalized;
+
+        return (
+          <button
+            key={pIdx}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveFigure(normalized);
+              if (diagramViewMode === 'single') {
+                setDiagramViewMode('split');
+              }
+            }}
+            onMouseEnter={() => {
+              if (isAutoSyncActive) {
+                setActiveFigure(normalized);
+              }
+            }}
+            className={`
+              inline-flex items-center gap-1 mx-1 px-2 py-0.5 rounded-lg text-xs font-black transition-all cursor-pointer shadow-xs
+              ${isActive
+                ? 'bg-blue-600 text-white shadow-blue-500/30 scale-105 ring-2 ring-blue-400/50'
+                : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 hover:scale-105'
+              }
+            `}
+            title={`Auto-focus diagram on ${part}`}
+          >
+            <Crosshair className="w-3 h-3" />
+            <span>{part}</span>
+          </button>
+        );
+      }
+      return part;
+    });
+  };
+
 
   // Celebrity voice synthesis states
   const [celebText, setCelebText] = useState('');
@@ -742,7 +820,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     ? "font-['EB_Garamond'] serif tracking-normal text-lg md:text-xl leading-relaxed"
     : fontItem ? fontItem.className : 'font-sans font-normal';
 
-  const paragraphs = content.split('\n\n').filter(p => p.trim() !== '');
 
   // Calculate estimated minutes remaining based on ~200 WPM
   const estTimeRemaining = Math.max(1, Math.ceil(((100 - scrollProgress) / 100) * (section.wordCount / 200)));
@@ -816,6 +893,36 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 <option value="hi">AI: HI 🇮🇳</option>
               </select>
             </div>
+            {/* Smart Diagram Split Toggle Button */}
+            {hasDiagramImages && (
+              <div className="flex items-center gap-1 bg-blue-500/10 border border-blue-500/25 rounded-full p-0.5">
+                <button
+                  onClick={() => setDiagramViewMode(prev => prev === 'split' ? 'single' : 'split')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full font-sans text-xs font-bold transition-all ${
+                    diagramViewMode === 'split'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-blue-600 dark:text-blue-400 hover:bg-blue-500/10'
+                  }`}
+                  title={diagramViewMode === 'split' ? "Switch to Single Column" : "Switch to Side-by-Side Diagram Mode"}
+                >
+                  <SplitSquareHorizontal className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">{diagramViewMode === 'split' ? 'Side-by-Side' : 'Split View'}</span>
+                </button>
+
+                <button
+                  onClick={() => setDiagramViewMode(prev => prev === 'pip' ? 'split' : 'pip')}
+                  className={`p-1.5 rounded-full transition-all ${
+                    diagramViewMode === 'pip'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-blue-600 dark:text-blue-400 hover:bg-blue-500/10'
+                  }`}
+                  title="Floating Picture-in-Picture window"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* Maps & Pictures Button */}
             {images && Object.keys(images).length > 0 && (
               <button
@@ -908,14 +1015,46 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           </div>
         )}
 
+        {/* Main Content Area Container */}
         <div className={`
-          ${isFocusMode
-            ? 'w-full max-w-[1200px] mx-auto min-h-screen pt-12 pb-32 px-12 md:px-24 bg-transparent shadow-none border-none'
-            : 'max-w-4xl mx-auto w-full pt-10 pb-16 px-10 md:px-16 mb-20 bg-[var(--card-bg)] text-[var(--text-color)] rounded-[40px] shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-[var(--border-color)]'
+          ${diagramViewMode === 'split' && hasDiagramImages
+            ? 'max-w-7xl mx-auto w-full mb-20 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start'
+            : 'max-w-4xl mx-auto w-full mb-20'
           }
-          relative
-          ${fontClassName}
         `}>
+          {/* Sticky Smart Diagram (when in split mode) */}
+          {diagramViewMode === 'split' && hasDiagramImages && (
+            <div className={`lg:col-span-5 ${diagramPosition === 'right' ? 'lg:order-2' : 'lg:order-1'} sticky top-4 z-20`}>
+              <SmartDiagramViewer
+                imageSrc={primaryImageDataUrl}
+                filename={primaryImageFilename}
+                title={section.title}
+                activeFigure={activeFigure}
+                onFigureSelect={(fig) => setActiveFigure(fig)}
+                isAutoSyncActive={isAutoSyncActive}
+                onToggleAutoSync={() => setIsAutoSyncActive(prev => !prev)}
+                onOpenLightbox={onOpenLightbox}
+                usefulInfoItems={usefulInfoItems}
+                onSaveUsefulInfo={onSaveUsefulInfo}
+                onDeleteUsefulInfo={onDeleteUsefulInfo}
+                sectionId={section.id}
+                sectionTitle={section.title}
+                onTogglePiP={() => setDiagramViewMode('pip')}
+                onSwapSides={() => setDiagramPosition(prev => prev === 'left' ? 'right' : 'left')}
+                diagramPosition={diagramPosition}
+              />
+            </div>
+          )}
+
+          {/* Reading Text Card */}
+          <div className={`
+            ${diagramViewMode === 'split' && hasDiagramImages
+              ? `lg:col-span-7 ${diagramPosition === 'right' ? 'lg:order-1' : 'lg:order-2'} w-full pt-10 pb-16 px-8 md:px-12 bg-[var(--card-bg)] text-[var(--text-color)] rounded-[40px] shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-[var(--border-color)] relative ${fontClassName}`
+              : isFocusMode
+              ? `w-full max-w-[1200px] mx-auto min-h-screen pt-12 pb-32 px-12 md:px-24 bg-transparent shadow-none border-none relative ${fontClassName}`
+              : `w-full pt-10 pb-16 px-10 md:px-16 bg-[var(--card-bg)] text-[var(--text-color)] rounded-[40px] shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-[var(--border-color)] relative ${fontClassName}`
+            }
+          `}>
           {/* Draggable Bookmark Ribbon hanging off the card */}
           {!isFocusMode && (
             <div id="tour-bookmark-ribbon" className="sticky top-6 float-right -mr-2 md:-mr-8 z-20 flex flex-col items-center">
@@ -1015,6 +1154,23 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                       }
                     }
                   };
+
+                  if (diagramViewMode === 'split') {
+                    return (
+                      <div key={index} className="w-full my-4 px-4 py-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400 select-none">
+                        <span className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-blue-500" />
+                          <span>Technical Diagram synced in {diagramPosition === 'left' ? 'Left' : 'Right'} Panel</span>
+                        </span>
+                        <button 
+                          onClick={() => setDiagramViewMode('single')}
+                          className="text-[11px] underline opacity-80 hover:opacity-100 font-bold"
+                        >
+                          View Inline
+                        </button>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div key={index} className="w-full flex justify-center my-6">
@@ -1133,7 +1289,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                     `}
                     style={{ textWrap: 'pretty' }}
                   >
-                    {p}
+                    {renderTextWithFigureChips(p)}
                   </p>
                 </div>
               );
@@ -1193,7 +1349,40 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             )}
           </div>
         </div>
+        </div>
       </main>
+
+      {/* Floating Picture-in-Picture (PiP) Window */}
+      <AnimatePresence>
+        {diagramViewMode === 'pip' && hasDiagramImages && (
+          <motion.div
+            drag
+            dragMomentum={false}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed z-50 bottom-8 right-8 w-[380px] md:w-[440px] max-w-[92vw] shadow-2xl rounded-3xl overflow-hidden border-2 border-blue-500/60 bg-black/40 backdrop-blur-xl"
+          >
+            <SmartDiagramViewer
+              imageSrc={primaryImageDataUrl}
+              filename={primaryImageFilename}
+              title={section.title}
+              activeFigure={activeFigure}
+              onFigureSelect={(fig) => setActiveFigure(fig)}
+              isAutoSyncActive={isAutoSyncActive}
+              onToggleAutoSync={() => setIsAutoSyncActive(prev => !prev)}
+              onOpenLightbox={onOpenLightbox}
+              usefulInfoItems={usefulInfoItems}
+              onSaveUsefulInfo={onSaveUsefulInfo}
+              onDeleteUsefulInfo={onDeleteUsefulInfo}
+              sectionId={section.id}
+              sectionTitle={section.title}
+              isFloatingPiP={true}
+              onTogglePiP={() => setDiagramViewMode('split')}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* AI Explanation Dialog/Overlay */}
       {typeof document !== 'undefined' && createPortal(
