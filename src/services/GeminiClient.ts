@@ -455,11 +455,13 @@ ${trimmedText}
 
     // 2. GROQ DISPATCH (OpenAI Compatible JSON Mode)
     else {
-      const systemPrompt = `You are a quiz generation engine. You must output a JSON object containing a "questions" list of exactly 4 questions of mixed formats (multiple_choice, short_answer, long_answer, summary). Format schema details:
-- For "multiple_choice": include "options" (exactly 4 strings) and "correctAnswerIndex" (integer 0-3).
-- For "short_answer": include "acceptedAnswers" (array of 1-3 short keyword strings).
+      const systemPrompt = `You are a quiz generation engine. You must output a JSON object containing a "questions" array of questions matching the requested formats (multiple_choice, fill_in_the_blank, short_answer, long_answer, summary, matching). Format schema details:
+- For "multiple_choice": include "options" (array of strings: 2 for True/False, 4 for multiple choice) and "correctAnswerIndex" (0-based integer index of correct option).
+- For "fill_in_the_blank": include "sentenceWithBlanks" (string containing "___" representing missing words) and "blanks" (array of strings with the exact missing words in order).
+- For "short_answer": include "acceptedAnswers" (array of acceptable short answer strings) or "idealAnswer".
 - For "long_answer" and "summary": include "idealAnswer" (ideal reference or rubric string).
-All questions must have "type" (one of the 4 types), "question" (string), and "explanation" (string).`;
+- For "matching": include "matchingPairs" (array of objects with "left" and "right" strings).
+All questions must have "type" (one of: "multiple_choice", "fill_in_the_blank", "short_answer", "long_answer", "summary", "matching"), "question" (string), and "explanation" (string).`;
       
       const response = await this.fetchGroq(apiKey, {
         model: 'openai/gpt-oss-120b',

@@ -1,0 +1,22 @@
+# readable.app - Full System & Architecture Documentation
+
+## Overview
+readable.app is a web application designed to counteract short-form media addiction by transforming deep-focus reading into an engaging, gamified experience. It converts EPUB digital books and long-form texts into milestone progression paths.
+
+## Core Components
+1. **PathView (`/path`)**: Displays a Duolingo-inspired interactive roadmap of book chapters, node completion states, locked/unlocked milestones, and level progress.
+2. **ReaderView (`/reader`)**: A distraction-shielded reader with customizable typography (Inter, Serif, OpenDyslexic), line-height controls, bionic reading mode, Web Speech TTS playback, and margin note highlights.
+3. **QuizView (`/quiz`)**: Adaptive comprehension testing with multiple choice, flashcards, and instant feedback.
+4. **TrophyRoom (`/trophy-room`)**: Achievement badges, streak history, reading velocity metrics, and library management.
+5. **FocusLabLayout (`/focus-lab`)**: Ambient sound generator (White Noise, Rain, Cafe, Forest), TTS voice parameters, and audio state controls.
+6. **TeacherDashboard (`/teacher`)**: Assignment management, class code generation, real-time student analytics, and leaderboard oversight.
+
+## Data Storage & Sync
+- **Local Storage / IDB**: EPUB binary files, book sections, reading progress, XP points, and bookmarks are stored client-side via IndexedDB (`IDBStorage.ts`) and LocalStorage with tamper-evident HMAC signatures.
+- **Firebase Firestore**: Opt-in classroom synchronization for multi-student leaderboards and teacher mission control.
+
+## Technology Stack
+- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Framer Motion
+- **Parsing**: JSZip + DOMParser for standard EPUB 2/3 decoding
+- **AI Service**: Google Gemini API via SDK integration for concept extraction and question generation
+- **Hosting & Infrastructure**: Optimized SPA static site with standard custom domain routing on `readable.app`

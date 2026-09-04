@@ -352,9 +352,9 @@ export const PathView: React.FC<PathViewProps> = ({
             </Tooltip>
           )}
           <Trophy className="w-5 h-5 text-duo-yellow fill-duo-yellow" />
-          <span className="font-extrabold text-[var(--text-color)] text-xs tracking-wider uppercase">
+          <h1 className="font-extrabold text-[var(--text-color)] text-xs tracking-wider uppercase">
             {isSidebar ? 'Chapters' : 'Path Progress'}
-          </span>
+          </h1>
         </div>
         
         {/* Stats and controls (Responsive Layout options) */}

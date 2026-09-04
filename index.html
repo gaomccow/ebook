@@ -2,14 +2,77 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="readable.app is a custom gamified reading path application designed to turn deep-focus reading content into a winding progression path with XP rewards and streaks." />
-        <script src="https://accounts.google.com/gsi/client" async defer></script>
     <title>readable.app - Gamified Deep-Focus Reading Path</title>
+    <meta name="description" content="readable.app turns long-form books and EPUB reading materials into a winding milestone progression path with XP rewards, streaks, audio focus soundscapes, and AI comprehension quizzes." />
+    
+    <!-- Custom Domain & Canonical -->
+    <link rel="canonical" href="https://readable.app/" />
+
+    <!-- Favicon Suite & Manifest -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/png" href="/og-image.png" />
+    <link rel="apple-touch-icon" href="/og-image.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#58cc02" />
+
+    <!-- Open Graph / Social Share -->
+    <meta property="og:site_name" content="readable.app" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://readable.app/" />
+    <meta property="og:title" content="readable.app - Gamified Deep-Focus Reading Path" />
+    <meta property="og:description" content="Turn long-form books and EPUB reading materials into an engaging milestone path with XP rewards, streaks, and AI comprehension quizzes." />
+    <meta property="og:image" content="https://readable.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="readable.app - Gamified Deep-Focus Reading Path" />
+    <meta name="twitter:description" content="Turn long-form books into a gamified milestone path with XP rewards, streaks, and AI quizzes." />
+    <meta name="twitter:image" content="https://readable.app/og-image.png" />
+
+    <!-- Google Identity Services (Gracefully handled if blocked) -->
+    <script src="https://accounts.google.com/gsi/client" async defer onerror="console.warn('Google GSI script failed to load. Authentication fallbacks enabled.')"></script>
+
+    <!-- Base JSON-LD Structured Data: WebApplication & EducationalOrganization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://readable.app/#webapp",
+          "name": "readable.app",
+          "url": "https://readable.app/",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "All",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "description": "Gamified deep-focus reading platform turning EPUB digital books into structured progression paths with XP rewards and audio focus engines.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        },
+        {
+          "@type": "EducationalOrganization",
+          "@id": "https://readable.app/#organization",
+          "name": "readable.app Deep Focus Reading Hub",
+          "url": "https://readable.app/",
+          "logo": "https://readable.app/og-image.png",
+          "sameAs": [
+            "https://readable.app"
+          ],
+          "knowsAbout": ["Deep Reading", "EdTech", "EPUB Parsing", "Cognitive Focus", "Comprehension Quizzes"]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <script>
+      // Clean developer utility for testing state progression without breaking production execution
       window.giveXP = function(amount) {
         if (!amount) amount = 1000000;
         try {
@@ -31,11 +94,10 @@
             hash |= 0;
           }
           localStorage.setItem(key + '_sig', hash.toString(36));
-          console.log(`%c🎉 ${Number(amount).toLocaleString()} XP Added Successfully! Reloading page...`, 'color: #58cc02; font-size: 16px; font-weight: bold;');
           window.location.reload();
           return `🎉 ${Number(amount).toLocaleString()} XP added!`;
         } catch (e) {
-          console.error(e);
+          console.error('Error adding XP:', e);
         }
       };
       window.addMillionXP = function() {

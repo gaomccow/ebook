@@ -19,7 +19,7 @@ export interface FigureZone {
  * Dynamically computes optimal zoom coordinates and spotlight beacon
  * for ANY figure number and ANY layout (1, 2 top/bottom, 3, 4, or 5+ grid).
  */
-export function calculateDynamicFigureZone(figureKey: string, totalFigures: number = 4): FigureZone {
+function calculateDynamicFigureZone(figureKey: string, totalFigures: number = 4): FigureZone {
   if (!figureKey || figureKey === 'OVERVIEW') {
     return {
       scale: 1.0,

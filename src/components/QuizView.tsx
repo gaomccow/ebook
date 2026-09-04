@@ -102,7 +102,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
     return () => {
       active = false;
     };
-  }, [apiKey, sectionTitle, sectionContent, aiProvider]);
+  }, [apiKey, sectionTitle, sectionContent, aiProvider, currentLang, quizProficiency]);
 
   // Reset and initialize question specific state
   useEffect(() => {

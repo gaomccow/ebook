@@ -117,23 +117,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const bottomRef = useRef<HTMLDivElement>(null);
   const [isChangingChapter, setIsChangingChapter] = useState(false);
 
-  // Synchrously reset scroll position to 0 on section change to prevent carryover bottom detections
-  useLayoutEffect(() => {
-    setIsNearBottom(false);
-    const hasBookmark = bookmarks.some(b => b.sectionId === section.id);
-    if (!hasBookmark && containerRef.current) {
-      containerRef.current.scrollTop = 0;
-    }
-    
-    // Set transitions cooldown
-    setIsChangingChapter(true);
-    const timer = setTimeout(() => {
-      setIsChangingChapter(false);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [section.id]);
-
-
   // Bookmark State & Scroll Restoration
   interface BookmarkItem {
     sectionId: string;
@@ -155,6 +138,22 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
 
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
 
+  // Synchrously reset scroll position to 0 on section change to prevent carryover bottom detections
+  useLayoutEffect(() => {
+    setIsNearBottom(false);
+    const hasBookmark = bookmarks.some(b => b.sectionId === section.id);
+    if (!hasBookmark && containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+    
+    // Set transitions cooldown
+    setIsChangingChapter(true);
+    const timer = setTimeout(() => {
+      setIsChangingChapter(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [section.id, bookmarks]);
+
   // --- Smart Diagram & Side-by-Side Dual-Pane States ---
   const paragraphs = content.split('\n\n').filter(p => p.trim() !== '');
 
@@ -166,19 +165,12 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const primaryImageFilename = hasDiagramImages ? chapterImageTags[0] : '';
   const primaryImageDataUrl = primaryImageFilename && images ? images[primaryImageFilename] : '';
 
-  const [diagramViewMode, setDiagramViewMode] = useState<'split' | 'single' | 'pip' | 'minimized'>('split');
+  const [diagramViewMode, setDiagramViewMode] = useState<'split' | 'single' | 'pip' | 'minimized'>('single');
   const [diagramPosition, setDiagramPosition] = useState<'left' | 'right'>('left');
   const [isAutoSyncActive, setIsAutoSyncActive] = useState<boolean>(true);
   const [activeFigure, setActiveFigure] = useState<string | null>(null);
   const [isReadingScrolling, setIsReadingScrolling] = useState<boolean>(false);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Auto-switch to split mode if chapter has diagram images on desktop
-  useEffect(() => {
-    if (isDesktop && hasDiagramImages) {
-      setDiagramViewMode('split');
-    }
-  }, [section.id, hasDiagramImages, isDesktop]);
 
   // Discover all figures present in the current chapter
   const discoveredFigures = useMemo(() => {
@@ -842,7 +834,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         container.removeEventListener('touchmove', handleWheelActivity);
       }
     };
-  }, [content, hasDistractionShield, isNearBottom]); // Re-bind on isNearBottom change for precise tracking
+  }, [content, hasDistractionShield, isNearBottom, isAutoSyncActive]);
 
   // Auto-claim XP handler
   useEffect(() => {

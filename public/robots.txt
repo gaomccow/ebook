@@ -1,0 +1,7 @@
+# https://readable.app - Gamified Deep-Focus Reading Engine
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /assets/*.map$
+
+Sitemap: https://readable.app/sitemap.xml

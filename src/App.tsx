@@ -47,6 +47,9 @@ import { SettingsModal } from './components/SettingsModal';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { BookFinderModal } from './components/BookFinderModal';
 import { OnboardingModal } from './components/OnboardingModal';
+import { HeadManager } from './services/HeadManager';
+import { BreadcrumbNav } from './components/BreadcrumbNav';
+import { NotFoundView } from './components/NotFoundView';
 
 // Default static reading material (Deep Focus guide)
 const DEFAULT_SECTIONS: SectionNode[] = [
@@ -122,6 +125,103 @@ function AppContent() {
   // Main navigation view routing: library, path, reader, quiz
   const [view, setView] = useState<'library' | 'path' | 'reader' | 'quiz'>('library');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [activeSection, setActiveSection] = useState<SectionNode | null>(null);
+
+  // Client-side URL path synchronization & router state
+  const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname);
+
+  const navigateToPath = (path: string) => {
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+    setCurrentPath(path);
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Sync view state with currentPath
+  useEffect(() => {
+    if (currentPath === '/reader' && activeSection) {
+      setView('reader');
+    } else if (currentPath === '/quiz') {
+      setView('quiz');
+    } else if (currentPath === '/trophy-room') {
+      setView('library');
+    } else if (currentPath === '/path' || currentPath === '/') {
+      setView('path');
+    }
+  }, [currentPath, activeSection]);
+
+  // Dynamic HeadManager SEO metadata & JSON-LD updates on route change
+  useEffect(() => {
+    const DOMAIN = 'https://readable.app';
+    const knownPaths = ['/', '/path', '/reader', '/quiz', '/trophy-room', '/focus-lab', '/teacher', '/student-join', '/login'];
+
+    if (currentPath === '/404' || (!knownPaths.includes(currentPath) && currentPath !== '/')) {
+      HeadManager.updatePageMeta({
+        title: '404 Page Not Found | readable.app',
+        description: 'The requested page or chapter could not be found.',
+        canonicalUrl: `${DOMAIN}/404`,
+        breadcrumbs: [{ name: 'Page Not Found', url: '/404' }]
+      });
+      return;
+    }
+
+    if (view === 'reader' && activeSection) {
+      HeadManager.updatePageMeta({
+        title: `${activeSection.title} | readable.app`,
+        description: `Read "${activeSection.title}" with distraction-shielded typography and focus audio on readable.app.`,
+        canonicalUrl: `${DOMAIN}/reader`,
+        breadcrumbs: [
+          { name: 'Reading Path', url: '/path' },
+          { name: activeSection.title, url: '/reader' }
+        ],
+        structuredData: [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'LearningResource',
+            'name': activeSection.title,
+            'description': activeSection.description || `Reading section: ${activeSection.title}`,
+            'learningResourceType': 'Reading Assignment',
+            'educationalUse': 'Self-Study & Focus Stamina'
+          }
+        ]
+      });
+    } else if (view === 'quiz') {
+      HeadManager.updatePageMeta({
+        title: 'Comprehension Quiz | readable.app',
+        description: 'Interactive comprehension test with instant feedback and XP rewards.',
+        canonicalUrl: `${DOMAIN}/quiz`,
+        breadcrumbs: [
+          { name: 'Reading Path', url: '/path' },
+          { name: 'Comprehension Quiz', url: '/quiz' }
+        ]
+      });
+    } else if (view === 'library') {
+      HeadManager.updatePageMeta({
+        title: 'Trophy Room & Bookshelf | readable.app',
+        description: 'Inspect your level progression, streak counters, reading velocity, and book library.',
+        canonicalUrl: `${DOMAIN}/trophy-room`,
+        breadcrumbs: [
+          { name: 'Reading Path', url: '/path' },
+          { name: 'Trophy Room', url: '/trophy-room' }
+        ]
+      });
+    } else {
+      HeadManager.updatePageMeta({
+        title: 'Reading Path | readable.app',
+        description: 'Gamified deep-focus reading path turning long-form books into milestone rewards.',
+        canonicalUrl: `${DOMAIN}/path`,
+        breadcrumbs: [{ name: 'Reading Path', url: '/path' }]
+      });
+    }
+  }, [view, activeSection, currentPath]);
 
   // Unified progression statistics
   const [stats, setStats] = useState<UserStats>(() => progressionManager.getStats());
@@ -153,7 +253,6 @@ function AppContent() {
     });
   }, []);
   
-  const [activeSection, setActiveSection] = useState<SectionNode | null>(null);
   const [isParsing, setIsParsing] = useState(false);
 
   // Gemini / Groq API key state
@@ -1129,66 +1228,104 @@ function AppContent() {
   );
 
   const readerViewNode = activeSection ? (
-    <ReaderView
-      section={activeSection}
-      content={contentMap[activeSection.id] || ''}
-      onBack={() => {
-        setView('path');
-        setActiveSection(null);
-        setIsFocusMode(false);
-      }}
-      onComplete={handleCompleteReading}
-      hasVerificationActive={!!apiKey.trim()}
-      xpClaimMode={xpClaimMode}
-      highlights={highlights}
-      onAddHighlight={handleAddHighlight}
-      onUpdateHighlight={handleUpdateNote}
-      onPrevSection={handlePrevSection}
-      onNextSection={handleNextSection}
-      isFocusMode={isFocusMode}
-      onToggleFocusMode={() => setIsFocusMode(prev => !prev)}
-      isDesktop={isDesktop}
-      currentTheme={stats.currentTheme}
-      currentFont={stats.currentFont}
-      currentTextSize={stats.currentTextSize || 'lg'}
-      onSelectTextSize={handleSelectTextSize}
-      hasDistractionShield={stats.unlockedFeatures.includes('distraction_shield')}
-      images={activeImages}
-      language={language}
-      onExplainText={handleExplainText}
-      onJumpToSection={handleJumpToSection}
-      onAddWord={handleAddWord}
-      usefulInfoItems={filteredUsefulInfoItems}
-      onSaveUsefulInfo={handleSaveUsefulInfoItem}
-      onDeleteUsefulInfo={handleDeleteUsefulInfoItem}
-      onOpenLightbox={(filename) => setActiveLightboxImage(filename)}
-      searchTarget={searchTarget}
-      aiProvider={aiProvider}
-      apiKey={apiKey}
-      aiTargetLanguage={aiTargetLanguage}
-      onAiTargetLanguageChange={(lang) => {
-        setAiTargetLanguage(lang);
-        localStorage.setItem('gamified_reader_ai_target_lang', lang);
-      }}
-    />
+    <div className="flex flex-col h-full w-full">
+      {!isFocusMode && (
+        <div className="bg-[var(--card-bg)] border-b border-[var(--border-color)]/20 px-4 py-1">
+          <BreadcrumbNav
+            items={[
+              { name: 'Reading Path', url: '/path' },
+              { name: activeSection.title, url: '/reader', active: true }
+            ]}
+            onNavigate={(url) => {
+              if (url === '/path') setView('path');
+              navigateToPath(url);
+            }}
+          />
+        </div>
+      )}
+      <div className="flex-1 overflow-hidden relative">
+        <ReaderView
+          section={activeSection}
+          content={contentMap[activeSection.id] || ''}
+          onBack={() => {
+            setView('path');
+            navigateToPath('/path');
+            setActiveSection(null);
+            setIsFocusMode(false);
+          }}
+          onComplete={handleCompleteReading}
+          hasVerificationActive={!!apiKey.trim()}
+          xpClaimMode={xpClaimMode}
+          highlights={highlights}
+          onAddHighlight={handleAddHighlight}
+          onUpdateHighlight={handleUpdateNote}
+          onPrevSection={handlePrevSection}
+          onNextSection={handleNextSection}
+          isFocusMode={isFocusMode}
+          onToggleFocusMode={() => setIsFocusMode(prev => !prev)}
+          isDesktop={isDesktop}
+          currentTheme={stats.currentTheme}
+          currentFont={stats.currentFont}
+          currentTextSize={stats.currentTextSize || 'lg'}
+          onSelectTextSize={handleSelectTextSize}
+          hasDistractionShield={stats.unlockedFeatures.includes('distraction_shield')}
+          images={activeImages}
+          language={language}
+          onExplainText={handleExplainText}
+          onJumpToSection={handleJumpToSection}
+          onAddWord={handleAddWord}
+          usefulInfoItems={filteredUsefulInfoItems}
+          onSaveUsefulInfo={handleSaveUsefulInfoItem}
+          onDeleteUsefulInfo={handleDeleteUsefulInfoItem}
+          onOpenLightbox={(filename) => setActiveLightboxImage(filename)}
+          searchTarget={searchTarget}
+          aiProvider={aiProvider}
+          apiKey={apiKey}
+          aiTargetLanguage={aiTargetLanguage}
+          onAiTargetLanguageChange={(lang) => {
+            setAiTargetLanguage(lang);
+            localStorage.setItem('gamified_reader_ai_target_lang', lang);
+          }}
+        />
+      </div>
+    </div>
   ) : null;
 
   const quizViewNode = activeSection && pendingCompletion ? (
-    <QuizView
-      apiKey={apiKey}
-      aiProvider={aiProvider}
-      sectionId={pendingCompletion.id}
-      sectionTitle={activeSection.title}
-      sectionContent={contentMap[pendingCompletion.id] || ''}
-      images={activeImages}
-      onBack={() => {
-        setView('reader');
-        setPendingCompletion(null);
-      }}
-      onSuccess={handleQuizSuccess}
-      isDesktop={isDesktop}
-      quizProficiency={quizProficiency}
-    />
+    <div className="flex flex-col h-full w-full">
+      <div className="bg-[var(--card-bg)] border-b border-[var(--border-color)]/20 px-4 py-1">
+        <BreadcrumbNav
+          items={[
+            { name: 'Reading Path', url: '/path' },
+            { name: 'Reader', url: '/reader' },
+            { name: 'Comprehension Quiz', url: '/quiz', active: true }
+          ]}
+          onNavigate={(url) => {
+            if (url === '/path') setView('path');
+            else if (url === '/reader') setView('reader');
+            navigateToPath(url);
+          }}
+        />
+      </div>
+      <div className="flex-1 overflow-hidden relative">
+        <QuizView
+          apiKey={apiKey}
+          aiProvider={aiProvider}
+          sectionId={pendingCompletion.id}
+          sectionTitle={activeSection.title}
+          sectionContent={contentMap[pendingCompletion.id] || ''}
+          images={activeImages}
+          onBack={() => {
+            setView('reader');
+            navigateToPath('/reader');
+            setPendingCompletion(null);
+          }}
+          onSuccess={handleQuizSuccess}
+          isDesktop={isDesktop}
+          quizProficiency={quizProficiency}
+        />
+      </div>
+    </div>
   ) : null;
 
   const highlightsSidebarNode = (
@@ -1222,20 +1359,32 @@ function AppContent() {
     {
       title: t('library'),
       icon: <Home className="w-full h-full" />,
-      onClick: () => setView('library'),
+      href: '/trophy-room',
+      onClick: () => {
+        setView('library');
+        navigateToPath('/trophy-room');
+      },
       active: view === 'library'
     },
     {
       title: t('pathMap'),
       icon: <Compass className="w-full h-full" />,
-      onClick: () => setView('path'),
+      href: '/path',
+      onClick: () => {
+        setView('path');
+        navigateToPath('/path');
+      },
       active: view === 'path'
     },
     {
       title: t('activeReader'),
       icon: <BookOpen className="w-full h-full" />,
+      href: '/reader',
       onClick: () => {
-        if (activeSection) setView('reader');
+        if (activeSection) {
+          setView('reader');
+          navigateToPath('/reader');
+        }
       },
       active: view === 'reader',
       disabled: !activeSection
@@ -1289,6 +1438,23 @@ function AppContent() {
 
   const currentLevel = ProgressionManager.calculateLevel(stats.lifetimeXP || stats.xp);
   const xpIntoCurrentLevel = stats.xp % 100;
+
+  const knownPaths = ['/', '/path', '/reader', '/quiz', '/trophy-room', '/focus-lab', '/teacher', '/student-join', '/login'];
+  if (currentPath === '/404' || (!knownPaths.includes(currentPath) && currentPath !== '/')) {
+    return (
+      <NotFoundView
+        onNavigateHome={() => {
+          setView('path');
+          navigateToPath('/path');
+        }}
+        onOpenSearch={() => {
+          setView('path');
+          navigateToPath('/path');
+          setShowSearchModal(true);
+        }}
+      />
+    );
+  }
 
   if (!isAuthenticated) {
     // Step 1: ask for role (if not chosen yet)

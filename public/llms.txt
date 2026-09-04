@@ -1,0 +1,18 @@
+# readable.app
+
+> readable.app is a gamified deep-focus reading platform that turns long-form books and EPUB documents into an engaging progression path with XP rewards, streaks, audio synthesis, and interactive comprehension quizzes.
+
+## Key Features
+- **Gamified Path Engine**: Winding progression tree mapping chapters into focus milestones with XP rewards.
+- **Deep Focus Reader**: Typography optimized with OpenDyslexic support, distraction shields, bionic reading toggles, and ambient focus soundscapes.
+- **AI Study Assistant & Smart Diagramming**: Automatic chapter summarization, concept flashcards, interactive quizzes, and visual diagram generators powered by Gemini.
+- **Classroom Mission Control**: Teacher dashboards to assign EPUB readings, track student reading velocity, and inspect comprehension analytics.
+- **Offline & Privacy First**: Client-side IndexedDB storage for local EPUB parsing, progress bookmarks, and offline reading.
+
+## Links
+- [Reading Path](https://readable.app/path): Main progression tree
+- [Focus Reader](https://readable.app/reader): Distraction-free reading environment
+- [Comprehension Quiz](https://readable.app/quiz): Interactive AI-generated quizzes
+- [Trophy Room](https://readable.app/trophy-room): User level, streaks, badges, and read books library
+- [Focus Lab](https://readable.app/focus-lab): Audio soundscapes and voice synthesis engine
+- [Full Documentation](https://readable.app/llms-full.txt): Complete architecture and API specifications

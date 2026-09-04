@@ -323,7 +323,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
             <School className="w-4 h-4 text-white" />
           </div>
-          <span className="font-black text-gray-800">Mission Control</span>
+          <h1 className="font-black text-gray-800 text-base">Teacher Mission Control</h1>
         </div>
         <span className="text-gray-300">|</span>
 

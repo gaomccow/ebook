@@ -5,6 +5,7 @@ export interface DockItem {
   title: string;
   icon: React.ReactNode;
   onClick: () => void;
+  href?: string;
   active?: boolean;
   disabled?: boolean;
 }
@@ -58,7 +59,7 @@ interface DockIconProps extends DockItem {
   isVertical: boolean;
 }
 
-const DockIcon: React.FC<DockIconProps> = ({ title, icon, onClick, active, disabled, mouseVal, isVertical }) => {
+const DockIcon: React.FC<DockIconProps> = ({ title, icon, onClick, href, active, disabled, mouseVal, isVertical }) => {
   const ref = useRef<HTMLDivElement>(null);
   const boundsRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
   
@@ -92,30 +93,56 @@ const DockIcon: React.FC<DockIconProps> = ({ title, icon, onClick, active, disab
     damping: 12,
   });
 
+  const baseClasses = `flex items-center justify-center rounded-2xl border transition-all shadow-sm group relative
+    ${disabled 
+      ? 'opacity-30 cursor-not-allowed bg-transparent border-transparent text-slate-400' 
+      : active 
+      ? 'bg-[var(--text-color)]/10 border-[var(--text-color)]/20 text-[var(--text-color)] shadow-inner' 
+      : 'bg-transparent hover:bg-[var(--text-color)]/5 border-transparent text-[var(--text-color)] opacity-60 hover:opacity-100'
+    }
+  `;
+
+  const innerContent = (
+    <>
+      <div className="w-5.5 h-5.5 flex items-center justify-center shrink-0">
+        {icon}
+      </div>
+
+      {/* Floating Tooltip Label */}
+      <span className={`absolute scale-0 group-hover:scale-100 transition-all duration-200 liquid-glass-tooltip font-black text-[10px] uppercase tracking-wider px-3 py-1.5 whitespace-nowrap pointer-events-none z-50
+        ${isVertical ? 'left-full ml-4 origin-left' : '-top-12 origin-bottom'}
+      `}>
+        {title}
+      </span>
+    </>
+  );
+
+  if (href && !disabled) {
+    return (
+      <div ref={ref} className="relative flex items-center justify-center">
+        <motion.a
+          href={href}
+          onClick={(e) => {
+            e.preventDefault();
+            onClick();
+          }}
+          style={{ width: size, height: size }}
+          className={baseClasses}
+        >
+          {innerContent}
+        </motion.a>
+      </div>
+    );
+  }
+
   return (
     <div ref={ref} className="relative flex items-center justify-center">
       <motion.button
         onClick={disabled ? undefined : onClick}
         style={{ width: size, height: size }}
-        className={`flex items-center justify-center rounded-2xl border transition-all shadow-sm group relative
-          ${disabled 
-            ? 'opacity-30 cursor-not-allowed bg-transparent border-transparent text-slate-400' 
-            : active 
-            ? 'bg-[var(--text-color)]/10 border-[var(--text-color)]/20 text-[var(--text-color)] shadow-inner' 
-            : 'bg-transparent hover:bg-[var(--text-color)]/5 border-transparent text-[var(--text-color)] opacity-60 hover:opacity-100'
-          }
-        `}
+        className={baseClasses}
       >
-        <div className="w-5.5 h-5.5 flex items-center justify-center shrink-0">
-          {icon}
-        </div>
-
-        {/* Floating Tooltip Label */}
-        <span className={`absolute scale-0 group-hover:scale-100 transition-all duration-200 liquid-glass-tooltip font-black text-[10px] uppercase tracking-wider px-3 py-1.5 whitespace-nowrap pointer-events-none z-50
-          ${isVertical ? 'left-full ml-4 origin-left' : '-top-12 origin-bottom'}
-        `}>
-          {title}
-        </span>
+        {innerContent}
       </motion.button>
     </div>
   );

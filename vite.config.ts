@@ -19,5 +19,33 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/fakeyou/, '')
       }
     }
+  },
+  build: {
+    sourcemap: false,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('framer-motion')) {
+              return 'vendor-framer';
+            }
+            if (id.includes('firebase')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            if (id.includes('jszip') || id.includes('@fontsource')) {
+              return 'vendor-utils';
+            }
+            return 'vendor-misc';
+          }
+        }
+      }
+    }
   }
 })
