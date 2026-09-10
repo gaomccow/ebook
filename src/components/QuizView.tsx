@@ -368,7 +368,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const progressPercent = ((currentQuestionIndex) / totalQuestions) * 100;
 
   return (
-    <div className={`flex flex-col h-screen bg-[var(--bg-color)] text-[var(--text-color)] transition-all duration-300 w-full relative overflow-hidden
+    <div className={`flex flex-col h-full bg-[var(--bg-color)] text-[var(--text-color)] transition-all duration-300 w-full relative overflow-hidden
       ${showPassage ? 'max-w-5xl' : 'max-w-lg'} mx-auto
     `}>
       {/* Header with back button, stepper bar and view passage button */}
@@ -556,10 +556,10 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
             {currentQuestion.type === 'fill_in_the_blank' && (
               <div className="flex flex-col gap-4 p-4 bg-[var(--card-bg)] rounded-2xl border-2 border-[var(--border-color)]">
-                <div className="text-base font-bold leading-relaxed flex flex-wrap items-center gap-2">
+                <div className="text-base font-bold leading-[2.5] block">
                   {(currentQuestion.sentenceWithBlanks || currentQuestion.question).split('___').map((part, i, arr) => (
                     <React.Fragment key={i}>
-                      <span>{part}</span>
+                      <span className="align-middle">{part}</span>
                       {i < arr.length - 1 && (
                         <input
                           type="text"
@@ -574,7 +574,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                           }}
                           disabled={isAnswered}
                           placeholder={`blank #${i + 1}`}
-                          className={`px-3 py-1 text-sm font-mono font-bold rounded-xl border-2 outline-none transition-all min-w-[100px] text-center
+                          className={`mx-2 px-3 py-1 text-sm font-mono font-bold rounded-xl border-2 outline-none transition-all min-w-[100px] text-center align-middle inline-block
                             ${isAnswered
                               ? gapAnswers[i]?.trim().toLowerCase() === (currentQuestion.blanks?.[i] || '').trim().toLowerCase()
                                 ? 'border-duo-green bg-duo-green/10 text-duo-green-dark'

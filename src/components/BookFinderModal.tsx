@@ -97,7 +97,7 @@ export const BookFinderModal: React.FC<BookFinderModalProps> = ({
               </div>
               <div>
                 <h2 className="text-xl font-black tracking-tight">
-                  {isVi ? 'Công Cụ Tìm Sách AI (Smart Book Finder)' : 'AI Book Discovery Concierge'}
+                  {isVi ? 'Công Cụ Tìm Sách AI (Smart Book Finder)' : 'AI Book Discovery bot'}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
                   {isVi ? 'Tìm kiếm sách phù hợp theo cấp độ và sở thích với trợ lý AI' : 'Find tailored reading material based on CEFR level and interests'}

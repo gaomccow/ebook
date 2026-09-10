@@ -942,7 +942,7 @@ export const TrophyRoom: React.FC<TrophyRoomProps> = ({
                   >
                     <div className="flex-1 pr-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm text-[var(--text-color)]">
+                        <span className={`font-extrabold text-lg text-[var(--text-color)] ${font.className}`}>
                           {t(`font_${font.id}_name`) || font.name}
                         </span>
                         <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase bg-duo-blue/10 text-duo-blue-dark">
